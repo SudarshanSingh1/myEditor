@@ -125,6 +125,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
       const wsHost = window.location.host;
       const wsUrl = `${wsProtocol}//${wsHost}/api/v1/execution/ws`;
       
+      console.log("[TerminalPanel] Connecting to shell WS at:", wsUrl);
       const ws = new WebSocket(wsUrl);
       shellWsRef.current = ws;
 
@@ -207,6 +208,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
       const wsHost = window.location.host;
       const wsUrl = `${wsProtocol}//${wsHost}/api/v1/execution/ws`;
       
+      console.log("[TerminalPanel] Connecting to exec WS at:", wsUrl);
       const ws = new WebSocket(wsUrl);
       execWsRef.current = ws;
 
