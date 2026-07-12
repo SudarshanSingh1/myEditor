@@ -50,6 +50,8 @@ class BaseRunner(ABC):
         """
         # Create a temporary directory that will be mounted to the container
         with tempfile.TemporaryDirectory() as temp_dir:
+            # FIX: Set permissions so container user can access the directory
+            os.chmod(temp_dir, 0o777)
             
             # Determine source file name based on language
             source_file = self.get_source_file_name(filename)
@@ -58,11 +60,15 @@ class BaseRunner(ABC):
             # Write source code
             with open(source_path, 'w', encoding='utf-8') as f:
                 f.write(code)
+            # FIX: Set permissions so container user can read it
+            os.chmod(source_path, 0o666)
                 
             # Write standard input
             input_path = os.path.join(temp_dir, 'input.txt')
             with open(input_path, 'w', encoding='utf-8') as f:
                 f.write(user_input if user_input else "")
+            # FIX: Set permissions so container user can read it
+            os.chmod(input_path, 0o666)
 
             # 1. Compilation phase
             compile_success, compile_output, compile_time = self.compile(temp_dir, source_file)

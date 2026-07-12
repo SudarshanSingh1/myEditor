@@ -153,10 +153,24 @@ class ExecutionService:
 
             # 3. Compile & Run via Temporary Directory
             with tempfile.TemporaryDirectory() as temp_dir:
+                # FIX: Set permissions so container user can access the directory
+                os.chmod(temp_dir, 0o777)
+                
                 source_file = file.name
                 source_path = os.path.join(temp_dir, source_file)
                 with open(source_path, 'w', encoding='utf-8') as f:
                     f.write(file.content)
+                # FIX: Set permissions so container user can read the file
+                os.chmod(source_path, 0o666)
+
+                # DEBUG LOGS
+                import stat
+                st = os.stat(temp_dir)
+                logger.info(f"DEBUG: temp_dir path: {temp_dir}")
+                logger.info(f"DEBUG: temp_dir permissions: {stat.filemode(st.st_mode)} (uid={st.st_uid}, gid={st.st_gid})")
+                
+                st_file = os.stat(source_path)
+                logger.info(f"DEBUG: file permissions: {stat.filemode(st_file.st_mode)} (uid={st_file.st_uid}, gid={st_file.st_gid})")
 
                 logger.info(f"Created temporary file: {source_path}")
                 await websocket.send_text("\r\n\x1b[38;5;4mRunning...\x1b[0m\r\n")
@@ -210,6 +224,8 @@ class ExecutionService:
             files = self.workspace_repo.get_project_files(self.db, project.id)
             
             with tempfile.TemporaryDirectory() as temp_dir:
+                # FIX: Set permissions so container user can access the directory
+                os.chmod(temp_dir, 0o777)
                 # Dump all files into temp_dir
                 for file_summary in files:
                     # We need the actual content
@@ -218,6 +234,8 @@ class ExecutionService:
                         file_path = os.path.join(temp_dir, file.name)
                         with open(file_path, 'w', encoding='utf-8') as f:
                             f.write(file.content)
+                        # FIX: Set permissions so container user can read the file
+                        os.chmod(file_path, 0o666)
 
                 binds = {temp_dir: {"bind": "/workspace", "mode": "rw"}}
                 
