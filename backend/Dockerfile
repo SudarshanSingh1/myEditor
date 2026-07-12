@@ -25,6 +25,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/wheels /wheels
@@ -34,15 +35,15 @@ RUN pip install --no-cache /wheels/*
 
 COPY . .
 
-# Create non-root user and group, add to docker group (usually gid 999, but might vary)
-RUN groupadd -g 999 docker || true && \
-    addgroup --system appgroup && \
+# Create non-root user and group
+RUN addgroup --system appgroup && \
     adduser --system --ingroup appgroup appuser && \
-    usermod -aG docker appuser || true && \
     chown -R appuser:appgroup /app
 
-USER appuser
+# Ensure entrypoint is executable
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
