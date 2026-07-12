@@ -125,18 +125,23 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
       const wsHost = window.location.host;
       const wsUrl = `${wsProtocol}//${wsHost}/api/v1/execution/ws`;
       
-      console.log("[TerminalPanel] Connecting to shell WS at:", wsUrl);
+      console.log("[TerminalPanel] Creating shell websocket at:", wsUrl);
       const ws = new WebSocket(wsUrl);
       shellWsRef.current = ws;
 
       ws.onopen = () => {
+        console.log("[TerminalPanel] Shell WebSocket opened, readyState:", ws.readyState);
         if (currentMode.current === 'none') {
             currentMode.current = 'shell';
         }
-        ws.send(JSON.stringify({
+        const payload = {
           mode: 'shell',
           projectId: projectId
-        }));
+        };
+        console.log("[TerminalPanel] Sending shell init packet");
+        console.log(payload);
+        ws.send(JSON.stringify(payload));
+        console.log("[TerminalPanel] Shell packet sent");
       };
 
       ws.onmessage = (event) => {
@@ -208,16 +213,21 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
       const wsHost = window.location.host;
       const wsUrl = `${wsProtocol}//${wsHost}/api/v1/execution/ws`;
       
-      console.log("[TerminalPanel] Connecting to exec WS at:", wsUrl);
+      console.log("[TerminalPanel] Creating websocket at:", wsUrl);
       const ws = new WebSocket(wsUrl);
       execWsRef.current = ws;
 
       ws.onopen = () => {
-        ws.send(JSON.stringify({
+        console.log("[TerminalPanel] WebSocket opened, readyState:", ws.readyState);
+        const payload = {
           mode: 'execute',
           projectId: pendingExecution.projectId,
           fileId: pendingExecution.fileId
-        }));
+        };
+        console.log("[TerminalPanel] Sending initialization packet");
+        console.log(payload);
+        ws.send(JSON.stringify(payload));
+        console.log("[TerminalPanel] Packet sent");
       };
 
       ws.onmessage = (event) => {
