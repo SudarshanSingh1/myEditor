@@ -56,7 +56,11 @@ def client(db_session):
     def override_get_db():
         yield db_session
 
+    from app.core.rate_limit import limiter
+    limiter.enabled = False
+    
     fastapi_app.dependency_overrides[get_db] = override_get_db
     with TestClient(fastapi_app) as test_client:
         yield test_client
     fastapi_app.dependency_overrides.clear()
+    limiter.enabled = True

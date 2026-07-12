@@ -107,7 +107,7 @@ def test_protected_route_success(client):
     # Access protected route
     response = client.get(
         "/api/v1/auth/me",
-        headers={"Authorization": f"Bearer {token}"}
+        cookies={"access_token": token}
     )
     assert response.status_code == 200
     assert response.json()["data"]["email"] == "johndoe@example.com"

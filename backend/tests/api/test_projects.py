@@ -15,10 +15,10 @@ def test_user_token(client: TestClient) -> str:
     return login_resp.json()["data"]["access_token"]
 
 def test_create_project(client: TestClient, test_user_token: str):
-    headers = {"Authorization": f"Bearer {test_user_token}"}
+    cookies = {"access_token": test_user_token}
     response = client.post(
         "/api/v1/projects",
-        headers=headers,
+        cookies=cookies,
         json={
             "name": "Test Project",
             "description": "A project for testing",
@@ -27,7 +27,7 @@ def test_create_project(client: TestClient, test_user_token: str):
         }
     )
     assert response.status_code == 201
-    data = response.json()
+    data = response.json()["data"]
     assert data["name"] == "Test Project"
     assert data["slug"] == "test-project"
     assert "id" in data
@@ -35,54 +35,54 @@ def test_create_project(client: TestClient, test_user_token: str):
     return data["id"]
 
 def test_get_projects(client: TestClient, test_user_token: str):
-    headers = {"Authorization": f"Bearer {test_user_token}"}
+    cookies = {"access_token": test_user_token}
     
     # Create one to ensure it's there
-    client.post("/api/v1/projects", headers=headers, json={"name": "P1"})
+    client.post("/api/v1/projects", cookies=cookies, json={"name": "P1"})
     
-    response = client.get("/api/v1/projects", headers=headers)
+    response = client.get("/api/v1/projects", cookies=cookies)
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["data"]
     assert "items" in data
     assert "total" in data
     assert data["total"] > 0
 
 def test_update_project(client: TestClient, test_user_token: str):
-    headers = {"Authorization": f"Bearer {test_user_token}"}
+    cookies = {"access_token": test_user_token}
     
     # Create
-    create_res = client.post("/api/v1/projects", headers=headers, json={"name": "P2"})
-    p_id = create_res.json()["id"]
+    create_res = client.post("/api/v1/projects", cookies=cookies, json={"name": "P2"})
+    p_id = create_res.json()["data"]["id"]
     
     # Update
-    response = client.put(f"/api/v1/projects/{p_id}", headers=headers, json={"name": "P2 Updated", "color": "Blue"})
+    response = client.put(f"/api/v1/projects/{p_id}", cookies=cookies, json={"name": "P2 Updated", "color": "Blue"})
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["data"]
     assert data["name"] == "P2 Updated"
     assert data["slug"] == "p2-updated"
     assert data["color"] == "Blue"
 
 def test_soft_delete_and_restore(client: TestClient, test_user_token: str):
-    headers = {"Authorization": f"Bearer {test_user_token}"}
+    cookies = {"access_token": test_user_token}
     
     # Create
-    create_res = client.post("/api/v1/projects", headers=headers, json={"name": "To Delete"})
-    p_id = create_res.json()["id"]
+    create_res = client.post("/api/v1/projects", cookies=cookies, json={"name": "To Delete"})
+    p_id = create_res.json()["data"]["id"]
     
     # Delete
-    del_res = client.delete(f"/api/v1/projects/{p_id}", headers=headers)
+    del_res = client.delete(f"/api/v1/projects/{p_id}", cookies=cookies)
     assert del_res.status_code == 200
-    assert del_res.json()["deleted_at"] is not None
+    assert del_res.json()["data"]["deleted_at"] is not None
     
     # Verify it doesn't appear in normal list
-    list_res = client.get("/api/v1/projects", headers=headers)
-    assert not any(p["id"] == p_id for p in list_res.json()["items"])
+    list_res = client.get("/api/v1/projects", cookies=cookies)
+    assert not any(p["id"] == p_id for p in list_res.json()["data"]["items"])
     
     # Verify it appears in trash
-    trash_res = client.get("/api/v1/projects/trash", headers=headers)
-    assert any(p["id"] == p_id for p in trash_res.json()["items"])
+    trash_res = client.get("/api/v1/projects/trash", cookies=cookies)
+    assert any(p["id"] == p_id for p in trash_res.json()["data"]["items"])
     
     # Restore
-    rest_res = client.post(f"/api/v1/projects/{p_id}/restore", headers=headers)
+    rest_res = client.post(f"/api/v1/projects/{p_id}/restore", cookies=cookies)
     assert rest_res.status_code == 200
-    assert rest_res.json()["deleted_at"] is None
+    assert rest_res.json()["data"]["deleted_at"] is None
