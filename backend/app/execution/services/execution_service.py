@@ -94,14 +94,28 @@ class ExecutionService:
         Interactive execution via WebSockets.
         """
         try:
+            logger.info(f"Starting run_code_interactive for file: {file_id}, project: {project_id}")
             # 1. Fetch File
-            file = self.workspace_repo.get_file(self.db, file_id)
+            try:
+                import uuid
+                file_uuid = uuid.UUID(file_id)
+                project_uuid = uuid.UUID(project_id)
+            except ValueError as e:
+                logger.error(f"Invalid UUID: {e}")
+                await websocket.send_json({"type": "error", "message": f"Invalid ID format: {e}"})
+                return
+
+            file = self.workspace_repo.get_file(self.db, file_uuid)
             if not file or str(file.project_id) != project_id:
+                logger.error("File not found or project mismatch")
                 await websocket.send_json({"type": "error", "message": "File not found"})
                 return
             if not file.content or file.content.strip() == "":
+                logger.error("File is empty")
                 await websocket.send_json({"type": "error", "message": "File is empty"})
                 return
+
+            logger.info("File loaded successfully")
 
             # Determine language runner based on file extension
             import os
@@ -123,17 +137,19 @@ class ExecutionService:
             
             runner_class = ext_to_runner.get(ext)
             if not runner_class:
+                logger.info(f"No direct runner for {ext}, falling back to project language")
                 # fallback to project language
-                from app.repositories.project_repository import ProjectRepository
-                project = ProjectRepository().get(self.db, project_id)
+                project = self.project_repo.get_by_id(project_uuid)
                 if project:
                     runner_class = self.runners.get(project.language.lower() if project.language else "")
                 
             if not runner_class:
+                logger.error(f"Language not supported for {file.name}")
                 await websocket.send_json({"type": "error", "message": f"Language not supported for {file.name}"})
                 return
             
             runner = runner_class()
+            logger.info(f"Language detected: {runner.__class__.__name__}")
 
             # 3. Compile & Run via Temporary Directory
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -142,13 +158,17 @@ class ExecutionService:
                 with open(source_path, 'w', encoding='utf-8') as f:
                     f.write(file.content)
 
+                logger.info(f"Created temporary file: {source_path}")
                 await websocket.send_text("\r\n\x1b[38;5;4mRunning...\x1b[0m\r\n")
+                logger.info("Sent 'Running...' message to frontend")
 
                 binds = {temp_dir: {"bind": "/execution", "mode": "rw"}}
                 # Use interactive command which combines compile+run if applicable
                 raw_cmd = runner.get_interactive_command(source_file)
+                logger.info(f"Using raw command: {raw_cmd}")
                 
                 from app.execution.docker.container_manager import DockerManager
+                logger.info(f"Creating container using image: {runner.image_name}")
                 exit_code = await DockerManager.run_container_interactive(
                     image=runner.image_name,
                     command=f"sh -c '{raw_cmd}'",
@@ -157,13 +177,17 @@ class ExecutionService:
                     websocket=websocket
                 )
 
+                logger.info(f"Container execution finished with exit code: {exit_code}")
+
                 if exit_code == 0:
                     await websocket.send_text("\r\n\x1b[38;5;2m✓ Program finished (0)\x1b[0m\r\n")
                 else:
                     await websocket.send_text(f"\r\n\x1b[38;5;1m[Runtime Error] Exited with code {exit_code}\x1b[0m\r\n")
+                
+                logger.info("Sent final execution status to websocket")
 
         except Exception as e:
-            logger.error(f"Interactive execution failed: {e}")
+            logger.exception(f"Interactive execution failed: {e}")
             try:
                 await websocket.send_text(f"\r\n\x1b[38;5;1m[System] Error: {e}\x1b[0m\r\n")
             except Exception as ws_e:
