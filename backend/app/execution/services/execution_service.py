@@ -173,8 +173,6 @@ class ExecutionService:
                 logger.info(f"DEBUG: file permissions: {stat.filemode(st_file.st_mode)} (uid={st_file.st_uid}, gid={st_file.st_gid})")
 
                 logger.info(f"Created temporary file: {source_path}")
-                await websocket.send_text("\r\n\x1b[38;5;4mRunning...\x1b[0m\r\n")
-                logger.info("Sent 'Running...' message to frontend")
 
                 binds = {temp_dir: {"bind": "/execution", "mode": "rw"}}
                 # Use interactive command which combines compile+run if applicable
@@ -219,31 +217,35 @@ class ExecutionService:
                 return
 
             # 2. Get Project Files and setup a temp directory to simulate the workspace
-            # For a true persistent shell, we should sync files two-ways, 
-            # but for this iteration we dump files so they can be compiled/run.
+            from app.models.user import User
+            user = self.db.query(User).filter(User.id == user_id).first()
+            first_name = user.first_name.lower() if user and user.first_name else "user"
+
             files = self.workspace_repo.get_project_files(self.db, project.id)
             
             with tempfile.TemporaryDirectory() as temp_dir:
-                # FIX: Set permissions so container user can access the directory
                 os.chmod(temp_dir, 0o777)
-                # Dump all files into temp_dir
+                
+                # Write a custom .bashrc for the shell prompt
+                bashrc_path = os.path.join(temp_dir, ".bashrc")
+                with open(bashrc_path, 'w', encoding='utf-8') as f:
+                    f.write(f'export PS1="{first_name}@\\h:\\w\\$ "\n')
+                os.chmod(bashrc_path, 0o666)
+
                 for file_summary in files:
-                    # We need the actual content
                     file = self.workspace_repo.get_file(self.db, file_summary.id)
                     if file and file.content:
                         file_path = os.path.join(temp_dir, file.name)
                         with open(file_path, 'w', encoding='utf-8') as f:
                             f.write(file.content)
-                        # FIX: Set permissions so container user can read the file
                         os.chmod(file_path, 0o666)
 
                 binds = {temp_dir: {"bind": "/workspace", "mode": "rw"}}
                 
                 from app.execution.docker.container_manager import DockerManager
-                # Using a generic linux image for shell
                 exit_code = await DockerManager.run_container_interactive(
                     image="debian:bullseye-slim",
-                    command="bash",
+                    command="bash --rcfile /workspace/.bashrc",
                     working_dir="/workspace",
                     binds=binds,
                     websocket=websocket

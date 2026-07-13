@@ -54,8 +54,10 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
           // Only show toast for explicit user-initiated requests, not background checks
           if (endpoint !== '/auth/me') {
             toast.error('Session expired. Please log in again.');
+            window.location.href = '/login?expired=true';
+          } else {
+            window.dispatchEvent(new Event('auth:unauthorized'));
           }
-          window.dispatchEvent(new Event('auth:unauthorized'));
         }
       }
     }
@@ -63,7 +65,17 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     const data = await response.json().catch(() => null);
     
     if (!response.ok) {
-      const errorMsg = data?.detail || data?.message || `API request failed (${response.status})`;
+      let errorMsg = data?.detail || data?.message || `API request failed (${response.status})`;
+      
+      // Handle structured detail object (e.g. for 2FA)
+      if (data && data.detail && typeof data.detail === 'object') {
+        errorMsg = data.detail.message || errorMsg;
+      }
+
+      if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        errorMsg = data.errors[0];
+      }
+      
       if (response.status === 503) {
         window.dispatchEvent(new Event('maintenance:active'));
       } else if (response.status >= 500) {
@@ -72,7 +84,10 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
         toast.error(errorMsg);
       }
       
-      throw new Error(errorMsg);
+      const error: any = new Error(errorMsg);
+      error.data = data;
+      error.status = response.status;
+      throw error;
     }
     
     return data;

@@ -295,3 +295,36 @@ class EmailService:
             EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
         finally:
             db.close()
+
+    @staticmethod
+    def send_new_login_alert(user_id: str, ip_address: str, device: str):
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user:
+                return
+            
+            subject = "New Login to Your Account"
+            name = user.first_name if user.first_name else user.username
+            
+            body = f"""
+            <div style="font-size: 19px; font-weight: 600; color: #ffffff; margin-bottom: 24px;">
+                Hello {name},
+            </div>
+            <div style="color: #d4d4d8; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+                We noticed a new login to your <strong>{settings.APP_NAME}</strong> account.
+            </div>
+            <div style="background-color: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 16px; margin-bottom: 32px;">
+                <div style="color: #71717a; font-size: 13px; margin-bottom: 8px;">Login Details:</div>
+                <div style="color: #e4e4e7; font-size: 14px;"><strong>IP Address:</strong> {ip_address or 'Unknown'}</div>
+                <div style="color: #e4e4e7; font-size: 14px;"><strong>Device:</strong> {device or 'Unknown'}</div>
+                <div style="color: #e4e4e7; font-size: 14px;"><strong>Time:</strong> {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}</div>
+            </div>
+            <div style="color: #d4d4d8; font-size: 15px; line-height: 1.6; margin-bottom: 36px;">
+                If this was you, you can safely ignore this email. If you don't recognize this activity, please reset your password immediately and secure your account.
+            </div>
+            """
+            html_content = EmailService._get_base_template(subject, body)
+            EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
+        finally:
+            db.close()

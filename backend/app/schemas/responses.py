@@ -13,6 +13,9 @@ class SuccessResponse(BaseResponse, Generic[T]):
     success: bool = True
     data: Optional[T] = None
 
+class StandardResponse(SuccessResponse[T]):
+    pass
+
 class ErrorResponse(BaseResponse):
     success: bool = False
     errors: Optional[List[str]] = None

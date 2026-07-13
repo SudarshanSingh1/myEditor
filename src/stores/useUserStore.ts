@@ -10,6 +10,10 @@ interface User {
   role: string;
   avatar?: string;
   must_change_password?: boolean;
+  bio?: string;
+  timezone?: string;
+  theme_preference?: string;
+  totp_enabled?: boolean;
 }
 
 interface UserState {

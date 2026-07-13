@@ -18,6 +18,7 @@ import { ProjectCard } from "../../components/ui/ProjectCard";
 import { Button } from "../../components/ui/Button";
 import { CreateProjectModal } from "../../components/projects/CreateProjectModal";
 import { LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
+import { GithubRepositories } from "../../components/dashboard/GithubRepositories";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -157,6 +158,22 @@ export default function Dashboard() {
         )}
       </div>
 
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <GithubRepositories />
+        </div>
+        <div className="space-y-6">
+          {/* Storage / Usage panel could go here in the future */}
+          <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <h3 className="text-lg font-medium mb-2">Workspace Usage</h3>
+            <p className="text-sm text-muted-foreground mb-4">You have used 120MB of your 5GB storage limit.</p>
+            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+              <div className="h-full bg-primary" style={{ width: '5%' }}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <CreateProjectModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

@@ -14,9 +14,13 @@ router.include_router(feedback.router, prefix="/feedback", tags=["Feedback"])
 router.include_router(system_errors.router, prefix="/system-errors", tags=["System Errors"])
 router.include_router(admin.router, prefix="/admin", tags=["Admin Dashboard"])
 router.include_router(system.router, prefix="/system", tags=["System"])
-# router.include_router(settings.router, prefix="/settings", tags=["Settings"])
-# router.include_router(share.router, prefix="/share", tags=["Sharing"])
-# router.include_router(compiler.router, prefix="/compiler", tags=["Compiler"])
+
+from app.api.v1 import sessions, security, oauth, github, git
+router.include_router(sessions.router, tags=["Sessions"])
+router.include_router(security.router, tags=["Security"])
+router.include_router(oauth.router, tags=["OAuth"])
+router.include_router(github.router, tags=["GitHub"])
+router.include_router(git.router, tags=["Git"])
 
 @router.get("/status", response_model=SuccessResponse[dict])
 async def v1_status():

@@ -258,8 +258,6 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         // Restore shell mode after execution finishes
         currentMode.current = 'shell';
         
-        // Print a nice separator before dropping back to bash
-        term.writeln('\r\n\x1b[38;5;8m--- Execution Finished. Restoring Shell ---\x1b[0m\r\n');
         // Synthesize an Enter press to refresh bash prompt
         if (shellWsRef.current && shellWsRef.current.readyState === WebSocket.OPEN) {
             shellWsRef.current.send('\r');

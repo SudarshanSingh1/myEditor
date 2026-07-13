@@ -7,6 +7,7 @@ import { EditorPane } from "../../components/workspace/EditorPane";
 import { StatusBar } from "../../components/workspace/StatusBar";
 import { BottomPanel } from "../../components/workspace/BottomPanel";
 import { VersionHistoryPanel } from "../../components/workspace/VersionHistoryPanel";
+import { GitPanel } from "../../components/workspace/GitPanel";
 import { useEditorStore } from "../../store/useEditorStore";
 import { useSaveStore } from "../../store/useSaveStore";
 import { useNotificationStore } from "../../store/useNotificationStore";
@@ -16,7 +17,7 @@ import { projectsApi } from "../../lib/api/projects";
 import { useQuery } from "@tanstack/react-query";
 
 import { useStatusBarStore } from "../../store/useStatusBarStore";
-import { AlertCircle, WifiOff } from 'lucide-react';
+import { AlertCircle, WifiOff, FileCode2, GitBranch } from 'lucide-react';
 import { PanelErrorBoundary } from "../../components/error/ErrorBoundaries";
 
 type Tab = 'PROBLEMS' | 'OUTPUT' | 'INPUT' | 'EXECUTION' | 'TERMINAL';
@@ -45,6 +46,7 @@ export default function ProjectWorkspace() {
     return saved ? parseInt(saved, 10) : 300;
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<'FILES' | 'GIT'>('FILES');
 
   const initializedProject = useRef<string | null>(null);
 
@@ -242,13 +244,47 @@ export default function ProjectWorkspace() {
       className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-background text-foreground"
       style={{ cursor: isDragging ? 'col-resize' : 'auto' }}
     >
+      {/* Activity Bar */}
+      <div className="w-12 border-r bg-muted/50 flex flex-col items-center py-4 gap-4 z-10 flex-shrink-0">
+        <button
+          onClick={() => setSidebarTab('FILES')}
+          className={cn(
+            "p-2 rounded-lg transition-colors group relative",
+            sidebarTab === 'FILES' ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+          )}
+          title="Explorer"
+        >
+          <FileCode2 className="w-5 h-5" />
+          {sidebarTab === 'FILES' && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setSidebarTab('GIT')}
+          className={cn(
+            "p-2 rounded-lg transition-colors group relative",
+            sidebarTab === 'GIT' ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+          )}
+          title="Source Control"
+        >
+          <GitBranch className="w-5 h-5" />
+          {sidebarTab === 'GIT' && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full" />
+          )}
+        </button>
+      </div>
+
       {/* Sidebar / Explorer */}
       <div 
         style={{ width: explorerWidth }}
-        className="flex-shrink-0 flex flex-col bg-muted overflow-hidden"
+        className="flex-shrink-0 flex flex-col bg-muted overflow-hidden border-r border-border/50"
       >
-        <PanelErrorBoundary panelName="Explorer">
-          <FileExplorer projectId={id} />
+        <PanelErrorBoundary panelName="Sidebar">
+          {sidebarTab === 'FILES' ? (
+            <FileExplorer projectId={id} />
+          ) : (
+            <GitPanel projectId={id} />
+          )}
         </PanelErrorBoundary>
       </div>
 

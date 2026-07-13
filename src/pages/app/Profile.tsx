@@ -13,6 +13,10 @@ export default function Profile() {
   
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [bio, setBio] = useState("");
+  const [timezone, setTimezone] = useState("");
+  const [themePref, setThemePref] = useState("system");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
 
@@ -25,6 +29,10 @@ export default function Profile() {
     if (user) {
       setFirstName(user.first_name || "");
       setLastName(user.last_name || "");
+      setBio(user.bio || "");
+      setTimezone(user.timezone || "");
+      setThemePref(user.theme_preference || "system");
+      setAvatarUrl(user.avatar || "");
     }
   }, [user]);
 
@@ -34,10 +42,24 @@ export default function Profile() {
     try {
       const response = await fetchApi("/auth/profile", {
         method: "PUT",
-        body: JSON.stringify({ first_name: firstName, last_name: lastName }),
+        body: JSON.stringify({ 
+          first_name: firstName, 
+          last_name: lastName,
+          bio: bio,
+          timezone: timezone,
+          theme_preference: themePref,
+          avatar: avatarUrl
+        }),
       });
       if (response.success) {
-        updateProfile({ first_name: firstName, last_name: lastName });
+        updateProfile({ 
+          first_name: firstName, 
+          last_name: lastName,
+          bio: bio,
+          timezone: timezone,
+          theme_preference: themePref,
+          avatar: avatarUrl
+        });
         setMessage({ text: "Profile updated successfully.", type: "success" });
       }
     } catch (error: any) {
@@ -84,11 +106,20 @@ export default function Profile() {
             <CardContent className="space-y-6">
               <div className="flex items-center gap-6">
                 <Avatar 
-                  src={user?.avatar} 
+                  src={avatarUrl || user?.avatar} 
                   fallback={user?.first_name?.charAt(0) || user?.username?.charAt(0) || "U"} 
                   className="h-20 w-20 text-2xl"
                 />
-                <Button variant="outline">Change Avatar</Button>
+                <div className="flex-1 space-y-1">
+                  <label className="text-sm font-medium">Avatar URL</label>
+                  <Input 
+                    value={avatarUrl} 
+                    onChange={e => setAvatarUrl(e.target.value)} 
+                    placeholder="https://example.com/avatar.jpg" 
+                    disabled={isSaving} 
+                  />
+                  <p className="text-xs text-zinc-400">Provide a direct link to an image to update your avatar.</p>
+                </div>
               </div>
               
               {message.text && (
@@ -112,6 +143,35 @@ export default function Profile() {
                   </div>
                 </div>
                 <div className="space-y-2">
+                  <label className="text-sm font-medium">Bio</label>
+                  <div className="relative">
+                    <Input value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell us about yourself" disabled={isSaving} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Timezone</label>
+                  <div className="relative">
+                    <Input value={timezone} onChange={e => setTimezone(e.target.value)} placeholder="e.g. America/Los_Angeles" disabled={isSaving} />
+                  </div>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-sm font-medium">Theme Preference</label>
+                  <div className="flex gap-4 mt-2">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="radio" name="theme" value="dark" checked={themePref === 'dark'} onChange={() => setThemePref('dark')} disabled={isSaving} className="accent-purple-500" />
+                      Dark
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="radio" name="theme" value="light" checked={themePref === 'light'} onChange={() => setThemePref('light')} disabled={isSaving} className="accent-purple-500" />
+                      Light
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="radio" name="theme" value="system" checked={themePref === 'system'} onChange={() => setThemePref('system')} disabled={isSaving} className="accent-purple-500" />
+                      System
+                    </label>
+                  </div>
+                </div>
+                <div className="space-y-2">
                   <label className="text-sm font-medium">Username</label>
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -127,7 +187,7 @@ export default function Profile() {
                 </div>
               </div>
               
-              <Button disabled={isSaving} onClick={handleSave}>
+              <Button disabled={isSaving} onClick={handleSave} className="bg-purple-600 hover:bg-purple-500 text-white">
                 {isSaving ? "Saving..." : "Save Changes"}
               </Button>
             </CardContent>

@@ -17,7 +17,9 @@ const Login = lazy(() => import("../pages/auth/Login"));
 const Signup = lazy(() => import("../pages/auth/Signup"));
 const ForgotPassword = lazy(() => import("../pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("../pages/auth/ResetPassword"));
+const VerifyEmail = lazy(() => import("../pages/auth/VerifyEmail"));
 const ForceChangePassword = lazy(() => import("../pages/auth/ForceChangePassword"));
+const OAuthCallback = lazy(() => import("../pages/auth/OAuthCallback"));
 
 // App Pages (Lazy)
 const Dashboard = lazy(() => import("../pages/app/Dashboard"));
@@ -90,7 +92,9 @@ export function AppRouter() {
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/force-password-change" element={<AuthGuard><ForceChangePassword /></AuthGuard>} />
+              <Route path="/oauth/callback/:provider" element={<OAuthCallback />} />
             </Route>
 
             {/* App Routes */}

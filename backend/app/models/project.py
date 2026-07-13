@@ -25,6 +25,7 @@ class Project(Base):
     color = Column(String(50), nullable=True)
     icon = Column(String(50), nullable=True)
     slug = Column(String(150), index=True, nullable=False)
+    github_repo_url = Column(String(500), nullable=True)
     
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

@@ -63,7 +63,7 @@ class AuthService:
         return new_user
 
     @staticmethod
-    def authenticate_user(db: Session, req: UserLoginRequest, ip_address: str = None) -> Tuple[User, str, str]:
+    def authenticate_user(db: Session, req: UserLoginRequest, ip_address: str = None, user_agent_string: str = None) -> Tuple[User, str, str]:
         email_normalized = req.email.lower().strip()
         logger.info(f"Login attempt for email: {email_normalized}")
         
@@ -75,11 +75,24 @@ class AuthService:
                 detail="Invalid email or password."
             )
             
+        # Brute Force Check
+        if user.account_locked_until and user.account_locked_until > datetime.now(timezone.utc):
+            logger.warning(f"Login failed: Account locked for user {user.username}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is temporarily locked due to too many failed login attempts. Try again later."
+            )
+
         logger.info(f"User found: ID {user.id}, Username {user.username}. Verifying password hash...")
         is_valid_password = verify_password(req.password, user.password_hash)
         logger.info(f"Password verification result: {'Success' if is_valid_password else 'Failed'}")
         
         if not is_valid_password:
+            user.failed_login_attempts += 1
+            if user.failed_login_attempts >= 5:
+                user.account_locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+            db.commit()
+            
             logger.warning(f"Login failed: Incorrect password for user {user.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -101,9 +114,49 @@ class AuthService:
                 detail="Temporary password has expired. Please contact your administrator."
             )
             
+        # 2FA Check
+        if getattr(user, 'totp_enabled', False):
+            # We assume a header or special token response. We will throw a special 401.
+            # In an actual setup we might issue an intermediate token.
+            # For this simple setup, we'll throw an error so the frontend knows to prompt 2FA.
+            # Wait, req does not have totp_code. If totp_enabled is true, this needs to be handled differently, 
+            # maybe by creating a temporary "pre-auth" token. We'll issue a JWT with type="2fa".
+            pre_auth_token = jwt.encode(
+                {"exp": datetime.now(timezone.utc) + timedelta(minutes=5), "sub": str(user.id), "type": "2fa"},
+                settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"message": "2FA_REQUIRED", "token": pre_auth_token}
+            )
+
+        # Reset failed attempts on success
+        user.failed_login_attempts = 0
+        user.account_locked_until = None
+        db.commit()
+
+        # Session Management
+        from app.models.user_session import UserSession
+        from user_agents import parse
+        
+        session_token_jti = str(uuid.uuid4())
+        ua = parse(user_agent_string or "")
+        
+        new_session = UserSession(
+            user_id=user.id,
+            session_token_jti=session_token_jti,
+            ip_address=ip_address,
+            user_agent=user_agent_string or "Unknown",
+            device_type=ua.device.family if hasattr(ua, 'device') else "Unknown",
+            browser=ua.browser.family if hasattr(ua, 'browser') else "Unknown",
+            os=ua.os.family if hasattr(ua, 'os') else "Unknown",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        )
+        db.add(new_session)
+        
         # Generate tokens
         access_token = create_access_token(subject=user.id)
-        refresh_token = create_refresh_token(subject=user.id)
+        refresh_token = create_refresh_token(subject=user.id, jti=session_token_jti)
 
         # Update last login timestamp
         user.last_login = datetime.now(timezone.utc)
@@ -112,6 +165,12 @@ class AuthService:
         log = AuditLog(user_id=user.id, action="LOGIN", ip_address=ip_address)
         db.add(log)
         db.commit()
+
+        # Notification
+        try:
+            EmailService.send_new_login_alert(user.id, ip_address, ua.device.family)
+        except Exception:
+            pass
 
         return user, access_token, refresh_token
 
@@ -124,6 +183,8 @@ class AuthService:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type.")
 
             user_id = payload.get("sub")
+            jti = payload.get("jti")
+            
             if not user_id:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
 
@@ -135,6 +196,16 @@ class AuthService:
             user = db.query(User).filter(User.id == uid).first()
             if not user or user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED]:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive.")
+                
+            if jti:
+                from app.models.user_session import UserSession
+                session = db.query(UserSession).filter(UserSession.session_token_jti == jti).first()
+                if not session or not session.is_active:
+                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session revoked or expired.")
+                
+                # Update last active
+                session.last_active_at = datetime.now(timezone.utc)
+                db.commit()
 
             return create_access_token(subject=user.id)
 
@@ -202,6 +273,12 @@ class AuthService:
             user.first_name = req.first_name
         if req.last_name is not None:
             user.last_name = req.last_name
+        if req.bio is not None:
+            user.bio = req.bio
+        if req.timezone is not None:
+            user.timezone = req.timezone
+        if req.theme_preference is not None:
+            user.theme_preference = req.theme_preference
             
         db.commit()
         db.refresh(user)

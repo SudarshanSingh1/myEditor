@@ -46,9 +46,16 @@ class UserProfileResponse(BaseModel):
     status: str
     avatar: str | None
     must_change_password: bool = False
+    bio: str | None = None
+    timezone: str | None = None
+    theme_preference: str | None = None
+    totp_enabled: bool = False
     
     model_config = {"from_attributes": True}
 
 class UserProfileUpdateRequest(BaseModel):
     first_name: str | None = Field(None, min_length=1, max_length=50)
     last_name: str | None = Field(None, min_length=1, max_length=50)
+    bio: str | None = Field(None, max_length=500)
+    timezone: str | None = Field(None, max_length=50)
+    theme_preference: str | None = Field(None, max_length=20)

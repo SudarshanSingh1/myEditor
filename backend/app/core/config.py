@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     SMTP_PASS: str | None = None
     SMTP_FROM: str = "noreply@hamaraeditor.com"
     SMTP_FROM_NAME: str = "Hamara Editor"
+    # OAuth Variables
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+    GITHUB_CLIENT_ID: str | None = None
+    GITHUB_CLIENT_SECRET: str | None = None
     
     # Pydantic settings config
     model_config = SettingsConfigDict(

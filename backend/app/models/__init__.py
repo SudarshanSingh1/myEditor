@@ -8,6 +8,8 @@ from app.models.feedback import Feedback, FeedbackCategory, FeedbackPriority, Fe
 from app.models.system_error import SystemError, ErrorTypeEnum
 from app.models.execution_log import ExecutionLog, ExecutionStatus
 from app.models.email_log import EmailLog, EmailStatus
+from app.models.oauth_account import OAuthAccount
+from app.models.user_session import UserSession
 
 __all__ = [
     "Base",
@@ -27,5 +29,9 @@ __all__ = [
     "SystemError",
     "ErrorTypeEnum",
     "ExecutionLog",
-    "ExecutionStatus"
+    "ExecutionStatus",
+    "EmailLog",
+    "EmailStatus",
+    "OAuthAccount",
+    "UserSession"
 ]
