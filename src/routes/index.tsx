@@ -34,7 +34,6 @@ const About = lazy(() => import("../pages/app/About"));
 const AdminPortalDashboard = lazy(() => import("../pages/admin/AdminPortalDashboard"));
 const AdminAnalytics = lazy(() => import("../pages/admin/AdminAnalytics"));
 const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
-const AdminRolesPage = lazy(() => import("../pages/admin/AdminRolesPage"));
 const AdminProjectsPage = lazy(() => import("../pages/admin/AdminProjectsPage"));
 const AdminExecutionsPage = lazy(() => import("../pages/admin/AdminExecutionsPage"));
 const AdminFeedbackPage = lazy(() => import("../pages/admin/AdminFeedbackPage"));
@@ -44,6 +43,7 @@ const AdminSettingsPage = lazy(() => import("../pages/admin/AdminSettingsPage"))
 const PlatformSecurity = lazy(() => import("../pages/admin/settings/PlatformSecurity"));
 const ResourceQuotas = lazy(() => import("../pages/admin/settings/ResourceQuotas"));
 const EmailSmtp = lazy(() => import("../pages/admin/settings/EmailSmtp"));
+const SystemMaintenance = lazy(() => import("../pages/admin/settings/SystemMaintenance"));
 const AdminServerPage = lazy(() => import("../pages/admin/AdminServerPage"));
 const AdminDatabasePage = lazy(() => import("../pages/admin/AdminDatabasePage"));
 const AdminEmailsPage = lazy(() => import("../pages/admin/AdminEmailsPage"));
@@ -153,13 +153,13 @@ export function AppRouter() {
               }
             >
               <Route index element={<Navigate to="/super-admin/server" replace />} />
-              <Route path="roles" element={<Suspense fallback={<AdminLoader />}><AdminRolesPage /></Suspense>} />
               <Route path="audit" element={<Suspense fallback={<AdminLoader />}><AdminAuditPage /></Suspense>} />
               <Route path="settings" element={<Suspense fallback={<AdminLoader />}><AdminSettingsPage /></Suspense>}>
                 <Route index element={<Navigate to="security" replace />} />
                 <Route path="security" element={<Suspense fallback={<AdminLoader />}><PlatformSecurity /></Suspense>} />
                 <Route path="resources" element={<Suspense fallback={<AdminLoader />}><ResourceQuotas /></Suspense>} />
                 <Route path="email" element={<Suspense fallback={<AdminLoader />}><EmailSmtp /></Suspense>} />
+                <Route path="maintenance" element={<Suspense fallback={<AdminLoader />}><SystemMaintenance /></Suspense>} />
               </Route>
               <Route path="server" element={<Suspense fallback={<AdminLoader />}><AdminServerPage /></Suspense>} />
               <Route path="database" element={<Suspense fallback={<AdminLoader />}><AdminDatabasePage /></Suspense>} />

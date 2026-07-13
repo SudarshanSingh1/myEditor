@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from app.dependencies.database import get_db
 from app.execution.services.execution_service import ExecutionService
 from app.services.auth_service import AuthService
-
+from app.models.system_settings import SystemSettings
+from app.models.user import RoleEnum
+from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -34,6 +36,21 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
             await websocket.send_json({"type": "error", "message": "Authentication failed"})
             await websocket.close()
             return
+            
+        # Check Maintenance Mode
+        sys_settings = db.query(SystemSettings).first()
+        if sys_settings and sys_settings.maintenance_mode:
+            is_maint = True
+            if sys_settings.maintenance_end_time and datetime.now(timezone.utc) > sys_settings.maintenance_end_time:
+                is_maint = False
+                
+            if is_maint:
+                is_admin = user.role in [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN]
+                if not (sys_settings.maintenance_allow_admin_access and is_admin):
+                    maint_msg = sys_settings.maintenance_message or "System is under maintenance."
+                    await websocket.send_json({"type": "error", "message": f"MAINTENANCE: {maint_msg}"})
+                    await websocket.close()
+                    return
 
         # 2. Wait for initialization message
         logger.info("Waiting for initialization message from frontend...")

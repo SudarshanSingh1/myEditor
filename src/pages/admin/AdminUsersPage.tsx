@@ -232,7 +232,7 @@ function SendEmailModal({ user, onClose }: { user: UserItem; onClose: () => void
 }
 
 export default function AdminUsersPage() {
-  const { isSuperAdmin } = useAdminContext();
+  const { isSuperAdmin, isModerator } = useAdminContext();
   const { confirm } = useConfirm();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -322,12 +322,14 @@ export default function AdminUsersPage() {
           <h1 className="text-2xl font-bold text-white">Users</h1>
           <p className="text-sm text-gray-500 mt-1">{total.toLocaleString()} total users</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          + Create Admin
-        </button>
+        {!isModerator && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            + Create Admin
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -416,40 +418,48 @@ export default function AdminUsersPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <select
-                      value={user.status}
-                      onChange={e => handleStatusChange(user.id, e.target.value)}
-                      className={`text-xs px-2 py-1 rounded-full font-medium ${statusBadge(user.status)} bg-transparent border-0 focus:outline-none cursor-pointer`}
-                    >
-                      {STATUSES.map(s => (
-                        <option key={s} value={s} className="bg-[#111118] text-white">{s}</option>
-                      ))}
-                    </select>
+                    {!isModerator ? (
+                      <select
+                        value={user.status}
+                        onChange={e => handleStatusChange(user.id, e.target.value)}
+                        className={`text-xs px-2 py-1 rounded-full font-medium ${statusBadge(user.status)} bg-transparent border-0 focus:outline-none cursor-pointer`}
+                      >
+                        {STATUSES.map(s => (
+                          <option key={s} value={s} className="bg-[#111118] text-white">{s}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusBadge(user.status)}`}>
+                        {user.status}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-gray-400">{user.projects_count}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{new Date(user.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end">
-                      <Dropdown
-                        align="right"
-                        trigger={<button className="p-1.5 text-gray-500 hover:text-white rounded hover:bg-white/10 transition-colors"><MoreHorizontal className="w-4 h-4" /></button>}
-                      >
-                        <DropdownItem onClick={() => setEmailTarget(user)}>
-                          Send Custom Email
-                        </DropdownItem>
-                        <DropdownItem onClick={() => handleResendCredentials(user.id, user.username)}>
-                          Send Credentials
-                        </DropdownItem>
-                        {(user.role !== "SUPER_ADMIN" || isSuperAdmin) && (
-                          <>
-                            <DropdownSeparator />
-                            <DropdownItem onClick={() => handleDelete(user.id, user.username)} className="text-red-400 hover:text-red-400">
-                              Delete User
-                            </DropdownItem>
-                          </>
-                        )}
-                      </Dropdown>
-                    </div>
+                    {!isModerator && (
+                      <div className="flex items-center justify-end">
+                        <Dropdown
+                          align="right"
+                          trigger={<button className="p-1.5 text-gray-500 hover:text-white rounded hover:bg-white/10 transition-colors"><MoreHorizontal className="w-4 h-4" /></button>}
+                        >
+                          <DropdownItem onClick={() => setEmailTarget(user)}>
+                            Send Custom Email
+                          </DropdownItem>
+                          <DropdownItem onClick={() => handleResendCredentials(user.id, user.username)}>
+                            Send Credentials
+                          </DropdownItem>
+                          {(user.role !== "SUPER_ADMIN" || isSuperAdmin) && (
+                            <>
+                              <DropdownSeparator />
+                              <DropdownItem onClick={() => handleDelete(user.id, user.username)} className="text-red-400 hover:text-red-400">
+                                Delete User
+                              </DropdownItem>
+                            </>
+                          )}
+                        </Dropdown>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

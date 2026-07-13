@@ -16,7 +16,7 @@ from app.database.base import Base
 import app.models
 
 # Setup in-memory SQLite for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+SQLALCHEMY_DATABASE_URL = "sqlite:///file:memdb1?mode=memory&cache=shared&uri=true"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -29,7 +29,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 import app.database.session
 app.database.session.SessionLocal = TestingSessionLocal
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(autouse=True)
 def setup_database():
     # Create tables
     Base.metadata.create_all(bind=engine)

@@ -2,6 +2,7 @@ import uuid
 import enum
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, Boolean, DateTime, Enum, Uuid
+from sqlalchemy.orm import relationship
 from app.database.base import Base
 
 class RoleEnum(str, enum.Enum):
@@ -44,3 +45,7 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan", passive_deletes=True)
+    feedback_submissions = relationship("Feedback", foreign_keys="[Feedback.user_id]", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)

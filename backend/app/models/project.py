@@ -32,7 +32,7 @@ class Project(Base):
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    owner = relationship("User", backref="projects")
+    owner = relationship("User", back_populates="projects")
 
     __table_args__ = (
         Index("ix_projects_owner_id_updated_at", "owner_id", "updated_at"),

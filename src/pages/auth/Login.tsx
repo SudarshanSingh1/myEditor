@@ -3,8 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { fetchApi } from "../../lib/api";
+import { fetchApi, resetUnauthorizedFlag } from "../../lib/api";
 import { useUserStore } from "../../stores/useUserStore";
+import { useSystemStore } from "../../stores/useSystemStore";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -28,13 +29,34 @@ export default function Login() {
       
       if (response.success) {
         // Now fetch user profile
-        const profileResp = await fetchApi("/auth/me");
-        if (profileResp.success && profileResp.data) {
-          login(profileResp.data);
-          navigate("/app/dashboard");
+        try {
+          const profileResp = await fetchApi("/auth/me");
+          if (profileResp.success && profileResp.data) {
+            resetUnauthorizedFlag();
+            login(profileResp.data);
+            navigate("/app/dashboard");
+          }
+        } catch (profileErr: any) {
+          // If the profile fetch fails during maintenance mode, it's because the user 
+          // is not an admin, so the backend blocked the request with a 503.
+          const isMaintenance = useSystemStore.getState().isMaintenanceMode;
+          if (isMaintenance) {
+            navigate("/maintenance", { replace: true });
+            return;
+          }
+          throw profileErr; // Otherwise rethrow
         }
       }
     } catch (err: any) {
+      // If the login request itself fails with 503, the api interceptor sets maintenance to true
+      const isMaintenance = useSystemStore.getState().isMaintenanceMode;
+      const errorText = (err.message || "").toLowerCase();
+      const isMaintenanceError = errorText.includes("maintenance") || errorText.includes("upgrade") || errorText.includes("scheduled");
+      
+      if (isMaintenance || isMaintenanceError) {
+        navigate("/maintenance", { replace: true });
+        return;
+      }
       setError(err.message || "Failed to login. Please check your credentials.");
     } finally {
       setIsLoading(false);

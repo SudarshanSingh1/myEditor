@@ -22,7 +22,6 @@ const adminNavItems = [
 const superAdminNavItems = [
   { icon: Server, label: "Server", to: "/super-admin/server", exact: true },
   { icon: Database, label: "Database", to: "/super-admin/database" },
-  { icon: ShieldCheck, label: "Roles", to: "/super-admin/roles" },
   { icon: ClipboardList, label: "Audit Logs", to: "/super-admin/audit" },
   { icon: Mail, label: "Emails", to: "/super-admin/emails" },
   { icon: Settings, label: "Settings", to: "/super-admin/settings" },

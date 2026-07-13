@@ -3,6 +3,13 @@ import { toast } from 'sonner';
 const API_BASE_URL = '/api/v1';
 
 let refreshPromise: Promise<Response> | null = null;
+// Track if we've already fired the unauthorized event this session
+// to prevent flooding the event bus on every failed request.
+let hasDispatchedUnauthorized = false;
+
+export function resetUnauthorizedFlag() {
+  hasDispatchedUnauthorized = false;
+}
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -41,9 +48,15 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
         // Retry original request
         response = await fetch(url, config);
       } else {
-        // Refresh failed, clear auth state
-        toast.error('Session expired. Please log in again.');
-        window.dispatchEvent(new Event('auth:unauthorized'));
+        // Refresh failed — fire unauthorized ONCE, not on every request
+        if (!hasDispatchedUnauthorized) {
+          hasDispatchedUnauthorized = true;
+          // Only show toast for explicit user-initiated requests, not background checks
+          if (endpoint !== '/auth/me') {
+            toast.error('Session expired. Please log in again.');
+          }
+          window.dispatchEvent(new Event('auth:unauthorized'));
+        }
       }
     }
 
@@ -51,10 +64,9 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     
     if (!response.ok) {
       const errorMsg = data?.detail || data?.message || `API request failed (${response.status})`;
-      
-      // Don't show toast for 404s on /projects/:id if we handle it in UI
-      // But generally show toasts for 5xx and other 4xx
-      if (response.status >= 500) {
+      if (response.status === 503) {
+        window.dispatchEvent(new Event('maintenance:active'));
+      } else if (response.status >= 500) {
         toast.error(`Server Error: ${errorMsg}`);
       } else if (response.status === 403 || response.status === 429) {
         toast.error(errorMsg);

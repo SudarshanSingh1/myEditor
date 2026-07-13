@@ -2,17 +2,19 @@ import { Navigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
 import { createContext, useContext, type ReactNode } from "react";
 
-export type AdminRole = "ADMIN" | "SUPER_ADMIN";
+export type AdminRole = "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
 
 interface AdminContextValue {
   isSuperAdmin: boolean;
   isAdmin: boolean;
+  isModerator: boolean;
   adminRole: AdminRole | null;
 }
 
 const AdminContext = createContext<AdminContextValue>({
   isSuperAdmin: false,
   isAdmin: false,
+  isModerator: false,
   adminRole: null,
 });
 
@@ -44,8 +46,10 @@ export function AdminAuthGuard({ children, requireSuperAdmin = false }: AdminAut
   const role = user.role?.toUpperCase() as AdminRole;
   const isSuperAdmin = role === "SUPER_ADMIN";
   const isAdmin = role === "ADMIN" || isSuperAdmin;
+  const isModerator = role === "MODERATOR";
+  const hasAccess = isAdmin || isModerator;
 
-  if (!isAdmin) {
+  if (!hasAccess) {
     return <Navigate to="/403" replace />;
   }
 
@@ -54,7 +58,7 @@ export function AdminAuthGuard({ children, requireSuperAdmin = false }: AdminAut
   }
 
   return (
-    <AdminContext.Provider value={{ isSuperAdmin, isAdmin, adminRole: role }}>
+    <AdminContext.Provider value={{ isSuperAdmin, isAdmin, isModerator, adminRole: role }}>
       {children}
     </AdminContext.Provider>
   );

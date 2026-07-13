@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Outlet, NavLink } from "react-router-dom";
 import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
-import { Settings as SettingsIcon, Shield, Zap, Save, RotateCcw, Mail } from "lucide-react";
+import { Settings as SettingsIcon, Shield, Zap, Save, RotateCcw, Mail, Wrench } from "lucide-react";
 import type { Settings } from "./settings/types";
 import { defaultSettings as defaults } from "./settings/types";
 
@@ -123,6 +123,16 @@ export default function AdminSettingsPage() {
         
         {/* Navigation Sidebar */}
         <div className="lg:col-span-3 space-y-2 hidden lg:block">
+          <NavLink
+            to="/super-admin/settings/maintenance"
+            className={({ isActive }) =>
+              `p-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-colors ${
+                isActive ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
+              }`
+            }
+          >
+            <Wrench className="w-4 h-4 text-cyan-400" /> System Maintenance
+          </NavLink>
           <NavLink
             to="/super-admin/settings/security"
             className={({ isActive }) =>

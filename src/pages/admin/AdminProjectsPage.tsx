@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
 import { useConfirm } from "../../components/ui/ConfirmProvider";
+import { useAdminContext } from "../../components/auth/AdminAuthGuard";
 
 export default function AdminProjectsPage() {
   const { confirm } = useConfirm();
+  const { isModerator } = useAdminContext();
   const [projects, setProjects] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -90,10 +92,12 @@ export default function AdminProjectsPage() {
                   <td className="px-4 py-3 text-gray-400">{p.executions}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{new Date(p.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => handleDelete(p.id, p.name)}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors">
-                      Delete
-                    </button>
+                    {!isModerator && (
+                      <button onClick={() => handleDelete(p.id, p.name)}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors">
+                        Delete
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

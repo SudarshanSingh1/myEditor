@@ -33,12 +33,12 @@ def login(req: UserLoginRequest, request: Request, response: Response, db: Sessi
     ip_address = request.client.host if request.client else None
     user, access_token, refresh_token = AuthService.authenticate_user(db, req, ip_address)
     
-    # Block login if maintenance mode is active and user is not SUPER_ADMIN
+    # Block login if maintenance mode is active and user is not SUPER_ADMIN/ADMIN
     from app.models.system_settings import SystemSettings
     from app.models.user import RoleEnum
     settings_obj = db.query(SystemSettings).first()
     if settings_obj and settings_obj.maintenance_mode:
-        if user.role != RoleEnum.SUPER_ADMIN:
+        if user.role not in [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN]:
             raise HTTPException(status_code=503, detail=settings_obj.maintenance_message or "System is under maintenance.")
             
     # Prepare HTTPOnly cookies architecture

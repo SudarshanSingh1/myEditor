@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { AppRouter } from "./routes";
 import { useUserStore } from "./stores/useUserStore";
+import { useSystemStore } from "./stores/useSystemStore";
+import { resetUnauthorizedFlag } from "./lib/api";
 
 import { Toaster } from 'sonner';
 import { NetworkStatus } from './components/network/NetworkStatus';
@@ -14,12 +16,21 @@ function App() {
     checkAuth();
 
     const handleUnauthorized = () => {
-      useUserStore.setState({ user: null, isAuthenticated: false });
+      useUserStore.setState({ user: null, isAuthenticated: false, isLoading: false });
+    };
+
+    const handleMaintenance = () => {
+      useSystemStore.setState({ isMaintenanceMode: true });
     };
 
     window.addEventListener('auth:unauthorized', handleUnauthorized);
-    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
-  }, [checkAuth]);
+    window.addEventListener('maintenance:active', handleMaintenance);
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+      window.removeEventListener('maintenance:active', handleMaintenance);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <GlobalErrorBoundary>

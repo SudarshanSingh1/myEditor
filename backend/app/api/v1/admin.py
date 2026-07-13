@@ -44,6 +44,11 @@ class UserStatusUpdate(BaseModel):
 
 class SystemSettingsUpdate(BaseModel):
     maintenance_mode: bool | None = None
+    maintenance_message: str | None = None
+    maintenance_end_time: str | None = None
+    maintenance_allow_admin_access: bool | None = None
+    maintenance_show_countdown: bool | None = None
+    
     registration_enabled: bool | None = None
     login_enabled: bool | None = None
     read_only_mode: bool | None = None
@@ -62,6 +67,13 @@ class SystemSettingsUpdate(BaseModel):
     smtp_from_email: str | None = None
     smtp_tls: bool | None = None
     smtp_ssl: bool | None = None
+
+class MaintenanceConfigRequest(BaseModel):
+    maintenance_mode: bool | None = None
+    maintenance_message: str | None = None
+    maintenance_end_time: datetime | None = None
+    maintenance_allow_admin_access: bool | None = None
+    maintenance_show_countdown: bool | None = None
 
 class CreateUserRequest(BaseModel):
     username: str
@@ -98,7 +110,7 @@ def get_dashboard(db: Session = Depends(get_db), admin: User = Depends(require_m
     })
 
 @router.get("/statistics", response_model=SuccessResponse)
-def get_statistics(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_statistics(db: Session = Depends(get_db), admin: User = Depends(require_moderator)):
     total_users = db.query(User).filter(User.is_deleted == False).count()
     active_users = db.query(User).filter(User.status == StatusEnum.ACTIVE, User.is_deleted == False).count()
     admins = db.query(User).filter(User.role.in_([RoleEnum.ADMIN, RoleEnum.SUPER_ADMIN]), User.is_deleted == False).count()
@@ -156,7 +168,7 @@ def get_server_status(admin: User = Depends(require_admin)):
 
 # --- Analytics ---
 @router.get("/analytics/users-growth", response_model=SuccessResponse)
-def get_users_growth(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_users_growth(db: Session = Depends(get_db), admin: User = Depends(require_moderator)):
     """Returns user registrations per day for last 30 days."""
     since = datetime.now(timezone.utc) - timedelta(days=30)
     rows = db.query(
@@ -171,7 +183,7 @@ def get_users_growth(db: Session = Depends(get_db), admin: User = Depends(requir
     return SuccessResponse(message="Users growth retrieved", data={"items": data})
 
 @router.get("/analytics/dau", response_model=SuccessResponse)
-def get_daily_active_users(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_daily_active_users(db: Session = Depends(get_db), admin: User = Depends(require_moderator)):
     """Daily active users based on last_login per day for last 30 days."""
     since = datetime.now(timezone.utc) - timedelta(days=30)
     rows = db.query(
@@ -186,7 +198,7 @@ def get_daily_active_users(db: Session = Depends(get_db), admin: User = Depends(
     return SuccessResponse(message="DAU retrieved", data={"items": data})
 
 @router.get("/analytics/executions", response_model=SuccessResponse)
-def get_execution_trends(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_execution_trends(db: Session = Depends(get_db), admin: User = Depends(require_moderator)):
     """Execution counts per day for last 30 days."""
     since = datetime.now(timezone.utc) - timedelta(days=30)
     rows = db.query(
@@ -200,7 +212,7 @@ def get_execution_trends(db: Session = Depends(get_db), admin: User = Depends(re
     return SuccessResponse(message="Execution trends retrieved", data={"items": data})
 
 @router.get("/analytics/master-timeline", response_model=SuccessResponse)
-def get_master_timeline(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_master_timeline(db: Session = Depends(get_db), admin: User = Depends(require_moderator)):
     """Aggregate Registrations, Errors, and Executions across the same timeline (30 days)"""
     since = datetime.now(timezone.utc) - timedelta(days=30)
     
@@ -232,7 +244,7 @@ def get_master_timeline(db: Session = Depends(get_db), admin: User = Depends(req
     return SuccessResponse(message="Master timeline retrieved", data={"items": sorted_items})
 
 @router.get("/analytics/languages", response_model=SuccessResponse)
-def get_language_distribution(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_language_distribution(db: Session = Depends(get_db), admin: User = Depends(require_moderator)):
     """Language distribution from projects."""
     rows = db.query(
         Project.language,
@@ -245,7 +257,7 @@ def get_language_distribution(db: Session = Depends(get_db), admin: User = Depen
     return SuccessResponse(message="Language distribution retrieved", data={"items": data})
 
 @router.get("/analytics/execution-status", response_model=SuccessResponse)
-def get_execution_status(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_execution_status(db: Session = Depends(get_db), admin: User = Depends(require_moderator)):
     """Execution success vs failure counts."""
     rows = db.query(
         ExecutionLog.status,
@@ -256,7 +268,7 @@ def get_execution_status(db: Session = Depends(get_db), admin: User = Depends(re
     return SuccessResponse(message="Execution status retrieved", data={"items": data})
 
 @router.get("/analytics/feedback-ratings", response_model=SuccessResponse)
-def get_feedback_ratings(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_feedback_ratings(db: Session = Depends(get_db), admin: User = Depends(require_moderator)):
     """Feedback rating distribution."""
     rows = db.query(
         Feedback.rating,
@@ -313,7 +325,7 @@ def get_database_info(db: Session = Depends(get_db), admin: User = Depends(requi
 @router.get("/users", response_model=SuccessResponse)
 def get_users(
     skip: int = 0, limit: int = 50, search: str = None, role: str = None,
-    db: Session = Depends(get_db), admin: User = Depends(require_admin)
+    db: Session = Depends(get_db), admin: User = Depends(require_moderator)
 ):
     query = db.query(User).filter(User.is_deleted == False)
     if search:
@@ -338,7 +350,7 @@ def get_users(
 @router.post("/users/create", response_model=SuccessResponse)
 def create_admin_user(
     req: CreateUserRequest, request: Request, background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db), admin: User = Depends(require_admin)
+    db: Session = Depends(get_db), admin: User = Depends(require_super_admin)
 ):
     # Only SUPER_ADMIN can create SUPER_ADMIN
     if req.role == RoleEnum.SUPER_ADMIN and admin.role != RoleEnum.SUPER_ADMIN:
@@ -482,7 +494,7 @@ def update_user_status(
 @router.delete("/users/{user_id}", response_model=SuccessResponse)
 def delete_user(
     user_id: uuid.UUID, request: Request,
-    db: Session = Depends(get_db), admin: User = Depends(require_admin)
+    db: Session = Depends(get_db), admin: User = Depends(require_super_admin)
 ):
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete your own account.")
@@ -492,14 +504,9 @@ def delete_user(
         raise HTTPException(status_code=404, detail="User not found")
         
     if target_user.role == RoleEnum.SUPER_ADMIN:
-        if admin.role != RoleEnum.SUPER_ADMIN:
-            raise HTTPException(status_code=403, detail="Only a SUPER_ADMIN can delete another SUPER_ADMIN account.")
         super_admin_count = db.query(User).filter(User.role == RoleEnum.SUPER_ADMIN, User.is_deleted == False).count()
         if super_admin_count <= 1:
             raise HTTPException(status_code=403, detail="Cannot delete the last Super Admin account.")
-        
-    if target_user.role == RoleEnum.ADMIN and admin.role != RoleEnum.SUPER_ADMIN:
-        raise HTTPException(status_code=403, detail="Only SUPER_ADMIN can delete ADMIN accounts.")
     
     username_to_log = target_user.username
     db.delete(target_user)
@@ -516,7 +523,7 @@ def delete_user(
 @router.get("/projects", response_model=SuccessResponse)
 def get_projects(
     skip: int = 0, limit: int = 50, search: str = None,
-    db: Session = Depends(get_db), admin: User = Depends(require_admin)
+    db: Session = Depends(get_db), admin: User = Depends(require_moderator)
 ):
     query = db.query(Project, User).join(User, Project.owner_id == User.id)
     if search:
@@ -581,7 +588,7 @@ def delete_project(
 @router.get("/executions", response_model=SuccessResponse)
 def get_executions(
     skip: int = 0, limit: int = 50,
-    db: Session = Depends(get_db), admin: User = Depends(require_admin)
+    db: Session = Depends(get_db), admin: User = Depends(require_moderator)
 ):
     total = db.query(ExecutionLog).count()
     rows = db.query(ExecutionLog, User.username).outerjoin(User, ExecutionLog.user_id == User.id).order_by(ExecutionLog.created_at.desc()).offset(skip).limit(limit).all()
@@ -644,15 +651,29 @@ def update_system_settings(req: SystemSettingsUpdate, request: Request, db: Sess
             
     changes = {}
     smtp_fields = ["smtp_host", "smtp_port", "smtp_user", "smtp_pass", "smtp_from_name", "smtp_from_email", "smtp_tls", "smtp_ssl"]
-    fields = ["maintenance_mode", "registration_enabled", "login_enabled", "read_only_mode",
-              "max_execution_time_seconds", "max_memory_mb", "max_file_size_mb", "max_projects_per_user", "rate_limit_per_minute"] + smtp_fields
+    fields = [
+        "maintenance_mode", "maintenance_message", "maintenance_end_time", "maintenance_allow_admin_access", "maintenance_show_countdown",
+        "registration_enabled", "login_enabled", "read_only_mode",
+        "max_execution_time_seconds", "max_memory_mb", "max_file_size_mb", "max_projects_per_user", "rate_limit_per_minute"
+    ] + smtp_fields
     
-    # Check if any SMTP fields are provided to trigger validation
-    should_validate_smtp = any(getattr(req, f, None) is not None for f in smtp_fields)
-    
-    if req.smtp_pass == "********":
+    should_validate_smtp = False
+    for f in smtp_fields:
+        req_val = getattr(req, f, None)
+        if req_val is not None:
+            if f == "smtp_pass" and req_val == "********":
+                continue
+            # Passwords need special check since DB is encrypted
+            if f == "smtp_pass":
+                if req_val != decrypt_string(getattr(settings_row, "smtp_pass", None)):
+                    should_validate_smtp = True
+                    break
+            elif req_val != getattr(settings_row, f, None):
+                should_validate_smtp = True
+                break
+                
+    if getattr(req, "smtp_pass", None) == "********":
         req.smtp_pass = None # Ignore dummy password from frontend
-        
     if should_validate_smtp:
         # Determine the effective SMTP settings for validation
         test_host = req.smtp_host if req.smtp_host is not None else getattr(settings_row, "smtp_host", None)
@@ -758,7 +779,7 @@ def update_feedback_status(
 @router.get("/errors", response_model=SuccessResponse)
 def get_errors(
     skip: int = 0, limit: int = 50,
-    db: Session = Depends(get_db), admin: User = Depends(require_admin)
+    db: Session = Depends(get_db), admin: User = Depends(require_moderator)
 ):
     total = db.query(SystemError).count()
     errors = db.query(SystemError).order_by(SystemError.created_at.desc()).offset(skip).limit(limit).all()
@@ -798,10 +819,99 @@ def get_email_logs(
             "provider": log.provider,
             "error_message": log.error_message,
             "sent_at": log.sent_at,
-            "created_at": log.created_at
+            "created_at": log.created_at,
         })
-        
     return SuccessResponse(message="Email logs retrieved", data={"items": items, "total": total})
+
+@router.post("/emails/{log_id}/retry", response_model=SuccessResponse)
+def retry_email_log(
+    log_id: str,
+    db: Session = Depends(get_db), 
+    admin: User = Depends(require_admin)
+):
+    log = db.query(EmailLog).filter(EmailLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Email log not found")
+        
+    # In a real system, we'd trigger a background Celery task here to resend the email
+    # For now, we mock the success response to fulfill the frontend endpoint
+    log.status = EmailStatusEnum.PENDING
+    log.retries = (log.retries or 0) + 1
+    log.error_message = None
+    db.commit()
+    
+    return SuccessResponse(message="Email queued for retry", data={"id": str(log.id)})
+
+# --- Maintenance ---
+@router.get("/maintenance", response_model=SuccessResponse)
+def get_maintenance_config(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    settings_row = db.query(SystemSettings).first()
+    if not settings_row:
+        settings_row = SystemSettings()
+        db.add(settings_row)
+        db.commit()
+        db.refresh(settings_row)
+    
+    return SuccessResponse(message="Maintenance config retrieved", data={
+        "maintenance_mode": settings_row.maintenance_mode,
+        "maintenance_message": settings_row.maintenance_message,
+        "maintenance_end_time": settings_row.maintenance_end_time.isoformat() if settings_row.maintenance_end_time else None,
+        "maintenance_allow_admin_access": settings_row.maintenance_allow_admin_access,
+        "maintenance_show_countdown": settings_row.maintenance_show_countdown,
+    })
+
+@router.put("/maintenance", response_model=SuccessResponse)
+def update_maintenance_config(
+    req: MaintenanceConfigRequest, request: Request,
+    db: Session = Depends(get_db), admin: User = Depends(require_super_admin)
+):
+    settings_row = db.query(SystemSettings).first()
+    if not settings_row:
+        settings_row = SystemSettings()
+        db.add(settings_row)
+    
+    changes = {}
+    fields = ["maintenance_mode", "maintenance_message", "maintenance_end_time", "maintenance_allow_admin_access", "maintenance_show_countdown"]
+    
+    for field in fields:
+        val = getattr(req, field, None)
+        if val is not None:
+            setattr(settings_row, field, val)
+            changes[field] = val
+            
+    if changes:
+        settings_row.updated_by_id = admin.id
+        db.commit()
+        db.refresh(settings_row)
+        AuditService.log_action(db, admin.id, "UPDATE_MAINTENANCE_CONFIG", request.client.host, request.headers.get("user-agent"), changes)
+        
+    return SuccessResponse(message="Maintenance config updated", data=changes)
+
+@router.post("/maintenance/enable", response_model=SuccessResponse)
+def enable_maintenance(request: Request, db: Session = Depends(get_db), admin: User = Depends(require_super_admin)):
+    settings_row = db.query(SystemSettings).first()
+    if not settings_row:
+        settings_row = SystemSettings()
+        db.add(settings_row)
+        
+    settings_row.maintenance_mode = True
+    settings_row.updated_by_id = admin.id
+    db.commit()
+    AuditService.log_action(db, admin.id, "ENABLE_MAINTENANCE", request.client.host, request.headers.get("user-agent"), {})
+    return SuccessResponse(message="Maintenance mode enabled")
+
+@router.post("/maintenance/disable", response_model=SuccessResponse)
+def disable_maintenance(request: Request, db: Session = Depends(get_db), admin: User = Depends(require_super_admin)):
+    settings_row = db.query(SystemSettings).first()
+    if not settings_row:
+        settings_row = SystemSettings()
+        db.add(settings_row)
+        
+    settings_row.maintenance_mode = False
+    settings_row.updated_by_id = admin.id
+    db.commit()
+    AuditService.log_action(db, admin.id, "DISABLE_MAINTENANCE", request.client.host, request.headers.get("user-agent"), {})
+    return SuccessResponse(message="Maintenance mode disabled")
 
 @router.post("/emails/test", response_model=SuccessResponse)
 def send_test_email(

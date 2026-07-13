@@ -1,17 +1,20 @@
 import pytest
 from fastapi.testclient import TestClient
 
+import uuid
+
 @pytest.fixture
 def workspace_user_token(client: TestClient) -> str:
+    unique_id = str(uuid.uuid4())[:8]
     payload = {
         "first_name": "Workspace",
         "last_name": "User",
-        "username": "workspace_tester",
-        "email": "workspace@example.com",
+        "username": f"workspace_{unique_id}",
+        "email": f"workspace_{unique_id}@example.com",
         "password": "Password123!"
     }
     client.post("/api/v1/auth/register", json=payload)
-    login_resp = client.post("/api/v1/auth/login", json={"email": "workspace@example.com", "password": "Password123!"})
+    login_resp = client.post("/api/v1/auth/login", json={"email": payload["email"], "password": "Password123!"})
     return login_resp.json()["data"]["access_token"]
 
 @pytest.fixture

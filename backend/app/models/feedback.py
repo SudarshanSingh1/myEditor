@@ -57,5 +57,5 @@ class Feedback(Base):
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     admin_reply = Column(Text, nullable=True)
 
-    user = relationship("User", foreign_keys=[user_id], backref="feedback_submissions")
+    user = relationship("User", foreign_keys=[user_id], back_populates="feedback_submissions")
     assignee = relationship("User", foreign_keys=[assigned_to], backref="assigned_feedbacks")

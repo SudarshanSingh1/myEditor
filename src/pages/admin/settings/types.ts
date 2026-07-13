@@ -1,5 +1,9 @@
 export interface Settings {
   maintenance_mode: boolean;
+  maintenance_message: string;
+  maintenance_end_time: string | null;
+  maintenance_allow_admin_access: boolean;
+  maintenance_show_countdown: boolean;
   registration_enabled: boolean;
   login_enabled: boolean;
   read_only_mode: boolean;
@@ -20,6 +24,10 @@ export interface Settings {
 
 export const defaultSettings: Settings = {
   maintenance_mode: false,
+  maintenance_message: "System is under maintenance.",
+  maintenance_end_time: null,
+  maintenance_allow_admin_access: true,
+  maintenance_show_countdown: true,
   registration_enabled: true,
   login_enabled: true,
   read_only_mode: false,

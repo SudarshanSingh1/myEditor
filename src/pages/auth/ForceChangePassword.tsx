@@ -25,6 +25,7 @@ export default function ForceChangePassword() {
     }
 
     setLoading(true);
+    let success = false;
     try {
       const resp = await fetchApi('/auth/change-password', {
         method: 'POST',
@@ -35,20 +36,23 @@ export default function ForceChangePassword() {
       });
 
       if (resp?.success) {
-        toast.success('Password changed successfully.');
-        await checkAuth(); // Refetches user, clearing must_change_password from state
-        navigate('/projects', { replace: true });
+        success = true;
+        toast.success('Password changed successfully. Please login with your new password.');
+        await logout();
+        navigate('/login', { replace: true });
       }
     } catch (e: any) {
       toast.error(e.message || 'Failed to change password.');
     } finally {
-      setLoading(false);
+      if (!success) {
+        setLoading(false);
+      }
     }
   };
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (

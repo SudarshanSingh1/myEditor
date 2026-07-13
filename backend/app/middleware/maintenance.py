@@ -7,61 +7,82 @@ from app.models.user import User, RoleEnum
 from app.core.config import settings
 import time
 
+from datetime import datetime, timezone
+
 _maintenance_cache_time = 0
-_maintenance_mode = False
-_maintenance_message = "System is under maintenance."
+_maintenance_config = {
+    "enabled": False,
+    "message": "System is under maintenance.",
+    "end_time": None,
+    "allow_admin": True,
+    "show_countdown": True
+}
 
 def _get_maintenance_status(db):
-    global _maintenance_cache_time, _maintenance_mode, _maintenance_message
+    global _maintenance_cache_time, _maintenance_config
     now = time.time()
-    if now - _maintenance_cache_time > 30:
+    if now - _maintenance_cache_time > 5:  # Cache for 5 seconds
         settings_obj = db.query(SystemSettings).first()
         if settings_obj:
-            _maintenance_mode = settings_obj.maintenance_mode
-            _maintenance_message = settings_obj.maintenance_message or "System is under maintenance."
+            is_enabled = settings_obj.maintenance_mode
+            
+            # Auto recovery
+            if is_enabled and settings_obj.maintenance_end_time:
+                if datetime.now(timezone.utc) > settings_obj.maintenance_end_time:
+                    is_enabled = False
+                    
+            _maintenance_config = {
+                "enabled": is_enabled,
+                "message": settings_obj.maintenance_message or "System is under maintenance.",
+                "end_time": settings_obj.maintenance_end_time,
+                "allow_admin": getattr(settings_obj, "maintenance_allow_admin_access", True),
+                "show_countdown": getattr(settings_obj, "maintenance_show_countdown", True)
+            }
         else:
-            _maintenance_mode = False
-            _maintenance_message = "System is under maintenance."
+            _maintenance_config["enabled"] = False
         _maintenance_cache_time = now
-    return _maintenance_mode, _maintenance_message
+    return _maintenance_config
 
 class MaintenanceMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Exclude certain paths from maintenance mode
-        excluded_paths = ["/health", "/docs", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/status"]
+        excluded_paths = ["/health", "/docs", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/system/status"]
         
         if not any(request.url.path.startswith(path) for path in excluded_paths):
             from app.database.session import SessionLocal
             db = SessionLocal()
             try:
-                is_maint, maint_msg = _get_maintenance_status(db)
-                if is_maint:
-                    # Check if user is an admin
+                config = _get_maintenance_status(db)
+                if config["enabled"]:
                     is_admin = False
-                    token = request.cookies.get("access_token")
-                    if not token:
-                        auth_header = request.headers.get("Authorization")
-                        if auth_header and auth_header.startswith("Bearer "):
-                            token = auth_header.split(" ")[1]
-                    
-                    if token:
-                        try:
-                            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
-                            user_id = payload.get("sub")
-                            if user_id:
-                                user = db.query(User).filter(User.id == user_id).first()
-                                if user and user.role in [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN]:
-                                    is_admin = True
-                        except JWTError:
-                            pass
-                            
+                    if config["allow_admin"]:
+                        token = request.cookies.get("access_token")
+                        if not token:
+                            auth_header = request.headers.get("Authorization")
+                            if auth_header and auth_header.startswith("Bearer "):
+                                token = auth_header.split(" ")[1]
+                        
+                        if token:
+                            try:
+                                payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+                                user_id = payload.get("sub")
+                                if user_id:
+                                    user = db.query(User).filter(User.id == user_id).first()
+                                    if user and user.role in [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN]:
+                                        is_admin = True
+                            except JWTError:
+                                pass
+                                
                     if not is_admin:
                         return JSONResponse(
                             status_code=503,
                             content={
                                 "success": False,
-                                "message": maint_msg,
-                                "errors": []
+                                "message": config["message"],
+                                "maintenance_info": {
+                                    "end_time": config["end_time"].isoformat() if config["end_time"] and config["show_countdown"] else None,
+                                    "server_time": datetime.now(timezone.utc).isoformat()
+                                }
                             }
                         )
             finally:

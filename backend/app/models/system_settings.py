@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
 from app.database.base import Base
 
 class SystemSettings(Base):
@@ -12,6 +13,8 @@ class SystemSettings(Base):
     maintenance_message = Column(String, nullable=True)
     maintenance_end_time = Column(DateTime(timezone=True), nullable=True)
     maintenance_type = Column(String, nullable=True)
+    maintenance_allow_admin_access = Column(Boolean, nullable=False, default=True, server_default="true")
+    maintenance_show_countdown = Column(Boolean, nullable=False, default=True, server_default="true")
     
     # Core Toggles
     registration_enabled = Column(Boolean, nullable=False, default=True, server_default="true")
@@ -53,4 +56,6 @@ class SystemSettings(Base):
     smtp_tls = Column(Boolean, nullable=False, default=True, server_default="true")
     smtp_ssl = Column(Boolean, nullable=False, default=False, server_default="false")
 
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
