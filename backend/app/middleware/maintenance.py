@@ -46,7 +46,21 @@ def _get_maintenance_status(db):
 class MaintenanceMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Exclude certain paths from maintenance mode
-        excluded_paths = ["/health", "/docs", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/system/status", "/api/v1/auth/request-password-reset", "/api/v1/auth/reset-password"]
+        excluded_paths = [
+            "/health",
+            "/docs",
+            "/openapi.json",
+            "/api/v1/auth/login",
+            "/api/v1/auth/logout",
+            "/api/v1/auth/register",
+            "/api/v1/auth/request-password-reset",
+            "/api/v1/auth/reset-password",
+            "/api/v1/auth/verify-email",
+            "/api/v1/system/status",
+            # OAuth – authorize redirects and code-exchange callbacks must always work
+            # so that admins/super-admins can still log in during maintenance
+            "/api/v1/auth/oauth",
+        ]
         
         if not any(request.url.path.startswith(path) for path in excluded_paths):
             from app.database.session import SessionLocal

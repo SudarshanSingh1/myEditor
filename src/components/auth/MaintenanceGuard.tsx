@@ -45,7 +45,9 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     "/signup",
     "/forgot-password",
     "/reset-password",
-    "/force-password-change"
+    "/force-password-change",
+    "/verify-email",
+    "/oauth/callback",
   ].some(route => location.pathname.startsWith(route));
   
   if (isMaintenanceMode && !isAllowedToBypass && !isAuthRoute && !isPreview) {

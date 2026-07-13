@@ -147,13 +147,15 @@ export function AppRouter() {
             <Route
               path="/super-admin"
               element={
-                <AuthGuard>
-                  <AdminAuthGuard requireSuperAdmin={true}>
-                    <Suspense fallback={<AdminLoader />}>
-                      <AdminLayout isSuperAdminLayout={true} />
-                    </Suspense>
-                  </AdminAuthGuard>
-                </AuthGuard>
+                <MaintenanceGuard>
+                  <AuthGuard>
+                    <AdminAuthGuard requireSuperAdmin={true}>
+                      <Suspense fallback={<AdminLoader />}>
+                        <AdminLayout isSuperAdminLayout={true} />
+                      </Suspense>
+                    </AdminAuthGuard>
+                  </AuthGuard>
+                </MaintenanceGuard>
               }
             >
               <Route index element={<Navigate to="/super-admin/server" replace />} />

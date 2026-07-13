@@ -14,18 +14,19 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const location = useLocation();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      // During maintenance mode, don't redirect to login — let MaintenanceGuard handle it.
-      // This prevents the /app → /login → /maintenance → /app bounce loop.
-      if (!isMaintenanceMode) {
-        navigate('/login', { state: { from: location.pathname }, replace: true });
-      }
-    } else if (!isLoading && isAuthenticated && user?.must_change_password && location.pathname !== '/force-password-change') {
+    if (isLoading) return;
+
+    if (!isAuthenticated) {
+      // Always redirect to login when unauthenticated.
+      // MaintenanceGuard wraps the auth routes and will redirect to /maintenance if needed.
+      navigate('/login', { state: { from: location.pathname }, replace: true });
+    } else if (isAuthenticated && user?.must_change_password && location.pathname !== '/force-password-change') {
       navigate('/force-password-change', { replace: true });
     }
   }, [isLoading, isAuthenticated, user, navigate, location, isMaintenanceMode]);
 
-  if (isLoading) {
+  // Always show a spinner — never render a black/blank screen
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -33,5 +34,5 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  return isAuthenticated ? <>{children}</> : null;
+  return <>{children}</>;
 }

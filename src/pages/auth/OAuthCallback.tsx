@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
+import { useSystemStore } from "../../stores/useSystemStore";
 import { fetchApi } from "../../lib/api";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,26 +22,60 @@ export default function OAuthCallback() {
 
     const exchangeCode = async () => {
       try {
+        // Step 1: Exchange the code for tokens
         const response = await fetchApi(`/auth/oauth/${provider}/callback`, {
           method: "POST",
           body: JSON.stringify({ code }),
         });
 
         if (response.success && response.data) {
-          // The backend sets the httponly cookies. We just need to update the store
-          login({
-            id: response.data.user.id,
-            email: response.data.user.email,
-            username: response.data.user.username,
-            first_name: response.data.user.first_name,
-            last_name: response.data.user.last_name,
-            avatar: response.data.user.avatar,
-            role: "user", // The backend response doesn't include role right now, but it's fine for initial state
-          });
+          // Step 2: Fetch the full profile to get the real role
+          let userData = response.data.user;
+          try {
+            const profileResp = await fetchApi("/auth/me");
+            if (profileResp.success && profileResp.data) {
+              userData = profileResp.data;
+            }
+          } catch {
+            // If /auth/me fails (e.g. maintenance), use what the oauth response gave us
+            userData = { ...response.data.user, role: "USER" };
+          }
+
+          login(userData);
           toast.success(`Successfully logged in with ${provider}`);
+
+          // Step 3: Refresh maintenance status and apply same logic as email Login
+          await useSystemStore.getState().checkStatus();
+          const { isMaintenanceMode, allowAdmin } = useSystemStore.getState();
+
+          if (isMaintenanceMode) {
+            const role = (userData.role as string) || "USER";
+            const isSuperAdmin = role === "SUPER_ADMIN";
+            const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
+            const canBypass = isSuperAdmin || (isAdminOrMod && allowAdmin);
+
+            if (!canBypass) {
+              navigate("/maintenance", { replace: true });
+              return;
+            }
+          }
+
           navigate("/app/dashboard");
         }
       } catch (err: any) {
+        // Check if maintenance mode caused the failure
+        const { isMaintenanceMode } = useSystemStore.getState();
+        const errorText = (err.message || "").toLowerCase();
+        const isMaintenanceError =
+          errorText.includes("maintenance") ||
+          errorText.includes("upgrade") ||
+          errorText.includes("scheduled");
+
+        if (isMaintenanceMode || isMaintenanceError) {
+          navigate("/maintenance", { replace: true });
+          return;
+        }
+
         setError(err.message || "Failed to complete OAuth login");
         toast.error("OAuth login failed");
         setTimeout(() => navigate("/login"), 3000);
@@ -56,7 +91,7 @@ export default function OAuthCallback() {
         <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center w-full max-w-md">
           <h2 className="mb-2 text-xl font-semibold text-red-400">OAuth Error</h2>
           <p className="text-zinc-400">{error}</p>
-          <button 
+          <button
             onClick={() => navigate("/login")}
             className="mt-6 w-full rounded-md bg-white/10 px-4 py-2 hover:bg-white/20 transition-colors"
           >
