@@ -355,7 +355,7 @@ export function MaintenancePage() {
               <p className={`text-[10px] font-bold text-green-600/80 flex items-center gap-2 uppercase tracking-[0.2em] ${timeLeft === null || timeLeft === 0 ? "justify-center" : ""}`}>
                 <Activity className="w-3.5 h-3.5 text-green-500" /> Current Stage
               </p>
-              <div className="flex items-center h-8">
+              <div className="flex items-center min-h-[2rem]">
                 <motion.span 
                   key={stageIndex}
                   initial={{ opacity: 0 }}
@@ -373,9 +373,9 @@ export function MaintenancePage() {
                 <p className={`text-[10px] font-bold text-green-600/80 flex items-center gap-2 uppercase tracking-[0.2em] ${timeLeft === 0 ? "justify-center" : "md:justify-end"}`}>
                   <Terminal className="w-3.5 h-3.5 text-green-500" /> Time Remaining
                 </p>
-                <div className={`h-8 flex items-center ${timeLeft === 0 ? "justify-center" : "md:justify-end"}`}>
+                <div className={`flex items-center ${timeLeft === 0 ? "justify-center" : "md:justify-end"}`}>
                   {timeLeft > 0 ? (
-                    <p className="text-white font-mono text-3xl tracking-widest tabular-nums font-bold">
+                    <p className="text-white font-mono text-xl sm:text-2xl md:text-3xl tracking-wider tabular-nums font-bold whitespace-nowrap">
                       {formatTime(timeLeft)}
                     </p>
                   ) : (

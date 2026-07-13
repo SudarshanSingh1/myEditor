@@ -5,6 +5,7 @@ interface SystemState {
   isMaintenanceMode: boolean;
   maintenanceMessage: string;
   maintenanceEndTime: string | null;
+  allowAdmin: boolean;
   serverTime: string | null;
   isChecking: boolean;
   hasChecked: boolean;
@@ -15,6 +16,7 @@ export const useSystemStore = create<SystemState>((set) => ({
   isMaintenanceMode: false,
   maintenanceMessage: "System is under maintenance.",
   maintenanceEndTime: null,
+  allowAdmin: true,
   serverTime: null,
   isChecking: true,
   hasChecked: false,
@@ -26,6 +28,7 @@ export const useSystemStore = create<SystemState>((set) => ({
           isMaintenanceMode: response.data.maintenance_enabled || false,
           maintenanceMessage: response.data.message || "System is under maintenance.",
           maintenanceEndTime: response.data.countdown || null,
+          allowAdmin: response.data.allow_admin ?? true,
           serverTime: response.data.server_time || null,
           isChecking: false,
           hasChecked: true

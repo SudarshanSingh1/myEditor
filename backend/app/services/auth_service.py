@@ -8,9 +8,11 @@ from jose import jwt, JWTError
 
 from app.core.config import settings
 from app.core.security import verify_password, get_password_hash, create_access_token, create_refresh_token, validate_password_strength
-from app.models.user import User, StatusEnum
+from app.models.user import User, StatusEnum, RoleEnum
+from app.models.system_settings import SystemSettings
 from app.models.audit_log import AuditLog
 from app.schemas.auth import UserRegisterRequest, UserLoginRequest, ChangePasswordRequest, PasswordResetRequest, ResetPasswordConfirmRequest, UserProfileUpdateRequest
+from app.services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
 
@@ -214,6 +216,30 @@ class AuthService:
     def request_password_reset(db: Session, req: PasswordResetRequest, ip_address: str = None) -> str:
         # Check if user exists – always return the same message to prevent email enumeration
         user = db.query(User).filter(User.email == req.email.lower().strip()).first()
+        
+        # Check maintenance mode
+        sys_settings = db.query(SystemSettings).first()
+        if sys_settings and sys_settings.maintenance_mode:
+            # Auto recovery logic
+            is_in_maintenance = True
+            if sys_settings.maintenance_end_time and datetime.now(timezone.utc) > sys_settings.maintenance_end_time:
+                is_in_maintenance = False
+                
+            if is_in_maintenance:
+                # Determine if user is allowed
+                is_allowed = False
+                if user:
+                    if user.role == RoleEnum.SUPER_ADMIN:
+                        is_allowed = True
+                    elif getattr(sys_settings, "maintenance_allow_admin_access", True) and user.role in [RoleEnum.ADMIN, RoleEnum.MODERATOR]:
+                        is_allowed = True
+                
+                if not is_allowed:
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="System is currently under maintenance. Password resets are temporarily disabled."
+                    )
+
         if not user:
             return "If the email is registered, a password reset link has been sent."
 
@@ -233,9 +259,16 @@ class AuthService:
         db.add(log)
         db.commit()
 
-        # SECURITY: Never log the token itself – it grants full password-reset access.
-        # In production, send email via an email provider
-        logger.info(f"Password reset token generated for user {user.id}")
+        # Send email
+        # In a real setup, FRONTEND_URL should be in settings, fallback to localhost for now
+        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:8080")
+        reset_url = f"{frontend_url.rstrip('/')}/reset-password"
+        
+        try:
+            EmailService.send_password_reset_email(user.id, reset_token, reset_url)
+            logger.info(f"Password reset email sent to user {user.id}")
+        except Exception as e:
+            logger.error(f"Failed to send password reset email to {user.id}: {str(e)}")
 
         return "If the email is registered, a password reset link has been sent."
 
@@ -260,6 +293,28 @@ class AuthService:
         user = db.query(User).filter(User.id == uid).first()
         if not user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found.")
+            
+        # Check maintenance mode
+        sys_settings = db.query(SystemSettings).first()
+        if sys_settings and sys_settings.maintenance_mode:
+            # Auto recovery logic
+            is_in_maintenance = True
+            if sys_settings.maintenance_end_time and datetime.now(timezone.utc) > sys_settings.maintenance_end_time:
+                is_in_maintenance = False
+                
+            if is_in_maintenance:
+                # Determine if user is allowed
+                is_allowed = False
+                if user.role == RoleEnum.SUPER_ADMIN:
+                    is_allowed = True
+                elif getattr(sys_settings, "maintenance_allow_admin_access", True) and user.role in [RoleEnum.ADMIN, RoleEnum.MODERATOR]:
+                    is_allowed = True
+                
+                if not is_allowed:
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="System is currently under maintenance. Password resets are temporarily disabled."
+                    )
 
         # Invalidate if password was already changed
         pwd_frag = payload.get("pwd_frag")

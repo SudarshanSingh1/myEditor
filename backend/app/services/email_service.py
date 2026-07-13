@@ -25,36 +25,37 @@ class EmailService:
             <title>{subject}</title>
             <style>
                 body {{
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                     background-color: #09090b;
                     color: #fafafa;
                     margin: 0;
-                    padding: 0;
+                    padding: 40px 20px;
                     -webkit-font-smoothing: antialiased;
                 }}
                 .container {{
                     max-width: 600px;
-                    margin: 40px auto;
+                    margin: 0 auto;
                     background-color: #18181b;
                     border: 1px solid #27272a;
-                    border-radius: 12px;
+                    border-radius: 16px;
                     overflow: hidden;
-                    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
                 }}
                 .header {{
-                    background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%);
-                    padding: 32px 24px;
+                    background: linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%);
+                    padding: 40px 32px;
                     text-align: center;
                 }}
                 .header h1 {{
                     margin: 0;
-                    font-size: 24px;
-                    font-weight: 600;
-                    color: white;
+                    font-size: 26px;
+                    font-weight: 700;
+                    color: #ffffff;
                     letter-spacing: -0.5px;
                 }}
                 .content {{
-                    padding: 32px 24px;
+                    padding: 40px 32px;
+                    background-color: #18181b;
                 }}
                 .footer {{
                     text-align: center;
@@ -62,6 +63,7 @@ class EmailService:
                     border-top: 1px solid #27272a;
                     color: #71717a;
                     font-size: 13px;
+                    background-color: #18181b;
                 }}
             </style>
         </head>
@@ -227,6 +229,49 @@ class EmailService:
                 For security, please change your password after your first login.<br><br>
                 Regards,<br>
                 {settings.APP_NAME} Team
+            </div>
+            """
+            html_content = EmailService._get_base_template(subject, body)
+            EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
+        finally:
+            db.close()
+
+    @staticmethod
+    def send_password_reset_email(user_id: str, reset_token: str, reset_url: str):
+        """Send a password reset email."""
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user:
+                raise Exception("User not found.")
+                
+            subject = f"Reset Your Password - {settings.APP_NAME}"
+            name = user.first_name or user.username
+            
+            body = f"""
+            <div style="font-size: 19px; font-weight: 600; color: #ffffff; margin-bottom: 24px;">
+                Hello {name},
+            </div>
+            <div style="color: #d4d4d8; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+                We received a request to reset the password for your <strong>{settings.APP_NAME}</strong> account. If you didn't make this request, you can safely ignore this email.
+            </div>
+            <div style="color: #d4d4d8; font-size: 15px; line-height: 1.6; margin-bottom: 36px;">
+                To reset your password, click the secure link below. This link will automatically expire in 15 minutes.
+            </div>
+            <div style="text-align: center; margin-bottom: 36px;">
+                <a href="{reset_url}?token={reset_token}" style="display: inline-block; background-color: #8b5cf6; color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);">
+                    Reset Password
+                </a>
+            </div>
+            <div style="background-color: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 16px; margin-bottom: 32px;">
+                <div style="color: #71717a; font-size: 13px; margin-bottom: 8px;">Or copy and paste this link into your browser:</div>
+                <div style="word-break: break-all;">
+                    <a href="{reset_url}?token={reset_token}" style="color: #a78bfa; font-size: 13px; text-decoration: none;">{reset_url}?token={reset_token}</a>
+                </div>
+            </div>
+            <div style="color: #a1a1aa; font-size: 15px; line-height: 1.6;">
+                Regards,<br>
+                The {settings.APP_NAME} Team
             </div>
             """
             html_content = EmailService._get_base_template(subject, body)

@@ -46,7 +46,7 @@ def _get_maintenance_status(db):
 class MaintenanceMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Exclude certain paths from maintenance mode
-        excluded_paths = ["/health", "/docs", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/system/status"]
+        excluded_paths = ["/health", "/docs", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/system/status", "/api/v1/auth/request-password-reset", "/api/v1/auth/reset-password"]
         
         if not any(request.url.path.startswith(path) for path in excluded_paths):
             from app.database.session import SessionLocal
@@ -54,26 +54,29 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
             try:
                 config = _get_maintenance_status(db)
                 if config["enabled"]:
-                    is_admin = False
-                    if config["allow_admin"]:
-                        token = request.cookies.get("access_token")
-                        if not token:
-                            auth_header = request.headers.get("Authorization")
-                            if auth_header and auth_header.startswith("Bearer "):
-                                token = auth_header.split(" ")[1]
-                        
-                        if token:
-                            try:
-                                payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
-                                user_id = payload.get("sub")
-                                if user_id:
-                                    user = db.query(User).filter(User.id == user_id).first()
-                                    if user and user.role in [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN]:
-                                        is_admin = True
-                            except JWTError:
-                                pass
+                    is_admin_allowed = False
+                    
+                    token = request.cookies.get("access_token")
+                    if not token:
+                        auth_header = request.headers.get("Authorization")
+                        if auth_header and auth_header.startswith("Bearer "):
+                            token = auth_header.split(" ")[1]
+                    
+                    if token:
+                        try:
+                            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+                            user_id = payload.get("sub")
+                            if user_id:
+                                user = db.query(User).filter(User.id == user_id).first()
+                                if user:
+                                    if user.role == RoleEnum.SUPER_ADMIN:
+                                        is_admin_allowed = True
+                                    elif config["allow_admin"] and user.role in [RoleEnum.ADMIN, RoleEnum.MODERATOR]:
+                                        is_admin_allowed = True
+                        except JWTError:
+                            pass
                                 
-                    if not is_admin:
+                    if not is_admin_allowed:
                         return JSONResponse(
                             status_code=503,
                             content={

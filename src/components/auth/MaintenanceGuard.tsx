@@ -4,7 +4,7 @@ import { useSystemStore } from "../../stores/useSystemStore";
 import { useUserStore } from "../../stores/useUserStore";
 
 export function MaintenanceGuard({ children }: { children: ReactNode }) {
-  const { isMaintenanceMode, checkStatus, isChecking } = useSystemStore();
+  const { isMaintenanceMode, checkStatus, isChecking, allowAdmin } = useSystemStore();
   const { user } = useUserStore();
   const location = useLocation();
   const [hasCheckedOnce, setHasCheckedOnce] = useState(false);
@@ -35,7 +35,11 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
   }
 
   const isPreview = sessionStorage.getItem("maintenance_preview") === "true";
-  const isAdmin = user?.role === "SUPER_ADMIN" || user?.role === "ADMIN";
+  
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isNormalAdminOrMod = user?.role === "ADMIN" || user?.role === "MODERATOR";
+  const isAllowedToBypass = isSuperAdmin || (isNormalAdminOrMod && allowAdmin);
+
   const isAuthRoute = [
     "/login",
     "/signup",
@@ -44,7 +48,7 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     "/force-password-change"
   ].some(route => location.pathname.startsWith(route));
   
-  if (isMaintenanceMode && !isAdmin && !isAuthRoute && !isPreview) {
+  if (isMaintenanceMode && !isAllowedToBypass && !isAuthRoute && !isPreview) {
     return <Navigate to="/maintenance" replace state={{ from: location.pathname }} />;
   }
 

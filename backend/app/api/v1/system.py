@@ -16,6 +16,7 @@ def get_system_status(db: Session = Depends(get_db)):
             "maintenance_enabled": False,
             "message": "System is under maintenance.",
             "countdown": None,
+            "allow_admin": True,
             "server_time": datetime.now(timezone.utc).isoformat()
         })
         
@@ -23,5 +24,6 @@ def get_system_status(db: Session = Depends(get_db)):
         "maintenance_enabled": settings.maintenance_mode,
         "message": settings.maintenance_message or "System is under maintenance.",
         "countdown": settings.maintenance_end_time.isoformat() if settings.maintenance_show_countdown and settings.maintenance_end_time else None,
+        "allow_admin": getattr(settings, "maintenance_allow_admin_access", True),
         "server_time": datetime.now(timezone.utc).isoformat()
     })

@@ -59,7 +59,7 @@ export default function SystemMaintenance() {
           />
           <Toggle
             label="Allow Admin Access"
-            description="If enabled, Super Admins and Admins can bypass the maintenance block."
+            description="If enabled, standard Admins and Moderators can bypass the maintenance block. (Super Admins are always allowed)."
             checked={settings.maintenance_allow_admin_access}
             onChange={(v) => set("maintenance_allow_admin_access")(v)}
             icon={ShieldAlert}
