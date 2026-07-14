@@ -43,9 +43,9 @@ export function ActivityHeatmap() {
   }, [data]);
 
   const getColorClass = (count: number) => {
-    if (count === 0) return 'bg-zinc-100 dark:bg-zinc-800/50';
-    if (count <= 2) return 'bg-green-200 dark:bg-green-900/60';
-    if (count <= 5) return 'bg-green-400 dark:bg-green-700/80';
+    if (count === 0) return 'bg-zinc-200 dark:bg-zinc-800';
+    if (count <= 2) return 'bg-green-300 dark:bg-green-900/80';
+    if (count <= 5) return 'bg-green-400 dark:bg-green-700';
     if (count <= 10) return 'bg-green-500 dark:bg-green-500';
     return 'bg-green-600 dark:bg-green-400';
   };
@@ -107,6 +107,7 @@ export function ActivityHeatmap() {
               {week.map((date, dIdx) => {
                 const dateString = date.toISOString().split('T')[0];
                 const count = activityMap.get(dateString) || 0;
+                const isTopRow = dIdx < 2;
                 return (
                   <div key={dIdx} className="group relative">
                     <div
@@ -115,11 +116,15 @@ export function ActivityHeatmap() {
                         getColorClass(count)
                       )}
                     />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
+                    <div className={cn(
+                      "absolute left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none",
+                      isTopRow ? "top-full mt-2" : "bottom-full mb-2"
+                    )}>
+                      {isTopRow && <div className="w-2 h-2 -mb-1 rotate-45 bg-zinc-900 dark:bg-white z-0 relative top-[4px]"></div>}
                       <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-nowrap bg-zinc-900 dark:bg-white dark:text-black shadow-lg rounded-md font-medium">
                         {count} contributions on {dateString}
                       </span>
-                      <div className="w-2 h-2 -mt-1 rotate-45 bg-zinc-900 dark:bg-white"></div>
+                      {!isTopRow && <div className="w-2 h-2 -mt-1 rotate-45 bg-zinc-900 dark:bg-white z-0 relative bottom-[4px]"></div>}
                     </div>
                   </div>
                 );
