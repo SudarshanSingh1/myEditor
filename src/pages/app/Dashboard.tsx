@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Code,
@@ -20,6 +20,7 @@ import { CreateProjectModal } from "../../components/projects/CreateProjectModal
 import { LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
 import { ActivityHeatmap } from "../../components/dashboard/ActivityHeatmap";
 import { usersApi } from "../../lib/api/users";
+import { workspaceApi } from "../../lib/api/workspace";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -31,10 +32,58 @@ export default function Dashboard() {
     totalProjects,
     toggleFavorite,
     fetchProjects,
+    createProject,
     isLoading,
   } = useProjectsStore();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File is too large. Please select a file under 2MB.");
+      return;
+    }
+
+    e.target.value = '';
+    setIsImporting(true);
+
+    try {
+      const content = await file.text();
+      
+      const newProject = await createProject({
+        name: file.name,
+        description: "Imported from file",
+        language: "TypeScript",
+        visibility: "PRIVATE",
+        color: "blue",
+        icon: "💻",
+      });
+
+      if (newProject) {
+        await workspaceApi.createFile({
+          project_id: newProject.id,
+          name: file.name,
+          content: content,
+        });
+
+        navigate(`/app/projects/${newProject.id}/editor`);
+      }
+    } catch (error) {
+      console.error("Failed to import file", error);
+      alert("Failed to import file.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   useEffect(() => {
     fetchProjects({
@@ -69,16 +118,24 @@ export default function Dashboard() {
             New Project
           </Button>
 
-          <Button variant="outline" className="gap-2 border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/5 bg-transparent text-zinc-900 dark:text-white" disabled onClick={() => {}}>
+          <Button variant="outline" className="gap-2 border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/5 bg-transparent text-zinc-900 dark:text-white" disabled={isImporting} onClick={handleImportClick}>
             <FolderUp className="h-4 w-4" />
-            Import
+            {isImporting ? 'Importing...' : 'Import'}
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Main Content Column */}
-        <div className="lg:col-span-2 space-y-10">
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden" 
+        accept=".txt,.js,.ts,.jsx,.tsx,.py,.html,.css,.json,.md,.cpp,.c,.go,.rs,.java,text/*,application/json"
+        onChange={handleFileImport} 
+      />
+
+      <div className="space-y-10">
+        {/* Main Content */}
+        <div>
           {/* Recent Projects */}
           <div>
             <PageHeader
@@ -92,7 +149,7 @@ export default function Dashboard() {
             />
 
             {isLoading && projects.length === 0 ? (
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <LoadingSkeleton className="h-[140px] w-full rounded-xl" />
                 <LoadingSkeleton className="h-[140px] w-full rounded-xl" />
               </div>
@@ -100,11 +157,14 @@ export default function Dashboard() {
               <div className="text-center py-16 border border-zinc-200 dark:border-white/10 rounded-2xl bg-zinc-50 dark:bg-black/20">
                 <Code className="mx-auto h-12 w-12 text-zinc-400 dark:text-zinc-600 mb-4" />
                 <h3 className="text-lg font-semibold mb-1 text-zinc-900 dark:text-white">No projects yet</h3>
-                <p className="text-zinc-500 dark:text-zinc-400 mb-6">Create your first project to get started.</p>
-                <Button className="bg-green-600 hover:bg-green-500 text-white border-0" onClick={() => setIsCreateModalOpen(true)}>Create Project</Button>
+                <p className="text-zinc-500 dark:text-zinc-400 mb-6">Create or import your first project to get started.</p>
+                <div className="flex justify-center gap-3">
+                  <Button className="bg-green-600 hover:bg-green-500 text-white border-0" onClick={() => setIsCreateModalOpen(true)}>Create Project</Button>
+                  <Button variant="outline" disabled={isImporting} onClick={handleImportClick}>Import File</Button>
+                </div>
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {recentProjects.map((project) => (
                   <ProjectCard
                     key={project.id}
@@ -113,11 +173,21 @@ export default function Dashboard() {
                     onOpen={(id) => navigate(`/app/projects/${id}/editor`)}
                   />
                 ))}
+                
+                {/* Import Card */}
+                <button
+                  onClick={handleImportClick}
+                  disabled={isImporting}
+                  className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 dark:border-white/10 rounded-2xl bg-zinc-50 dark:bg-black/20 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+                >
+                  <FolderUp className="h-8 w-8 mb-3 opacity-80" />
+                  <span className="font-medium text-sm">{isImporting ? 'Importing...' : 'Import File'}</span>
+                  <span className="text-xs mt-1 opacity-70">Code files max 2MB</span>
+                </button>
               </div>
             )}
           </div>
         </div>
-      </div>
       
       {/* Activity Heatmap Section */}
       <ActivityHeatmap />      
