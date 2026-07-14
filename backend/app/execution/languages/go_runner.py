@@ -18,4 +18,4 @@ class GoRunner(BaseRunner):
         return True, "", 0.0
 
     def get_run_command(self, source_file: str) -> str:
-        return f"go run {source_file}"
+        return f"GOCACHE=/tmp go run {source_file}"

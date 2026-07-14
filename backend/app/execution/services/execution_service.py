@@ -51,7 +51,7 @@ class ExecutionService:
         """
         # Validate project access — use correct repository method and compare UUID types
         project = self.project_repo.get_by_id(request.project_id)
-        if not project or project.owner_id != user_id:
+        if not project or str(project.owner_id) != str(user_id):
             raise ValueError("Project not found or access denied")
             
         # Get file contents — use correct repository method (get_file, not get_file_by_id)
@@ -212,7 +212,7 @@ class ExecutionService:
         try:
             # 1. Validate Project
             project = self.project_repo.get_by_id(UUID(project_id))
-            if not project or project.owner_id != user_id:
+            if not project or str(project.owner_id) != str(user_id):
                 await websocket.send_json({"type": "error", "message": "Project not found or access denied"})
                 return
 

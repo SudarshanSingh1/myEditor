@@ -103,14 +103,14 @@ export const useExecutionStore = create<ExecutionState>()(
         execution_time_ms: 0,
         memory_used_kb: 0
       };
-      // Invalidate heatmap to update streak immediately, slightly delayed to allow DB commit
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['activity-heatmap'] });
-        
-        if (isSuccess) {
+      if (isSuccess) {
+        usersApi.recordActivity().then(() => {
+          queryClient.invalidateQueries({ queryKey: ['activity-heatmap'] });
           usersApi.getHeatmap().then(res => {
-            const today = new Date().toISOString().split('T')[0];
+            const todayDate = new Date();
+            const today = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
             const todayActivity = res.heatmap.find(h => h.date === today);
+            
             if (todayActivity && todayActivity.count === 1) {
               const duration = 3 * 1000;
               const animationEnd = Date.now() + duration;
@@ -132,8 +132,8 @@ export const useExecutionStore = create<ExecutionState>()(
               }, 250);
             }
           }).catch(console.error);
-        }
-      }, 500);
+        }).catch(console.error);
+      }
 
       // Keep only last 20 items
       const newHistory = [newHistoryItem, ...history].slice(0, 20);

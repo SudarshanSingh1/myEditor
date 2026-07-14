@@ -11,13 +11,19 @@ const generateDateRange = () => {
   const oneYearAgo = new Date(today);
   oneYearAgo.setFullYear(today.getFullYear() - 1);
   
+  // Reset to midnight local time
+  oneYearAgo.setHours(0, 0, 0, 0);
+  
   // Adjust to start on a Sunday
   while (oneYearAgo.getDay() !== 0) {
     oneYearAgo.setDate(oneYearAgo.getDate() - 1);
   }
 
   const currentDate = new Date(oneYearAgo);
-  while (currentDate <= today) {
+  const endOfToday = new Date(today);
+  endOfToday.setHours(23, 59, 59, 999);
+  
+  while (currentDate <= endOfToday) {
     dates.push(new Date(currentDate));
     currentDate.setDate(currentDate.getDate() + 1);
   }
@@ -42,7 +48,8 @@ export function ActivityHeatmap() {
     return map;
   }, [data]);
 
-  const todayString = new Date().toISOString().split('T')[0];
+  const today = new Date();
+  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const hasContributedToday = (activityMap.get(todayString) || 0) > 0;
 
   const getColorClass = (count: number) => {
@@ -111,7 +118,7 @@ export function ActivityHeatmap() {
           {weeks.map((week, wIdx) => (
             <div key={wIdx} className="flex flex-col gap-1">
               {week.map((date, dIdx) => {
-                const dateString = date.toISOString().split('T')[0];
+                const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                 const count = activityMap.get(dateString) || 0;
                 const isTopRow = dIdx < 2;
                 return (

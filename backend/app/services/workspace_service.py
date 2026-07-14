@@ -49,7 +49,7 @@ class WorkspaceService:
             raise HTTPException(status_code=404, detail="Project not found")
         
         # Simplified access control: Owner only for now (collaboration later)
-        if project.owner_id != current_user.id:
+        if str(project.owner_id) != str(current_user.id):
             raise HTTPException(status_code=403, detail="Not authorized to access this project")
         return project
 
