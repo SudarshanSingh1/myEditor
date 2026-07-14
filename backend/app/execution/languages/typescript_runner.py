@@ -5,7 +5,7 @@ from app.execution.languages.base_runner import BaseRunner
 class TsRunner(BaseRunner):
     @property
     def image_name(self) -> str:
-        return "node:20-alpine"
+        return "node:22-alpine"
 
     @property
     def language_name(self) -> str:
@@ -18,4 +18,4 @@ class TsRunner(BaseRunner):
         return True, "", 0.0
 
     def get_run_command(self, source_file: str) -> str:
-        return f"npx ts-node {source_file}"
+        return f"node --experimental-strip-types {source_file}"

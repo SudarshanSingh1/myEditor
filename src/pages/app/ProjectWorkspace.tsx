@@ -17,7 +17,7 @@ import { projectsApi } from "../../lib/api/projects";
 import { useQuery } from "@tanstack/react-query";
 
 import { useStatusBarStore } from "../../store/useStatusBarStore";
-import { AlertCircle, WifiOff, FileCode2, GitBranch } from 'lucide-react';
+import { AlertCircle, WifiOff, Copy, Search, GitBranch, BugPlay, Blocks, CircleUser, Settings } from 'lucide-react';
 import { PanelErrorBoundary } from "../../components/error/ErrorBoundaries";
 
 type Tab = 'PROBLEMS' | 'OUTPUT' | 'INPUT' | 'EXECUTION' | 'TERMINAL';
@@ -46,11 +46,11 @@ export default function ProjectWorkspace() {
     return saved ? parseInt(saved, 10) : 300;
   });
   const [isDragging, setIsDragging] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<'FILES' | 'GIT' | null>(() => {
+  const [sidebarTab, setSidebarTab] = useState<'FILES' | 'SEARCH' | 'GIT' | 'RUN' | 'EXTENSIONS' | null>(() => {
     const saved = localStorage.getItem('hamara-sidebar-tab');
     if (saved === 'null') return null;
     if (saved === null) return 'FILES';
-    return saved as 'FILES' | 'GIT' | null;
+    return saved as 'FILES' | 'SEARCH' | 'GIT' | 'RUN' | 'EXTENSIONS' | null;
   });
 
   useEffect(() => {
@@ -264,33 +264,97 @@ export default function ProjectWorkspace() {
       style={isDragging ? { cursor: 'col-resize' } : undefined}
     >
       {/* Activity Bar */}
-      <div className="w-12 border-r bg-muted/50 flex flex-col items-center py-4 gap-4 z-10 flex-shrink-0">
-        <button
-          onClick={() => setSidebarTab(prev => prev === 'FILES' ? null : 'FILES')}
-          className={cn(
-            "p-2 rounded-lg transition-colors group relative",
-            sidebarTab === 'FILES' ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
-          )}
-          title="Explorer"
-        >
-          <FileCode2 className="w-5 h-5" />
-          {sidebarTab === 'FILES' && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full" />
-          )}
-        </button>
-        <button
-          onClick={() => setSidebarTab(prev => prev === 'GIT' ? null : 'GIT')}
-          className={cn(
-            "p-2 rounded-lg transition-colors group relative",
-            sidebarTab === 'GIT' ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
-          )}
-          title="Source Control"
-        >
-          <GitBranch className="w-5 h-5" />
-          {sidebarTab === 'GIT' && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full" />
-          )}
-        </button>
+      <div className="w-12 h-full border-r bg-[#1e1e1e] border-[#333] flex flex-col justify-between py-2 z-10 flex-shrink-0 text-gray-400 select-none">
+        
+        {/* Top Icons */}
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={() => setSidebarTab(prev => prev === 'FILES' ? null : 'FILES')}
+            className={cn(
+              "p-3 transition-colors group relative w-full flex justify-center",
+              sidebarTab === 'FILES' ? "text-white" : "hover:text-white"
+            )}
+            title="Explorer"
+          >
+            <Copy className="w-6 h-6 stroke-[1.5px]" />
+            {sidebarTab === 'FILES' && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-full bg-primary" />
+            )}
+          </button>
+          
+          <button
+            onClick={() => setSidebarTab(prev => prev === 'SEARCH' ? null : 'SEARCH')}
+            className={cn(
+              "p-3 transition-colors group relative w-full flex justify-center",
+              sidebarTab === 'SEARCH' ? "text-white" : "hover:text-white"
+            )}
+            title="Search"
+          >
+            <Search className="w-6 h-6 stroke-[1.5px]" />
+            {sidebarTab === 'SEARCH' && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-full bg-primary" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setSidebarTab(prev => prev === 'GIT' ? null : 'GIT')}
+            className={cn(
+              "p-3 transition-colors group relative w-full flex justify-center",
+              sidebarTab === 'GIT' ? "text-white" : "hover:text-white"
+            )}
+            title="Source Control"
+          >
+            <GitBranch className="w-6 h-6 stroke-[1.5px]" />
+            {sidebarTab === 'GIT' && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-full bg-primary" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setSidebarTab(prev => prev === 'RUN' ? null : 'RUN')}
+            className={cn(
+              "p-3 transition-colors group relative w-full flex justify-center",
+              sidebarTab === 'RUN' ? "text-white" : "hover:text-white"
+            )}
+            title="Run and Debug"
+          >
+            <BugPlay className="w-6 h-6 stroke-[1.5px]" />
+            {sidebarTab === 'RUN' && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-full bg-primary" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setSidebarTab(prev => prev === 'EXTENSIONS' ? null : 'EXTENSIONS')}
+            className={cn(
+              "p-3 transition-colors group relative w-full flex justify-center",
+              sidebarTab === 'EXTENSIONS' ? "text-white" : "hover:text-white"
+            )}
+            title="Extensions"
+          >
+            <Blocks className="w-6 h-6 stroke-[1.5px]" />
+            {sidebarTab === 'EXTENSIONS' && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-full bg-primary" />
+            )}
+          </button>
+        </div>
+
+        {/* Bottom Icons */}
+        <div className="flex flex-col items-center gap-1 mb-2">
+          <button
+            className="p-3 transition-colors hover:text-white w-full flex justify-center"
+            title="Accounts"
+          >
+            <CircleUser className="w-6 h-6 stroke-[1.5px]" />
+          </button>
+          
+          <button
+            className="p-3 transition-colors hover:text-white w-full flex justify-center"
+            title="Manage"
+          >
+            <Settings className="w-6 h-6 stroke-[1.5px]" />
+          </button>
+        </div>
       </div>
 
       {/* Sidebar / Explorer */}
@@ -302,8 +366,13 @@ export default function ProjectWorkspace() {
           <PanelErrorBoundary panelName="Sidebar">
             {sidebarTab === 'FILES' ? (
               <FileExplorer projectId={id} />
-            ) : (
+            ) : sidebarTab === 'GIT' ? (
               <GitPanel projectId={id} />
+            ) : (
+              <div className="p-4 flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                <p className="text-sm font-medium mb-2">{sidebarTab} coming soon.</p>
+                <p className="text-xs opacity-70">This feature is currently under development.</p>
+              </div>
             )}
           </PanelErrorBoundary>
         </div>

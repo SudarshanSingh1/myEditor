@@ -122,7 +122,7 @@ export default function Projects() {
               key={project.id}
               {...project}
               onFavorite={toggleFavorite}
-              onOpen={(id) => navigate(`/app/projects/${id}`)}
+              onOpen={(id) => navigate(`/app/projects/${id}/editor`)}
             />
           ))}
         </div>
