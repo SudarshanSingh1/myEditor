@@ -327,7 +327,7 @@ def get_users(
     skip: int = 0, limit: int = 50, search: str = None, role: str = None,
     db: Session = Depends(get_db), admin: User = Depends(require_moderator)
 ):
-    query = db.query(User).filter(User.is_deleted == False)
+    query = db.query(User)
     if search:
         query = query.filter((User.username.ilike(f"%{search}%")) | (User.email.ilike(f"%{search}%")))
     if role:
@@ -342,7 +342,7 @@ def get_users(
         safe_users.append({
             "id": str(u.id), "username": u.username, "email": u.email, "role": u.role,
             "status": u.status, "created_at": u.created_at, "last_login": u.last_login,
-            "projects_count": projects_count,
+            "projects_count": projects_count, "is_deleted": u.is_deleted,
         })
         
     return SuccessResponse(message="Users retrieved", data={"items": safe_users, "total": total})
@@ -499,7 +499,7 @@ def delete_user(
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete your own account.")
         
-    target_user = db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
+    target_user = db.query(User).filter(User.id == user_id).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
         
@@ -509,12 +509,50 @@ def delete_user(
             raise HTTPException(status_code=403, detail="Cannot delete the last Super Admin account.")
     
     username_to_log = target_user.username
+    
+    # Manual cascade delete to ensure no IntegrityError from missing DB constraints
+    try:
+        from app.models.oauth_account import OAuthAccount
+        from app.models.user_session import UserSession
+        from app.models.feedback import Feedback
+        from app.models.execution_log import ExecutionLog
+        from app.models.audit_log import AuditLog
+        from app.models.system_error import SystemError
+        from app.models.project import Project
+        from app.models.workspace import Folder, File, FileVersion
+        from app.models.system_settings import SystemSettings
+        
+        db.query(SystemSettings).filter(SystemSettings.updated_by_id == target_user.id).update({"updated_by_id": None}, synchronize_session=False)
+        db.query(OAuthAccount).filter(OAuthAccount.user_id == target_user.id).delete(synchronize_session=False)
+        db.query(UserSession).filter(UserSession.user_id == target_user.id).delete(synchronize_session=False)
+        db.query(Feedback).filter((Feedback.user_id == target_user.id) | (Feedback.assigned_to == target_user.id)).delete(synchronize_session=False)
+        db.query(ExecutionLog).filter(ExecutionLog.user_id == target_user.id).delete(synchronize_session=False)
+        db.query(AuditLog).filter(AuditLog.user_id == target_user.id).delete(synchronize_session=False)
+        db.query(SystemError).filter(SystemError.user_id == target_user.id).delete(synchronize_session=False)
+        db.query(FileVersion).filter(FileVersion.created_by == target_user.id).delete(synchronize_session=False)
+        
+        projects = db.query(Project).filter(Project.owner_id == target_user.id).all()
+        if projects:
+            project_ids = [p.id for p in projects]
+            db.query(ExecutionLog).filter(ExecutionLog.project_id.in_(project_ids)).delete(synchronize_session=False)
+            files = db.query(File).filter(File.project_id.in_(project_ids)).all()
+            if files:
+                file_ids = [f.id for f in files]
+                db.query(FileVersion).filter(FileVersion.file_id.in_(file_ids)).delete(synchronize_session=False)
+            db.query(File).filter(File.project_id.in_(project_ids)).delete(synchronize_session=False)
+            db.query(Folder).filter(Folder.project_id.in_(project_ids)).delete(synchronize_session=False)
+            db.query(Project).filter(Project.owner_id == target_user.id).delete(synchronize_session=False)
+    except Exception as e:
+        from app.core.logger import logger
+        logger.warning(f"Error during manual cascade delete for user {target_user.id}: {e}")
+        # Proceed with db.delete and hope constraints handle it
+        
     db.delete(target_user)
     try:
         db.commit()
-    except IntegrityError:
+    except IntegrityError as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Cannot delete user because they are referenced by other system records.")
+        raise HTTPException(status_code=400, detail=f"Cannot delete user due to foreign key constraints. DB must be manually cleaned: {str(e)}")
         
     AuditService.log_action(db, admin.id, "DELETE_USER", request.client.host, request.headers.get("user-agent"), {"user_id": str(user_id), "username": username_to_log})
     return SuccessResponse(message="User deleted")

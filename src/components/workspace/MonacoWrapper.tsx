@@ -106,6 +106,11 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
     const isDirty = hasEverSaved ? true : value !== initialContent;
     setFileContent(fileId, value, isDirty);
     
+    // Automatically pin the tab if the user starts modifying it
+    if (isDirty) {
+      useEditorStore.getState().pinTab(fileId);
+    }
+    
     if (isDirty && settings.autoSave === 'on') {
       useSaveStore.getState().scheduleAutoSave(fileId, value, settings.autoSaveDelay * 1000);
     } else if (!isDirty) {
@@ -241,7 +246,7 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
           options={{
             renderSideBySide: true,
             fontSize: settings.fontSize,
-            fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+            fontFamily: '"JetBrains Mono", "Fira Code", Consolas, monospace',
             fontLigatures: true,
             minimap: { enabled: false },
             readOnly: true, // While diffing, prevent edits
@@ -272,7 +277,7 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
             padding: { top: 16 },
             scrollBeyondLastLine: false,
             smoothScrolling: true,
-            fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+            fontFamily: '"JetBrains Mono", "Fira Code", Consolas, monospace',
             fontLigatures: true,
           }}
         />

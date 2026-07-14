@@ -145,6 +145,22 @@ export default function Settings() {
                   </div>
                 </div>
               )}
+              
+              <div className="flex items-center justify-between border-t pt-6 mt-6">
+                <div>
+                  <p className="font-medium">Terminal Prompt</p>
+                  <p className="text-sm text-muted-foreground">Customize your bash prompt (e.g. @sudarshan ~$)</p>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    value={editorSettings.terminalPrompt || ''}
+                    onChange={(e) => updateEditorSettingsStore({ terminalPrompt: e.target.value })}
+                    placeholder="@user ~$"
+                    className="flex h-9 w-64 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 

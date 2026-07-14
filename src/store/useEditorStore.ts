@@ -13,6 +13,7 @@ export interface EditorSettings {
   renderWhitespace: 'none' | 'boundary' | 'selection' | 'trailing' | 'all';
   autoSave: 'on' | 'off';
   autoSaveDelay: number; // in seconds
+  terminalPrompt?: string;
 }
 
 export interface TabFile {
@@ -20,6 +21,7 @@ export interface TabFile {
   name: string;
   path?: string;
   language?: string | null;
+  isPreview?: boolean;
 }
 
 export interface ViewState {
@@ -40,7 +42,8 @@ interface EditorState {
   // Actions
   setProject: (projectId: string) => void;
   setProjectLanguage: (language: string) => void;
-  openTab: (file: TabFile) => void;
+  openTab: (file: Omit<TabFile, 'isPreview'>, isPreview?: boolean) => void;
+  pinTab: (fileId: string) => void;
   closeTab: (fileId: string) => void;
   updateTab: (fileId: string, updates: Partial<TabFile>) => void;
   setActiveFile: (fileId: string | null) => void;
@@ -64,6 +67,7 @@ const defaultSettings: EditorSettings = {
   renderWhitespace: 'none',
   autoSave: 'on',
   autoSaveDelay: 3,
+  terminalPrompt: '',
 };
 
 export const useEditorStore = create<EditorState>()(
@@ -101,16 +105,65 @@ export const useEditorStore = create<EditorState>()(
         viewStates: {},
       }),
 
-      openTab: (file) =>
+      openTab: (file, isPreview = false) =>
         set((state) => {
-          const exists = state.tabs.find((t) => t.id === file.id);
-          if (exists) {
+          const existsIndex = state.tabs.findIndex((t) => t.id === file.id);
+          
+          if (existsIndex >= 0) {
+            // If it already exists, and we're opening it NOT as preview, pin it.
+            if (!isPreview && state.tabs[existsIndex].isPreview) {
+              const newTabs = [...state.tabs];
+              newTabs[existsIndex] = { ...newTabs[existsIndex], isPreview: false };
+              return { tabs: newTabs, activeFileId: file.id };
+            }
             return { activeFileId: file.id };
           }
+
+          let newTabs = [...state.tabs];
+          
+          if (isPreview) {
+            // Find existing preview tab
+            const existingPreviewIndex = newTabs.findIndex((t) => t.isPreview);
+            if (existingPreviewIndex >= 0) {
+              const previewTabId = newTabs[existingPreviewIndex].id;
+              // Only replace if it's not dirty
+              if (!state.dirtyFiles[previewTabId]) {
+                newTabs[existingPreviewIndex] = { ...file, isPreview: true };
+                
+                // Cleanup old preview tab's state
+                const newDirtyFiles = { ...state.dirtyFiles };
+                const newLocalContents = { ...state.localContents };
+                const newViewStates = { ...state.viewStates };
+                delete newDirtyFiles[previewTabId];
+                delete newLocalContents[previewTabId];
+                delete newViewStates[previewTabId];
+                
+                return {
+                  tabs: newTabs,
+                  activeFileId: file.id,
+                  dirtyFiles: newDirtyFiles,
+                  localContents: newLocalContents,
+                  viewStates: newViewStates,
+                };
+              }
+            }
+          }
+          
+          newTabs.push({ ...file, isPreview });
           return {
-            tabs: [...state.tabs, file],
+            tabs: newTabs,
             activeFileId: file.id,
           };
+        }),
+
+      pinTab: (fileId) => 
+        set((state) => {
+          const tabIndex = state.tabs.findIndex(t => t.id === fileId);
+          if (tabIndex === -1 || !state.tabs[tabIndex].isPreview) return state;
+          
+          const newTabs = [...state.tabs];
+          newTabs[tabIndex] = { ...newTabs[tabIndex], isPreview: false };
+          return { tabs: newTabs };
         }),
 
       closeTab: (fileId) =>

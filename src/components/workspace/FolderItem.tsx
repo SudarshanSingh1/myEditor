@@ -47,6 +47,7 @@ export const FolderItem: React.FC<FolderItemProps> = React.memo(({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (e.detail > 1) return; // ignore double clicks so it doesn't toggle twice
     toggleFolder(folder.id);
   };
 

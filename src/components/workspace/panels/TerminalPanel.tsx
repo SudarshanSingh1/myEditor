@@ -5,6 +5,8 @@ import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { useExecutionStore } from '../../../store/useExecutionStore';
 import { useOutputStore } from '../../../store/useOutputStore';
+import { useEditorStore } from '../../../store/useEditorStore';
+import { useUserStore } from '../../../stores/useUserStore';
 import { History, Play } from 'lucide-react';
 import { Modal } from '../../ui/Modal';
 import { Button } from '../../ui/Button';
@@ -27,6 +29,8 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
   const isCancelling = useExecutionStore((state: any) => state.isCancelling);
   const history = useExecutionStore((state: any) => state.history);
   const runCode = useExecutionStore((state: any) => state.runCode);
+  const { settings: editorSettings } = useEditorStore();
+  const user = useUserStore((state: any) => state.user);
   
   const appendLog = useOutputStore((state: any) => state.appendLog);
 
@@ -47,7 +51,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
           cursor: '#ffffff',
           selectionBackground: '#264f78',
         },
-        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        fontFamily: '"JetBrains Mono", "Fira Code", Consolas, Menlo, Monaco, "Courier New", monospace',
         fontSize: 13,
         cursorBlink: true,
         disableStdin: false,
@@ -136,7 +140,8 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         }
         const payload = {
           mode: 'shell',
-          projectId: projectId
+          projectId: projectId,
+          terminalPrompt: editorSettings.terminalPrompt
         };
         console.log("[TerminalPanel] Sending shell init packet");
         console.log(payload);

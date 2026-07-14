@@ -205,7 +205,7 @@ class ExecutionService:
             except Exception as ws_e:
                 logger.debug(f"Failed to send error to websocket: {ws_e}")
 
-    async def run_shell_interactive(self, websocket: WebSocket, project_id: str, user_id: UUID) -> None:
+    async def run_shell_interactive(self, websocket: WebSocket, project_id: str, user_id: UUID, terminal_prompt: str = None) -> None:
         """
         Interactive Shell session via WebSockets.
         """
@@ -229,7 +229,10 @@ class ExecutionService:
                 # Write a custom .bashrc for the shell prompt
                 bashrc_path = os.path.join(temp_dir, ".bashrc")
                 with open(bashrc_path, 'w', encoding='utf-8') as f:
-                    f.write(f'export PS1="{first_name}@\\h:\\w\\$ "\n')
+                    if terminal_prompt:
+                        f.write(f'export PS1="{terminal_prompt}"\n')
+                    else:
+                        f.write(f'export PS1="@{first_name} ~$ "\n')
                 os.chmod(bashrc_path, 0o666)
 
                 for file_summary in files:

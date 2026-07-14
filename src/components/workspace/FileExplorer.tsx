@@ -4,7 +4,7 @@ import { workspaceApi } from '../../lib/api/workspace';
 import type { FileNode, FolderTree, ProjectTree } from '../../lib/api/workspace';
 import { FolderItem } from './FolderItem';
 import { FileItem } from './FileItem';
-import { Plus, FolderPlus, FilePlus, RefreshCw, Loader2 } from 'lucide-react';
+import { Plus, FolderPlus, FilePlus, RefreshCw, Loader2, ChevronsUp } from 'lucide-react';
 import { useWorkspaceStore } from '../../store/useWorkspaceStore';
 import { useEditorStore } from '../../store/useEditorStore';
 import { Modal } from '../ui/Modal';
@@ -27,7 +27,7 @@ interface FileExplorerProps {
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const queryClient = useQueryClient();
-  const { expandFolder } = useWorkspaceStore();
+  const { expandFolder, collapseAll } = useWorkspaceStore();
   
   const [dialog, setDialog] = useState<DialogState>({
     isOpen: false,
@@ -267,6 +267,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
             title="New Folder"
           >
             <FolderPlus size={14} />
+          </button>
+          <button 
+            onClick={collapseAll} 
+            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
+            title="Collapse All"
+          >
+            <ChevronsUp size={14} />
           </button>
           <button 
             onClick={invalidateTree} 

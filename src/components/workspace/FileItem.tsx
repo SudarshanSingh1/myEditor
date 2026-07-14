@@ -17,6 +17,7 @@ interface FileItemProps {
 export const FileItem: React.FC<FileItemProps> = React.memo(({ file, level, onRename, onDelete, onDuplicate, onDropItem }) => {
   const activeFileId = useEditorStore(state => state.activeFileId);
   const openTab = useEditorStore(state => state.openTab);
+  const isDirty = useEditorStore(state => state.dirtyFiles[file.id]);
   const [showMenu, setShowMenu] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -27,14 +28,20 @@ export const FileItem: React.FC<FileItemProps> = React.memo(({ file, level, onRe
     setShowMenu(true);
   };
 
-  const handleClick = () => {
-    openTab({ id: file.id, name: file.name, language: file.language });
+  const handleClick = (e: React.MouseEvent) => {
+    // Single click opens in preview mode
+    openTab({ id: file.id, name: file.name, language: file.language }, true);
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    // Double click opens/pins the tab permanently
+    openTab({ id: file.id, name: file.name, language: file.language }, false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleClick();
+      openTab({ id: file.id, name: file.name, language: file.language }, false);
     } else if (e.key === 'F2') {
       e.preventDefault();
       onRename(file);
@@ -55,29 +62,38 @@ export const FileItem: React.FC<FileItemProps> = React.memo(({ file, level, onRe
         className={cn(
           "flex items-center justify-between px-2 py-1 cursor-pointer text-sm select-none outline-none focus:bg-primary/10",
           "hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20",
-          activeFileId === file.id ? "bg-primary/20 text-primary font-medium dark:bg-primary/30" : "text-gray-600 dark:text-gray-300"
+          activeFileId === file.id ? "bg-primary/20 text-primary font-medium dark:bg-primary/30" : "text-gray-600 dark:text-gray-300",
+          isDirty && "text-amber-600 dark:text-amber-400"
         )}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
         onKeyDown={handleKeyDown}
         tabIndex={0}
       >
         <div className="flex items-center overflow-hidden">
           <FileIcon size={14} className="mr-2 flex-shrink-0 opacity-70" />
-          <span className="truncate">{file.name}</span>
+          <span className={cn("truncate", isDirty && "text-amber-600 dark:text-amber-400")}>{file.name}</span>
         </div>
 
-        {/* Action button - visible on hover */}
-        <button 
-          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:opacity-100"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowMenu(!showMenu);
-          }}
-        >
-          <MoreVertical size={14} />
-        </button>
+        <div className="flex items-center space-x-1">
+          {isDirty && (
+            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1 rounded flex-shrink-0">
+              M
+            </span>
+          )}
+          {/* Action button - visible on hover */}
+          <button 
+            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+          >
+            <MoreVertical size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Basic Inline Menu for simplicity - alternatively use a Portal for absolute screen coords */}

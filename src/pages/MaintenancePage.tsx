@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Server, ShieldAlert, Activity, Terminal } from "lucide-react";
 import { useSystemStore } from "../stores/useSystemStore";
 import { useUserStore } from "../stores/useUserStore";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 
 // --- Matrix Rain Component ---
@@ -204,6 +204,7 @@ export function MaintenancePage() {
   const { isMaintenanceMode, maintenanceMessage, maintenanceEndTime, checkStatus, isChecking, hasChecked } = useSystemStore();
   const { user } = useUserStore();
   const prefersReducedMotion = useReducedMotion();
+  const location = useLocation();
 
   // Countdown state
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -289,8 +290,8 @@ export function MaintenancePage() {
   }
 
   // Only redirect AFTER we've confirmed maintenance is genuinely off
-  if (!isMaintenanceMode) return <Navigate to="/app" replace />;
-  if (user?.role === "SUPER_ADMIN" || user?.role === "ADMIN") return <Navigate to="/app" replace />;
+  if (!isMaintenanceMode) return <Navigate to={location.state?.from || "/app"} replace />;
+  if (user?.role === "SUPER_ADMIN" || user?.role === "ADMIN") return <Navigate to={location.state?.from || "/app"} replace />;
 
   const progressPercent = timeLeft !== null ? Math.max(0, Math.min(100, 100 - (timeLeft / totalDuration) * 100)) : 100;
 

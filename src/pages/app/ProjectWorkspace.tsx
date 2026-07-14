@@ -46,7 +46,15 @@ export default function ProjectWorkspace() {
     return saved ? parseInt(saved, 10) : 300;
   });
   const [isDragging, setIsDragging] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<'FILES' | 'GIT'>('FILES');
+  const [sidebarTab, setSidebarTab] = useState<'FILES' | 'GIT' | null>(() => {
+    const saved = localStorage.getItem('hamara-sidebar-tab');
+    if (saved === 'null' || saved === null) return 'FILES';
+    return saved as 'FILES' | 'GIT' | null;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hamara-sidebar-tab', sidebarTab === null ? 'null' : sidebarTab);
+  }, [sidebarTab]);
 
   const initializedProject = useRef<string | null>(null);
 
@@ -189,9 +197,20 @@ export default function ProjectWorkspace() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
-      let newWidth = e.clientX;
-      if (newWidth < 220) newWidth = 220;
-      if (newWidth > 500) newWidth = 500;
+      // e.clientX is absolute, subtract Activity Bar width (48px)
+      let newWidth = e.clientX - 48;
+      
+      if (newWidth < 100) {
+        // Snap closed
+        setSidebarTab(null);
+        newWidth = 220; // reset the intended width for when it reopens
+      } else {
+        if (!sidebarTab) {
+          // If dragging out from closed, default to FILES
+          setSidebarTab('FILES');
+        }
+        if (newWidth > 500) newWidth = 500;
+      }
       setExplorerWidth(newWidth);
     };
 
@@ -214,13 +233,12 @@ export default function ProjectWorkspace() {
   }, [isDragging, explorerWidth]);
 
 
-  // Cleanup on unmount or project switch
+  // Cleanup on project switch (no longer resetting stores on unmount to preserve persistence)
   useEffect(() => {
     return () => {
-      useEditorStore.getState().reset();
+      // We only reset execution and save state to avoid memory leaks or stale active processes
       useExecutionStore.getState().reset();
       useSaveStore.getState().reset();
-      useWorkspaceStore.getState().reset();
     };
   }, [id]);
 
@@ -242,12 +260,12 @@ export default function ProjectWorkspace() {
   return (
     <div 
       className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-background text-foreground"
-      style={{ cursor: isDragging ? 'col-resize' : 'auto' }}
+      style={isDragging ? { cursor: 'col-resize' } : undefined}
     >
       {/* Activity Bar */}
       <div className="w-12 border-r bg-muted/50 flex flex-col items-center py-4 gap-4 z-10 flex-shrink-0">
         <button
-          onClick={() => setSidebarTab('FILES')}
+          onClick={() => setSidebarTab(prev => prev === 'FILES' ? null : 'FILES')}
           className={cn(
             "p-2 rounded-lg transition-colors group relative",
             sidebarTab === 'FILES' ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
@@ -260,7 +278,7 @@ export default function ProjectWorkspace() {
           )}
         </button>
         <button
-          onClick={() => setSidebarTab('GIT')}
+          onClick={() => setSidebarTab(prev => prev === 'GIT' ? null : 'GIT')}
           className={cn(
             "p-2 rounded-lg transition-colors group relative",
             sidebarTab === 'GIT' ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
@@ -275,28 +293,38 @@ export default function ProjectWorkspace() {
       </div>
 
       {/* Sidebar / Explorer */}
-      <div 
-        style={{ width: explorerWidth }}
-        className="flex-shrink-0 flex flex-col bg-muted overflow-hidden border-r border-border/50"
-      >
-        <PanelErrorBoundary panelName="Sidebar">
-          {sidebarTab === 'FILES' ? (
-            <FileExplorer projectId={id} />
-          ) : (
-            <GitPanel projectId={id} />
-          )}
-        </PanelErrorBoundary>
-      </div>
+      {sidebarTab !== null && (
+        <div 
+          style={{ width: explorerWidth }}
+          className="flex-shrink-0 flex flex-col bg-muted overflow-hidden border-r border-border/50"
+        >
+          <PanelErrorBoundary panelName="Sidebar">
+            {sidebarTab === 'FILES' ? (
+              <FileExplorer projectId={id} />
+            ) : (
+              <GitPanel projectId={id} />
+            )}
+          </PanelErrorBoundary>
+        </div>
+      )}
 
       {/* Resizer Divider */}
       <div 
         className={cn(
-          "w-1 z-10 cursor-col-resize hover:bg-primary/50 transition-colors",
+          "w-1 z-10 cursor-col-resize hover:bg-primary/50 transition-colors flex-shrink-0",
           isDragging ? "bg-primary" : "bg-gray-200 dark:bg-[#2d2d2d]"
         )}
         onMouseDown={(e) => {
           e.preventDefault();
           setIsDragging(true);
+        }}
+        onDoubleClick={() => {
+          if (sidebarTab === null) {
+            setSidebarTab('FILES');
+            setExplorerWidth(300);
+          } else {
+            setSidebarTab(null);
+          }
         }}
       />
 

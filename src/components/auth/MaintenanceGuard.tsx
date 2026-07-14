@@ -5,7 +5,7 @@ import { useUserStore } from "../../stores/useUserStore";
 
 export function MaintenanceGuard({ children }: { children: ReactNode }) {
   const { isMaintenanceMode, checkStatus, isChecking, allowAdmin } = useSystemStore();
-  const { user } = useUserStore();
+  const { user, isLoading } = useUserStore();
   const location = useLocation();
   const [hasCheckedOnce, setHasCheckedOnce] = useState(false);
 
@@ -25,8 +25,9 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     }
   }, [location.search]);
 
-  // Show loading spinner until the first check completes
-  if (isChecking || !hasCheckedOnce) {
+  // We no longer block on isChecking, so users don't see a spinner on every refresh.
+  // AuthGuard already blocks on isLoading.
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

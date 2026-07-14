@@ -7,6 +7,7 @@ import { X, Circle, Play, Square, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { FileIcon } from './FileIcon';
 
 export const EditorTabs: React.FC = () => {
   const tabs = useEditorStore(state => state.tabs);
@@ -56,20 +57,25 @@ export const EditorTabs: React.FC = () => {
           const isActive = activeFileId === file.id;
           const isDirty = dirtyFiles[file.id];
 
+          const isPreview = file.isPreview;
+
           return (
             <div
               key={file.id}
               className={cn(
                 "flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer border-r border-border min-w-32 max-w-xs group select-none transition-colors flex-shrink-0",
                 isActive 
-                  ? "bg-background border-t-2 border-t-primary text-primary dark:text-[#E4E4E4]" 
-                  : "text-gray-600 dark:text-[#969696] hover:bg-gray-50 dark:hover:bg-[#2d2d2d] border-t-2 border-t-transparent"
+                  ? "bg-background border-t-2 border-t-primary text-foreground" 
+                  : "text-muted-foreground hover:bg-background/50 border-t-2 border-t-transparent",
+                isPreview && "italic"
               )}
               onClick={() => setActiveFile(file.id)}
+              onDoubleClick={() => useEditorStore.getState().pinTab(file.id)}
               onAuxClick={(e) => handleMiddleClick(e, file.id)}
               title={file.path || file.name}
             >
-              <span className="truncate flex-1">{file.name}</span>
+              <FileIcon name={file.name} size={14} className={cn("flex-shrink-0 opacity-80", isPreview && "not-italic")} />
+              <span className={cn("truncate flex-1", isDirty && "text-amber-600 dark:text-amber-400 not-italic")}>{file.name}</span>
               <div className="flex items-center justify-center w-5 h-5 flex-shrink-0">
                 {isDirty ? (
                   <button
@@ -77,7 +83,7 @@ export const EditorTabs: React.FC = () => {
                     onClick={(e) => handleTabClose(e, file.id)}
                   >
                     <Circle className="h-2 w-2 fill-current group-hover:hidden" />
-                    <X className="h-3 w-3 hidden group-hover:block" />
+                    <X className="h-3.5 w-3.5 hidden group-hover:block" />
                   </button>
                 ) : (
                   <button 

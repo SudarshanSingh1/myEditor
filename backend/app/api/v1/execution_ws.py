@@ -68,7 +68,8 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
         
         if mode == "shell":
             logger.info("Calling run_shell_interactive")
-            await service.run_shell_interactive(websocket, project_id, user_id)
+            terminal_prompt = init_data.get("terminalPrompt")
+            await service.run_shell_interactive(websocket, project_id, user_id, terminal_prompt)
             logger.info("Finished run_shell_interactive")
         else:
             logger.info("Entering execute mode")

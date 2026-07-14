@@ -15,6 +15,7 @@ interface UserItem {
   created_at: string;
   last_login: string | null;
   projects_count: number;
+  is_deleted: boolean;
 }
 
 const ROLES = ["USER", "MODERATOR", "ADMIN", "SUPER_ADMIN"];
@@ -395,7 +396,14 @@ export default function AdminUsersPage() {
                         {user.username.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-white truncate">{user.username}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-white truncate">{user.username}</p>
+                          {user.is_deleted && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/20 text-red-400 border border-red-500/20">
+                              Deleted
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500 truncate">{user.email}</p>
                       </div>
                     </div>
