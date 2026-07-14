@@ -45,135 +45,108 @@ export default function Dashboard() {
   const recentProjects = projects.slice(0, 3);
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 max-w-7xl mx-auto space-y-8">
-      {/* Welcome Banner */}
-      <div className="rounded-xl border bg-card p-6 md:p-8 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-          <Terminal className="h-40 w-40" />
-        </div>
-
-        <div className="relative z-10">
-          <h2 className="text-2xl font-bold tracking-tight mb-2">
-            Welcome back, {user?.first_name || user?.username} 👋
+    <div className="p-6 md:p-8 lg:p-10 max-w-7xl mx-auto space-y-10">
+      {/* Welcome Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 md:p-8 rounded-2xl bg-white dark:bg-black/40 border border-zinc-200 dark:border-white/10 shadow-sm">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight mb-1 text-zinc-900 dark:text-white">
+            Welcome back, {user?.first_name || user?.username}
           </h2>
-
-          <p className="text-muted-foreground mb-6 max-w-lg">
-            Ready to build something amazing today? You have {totalProjects} active
-            projects.
+          <p className="text-lg text-zinc-600 dark:text-zinc-400">
+            Ready to build something amazing today? You have {totalProjects} active projects.
           </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button
+            className="gap-2 bg-green-600 hover:bg-green-500 text-white border-0 shadow-md transition-all"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <FilePlus className="h-4 w-4" />
+            New Project
+          </Button>
 
-          <div className="flex flex-wrap gap-4">
-            <Button
-              className="gap-2"
-              onClick={() => setIsCreateModalOpen(true)}
-            >
-              <FilePlus className="h-4 w-4" />
-              New Project
-            </Button>
-
-            <Button variant="outline" className="gap-2" disabled onClick={() => {}}>
-              <FolderUp className="h-4 w-4" />
-              Import Project
-            </Button>
-          </div>
+          <Button variant="outline" className="gap-2 border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/5 bg-transparent text-zinc-900 dark:text-white" disabled onClick={() => {}}>
+            <FolderUp className="h-4 w-4" />
+            Import
+          </Button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Projects"
-          value={totalProjects.toString()}
-          icon={Code}
-          description="Your workspaces"
-        />
+      <div className="grid gap-8 lg:grid-cols-3">
+        {/* Main Content Column */}
+        <div className="lg:col-span-2 space-y-10">
+          {/* Recent Projects */}
+          <div>
+            <PageHeader
+              title="Continue Coding"
+              action={
+                <Button variant="ghost" size="sm" onClick={() => navigate('/app/projects')}>
+                  View All
+                </Button>
+              }
+              className="pb-4"
+            />
 
-        <StatCard
-          title="Role"
-          value={(user?.role || "USER").toUpperCase()}
-          icon={Cloud}
-          description="Current access level"
-        />
-
-        <StatCard
-          title="Deployments"
-          value="0"
-          icon={Terminal}
-          description="Coming soon"
-        />
-
-        <StatCard
-          title="Collaborators"
-          value="0"
-          icon={GitMerge}
-          description="Coming soon"
-        />
-      </div>
-
-      {/* Recent Projects */}
-      <div>
-        <PageHeader
-          title="Continue Coding"
-          action={
-            <Button variant="ghost" size="sm">
-              View All
-            </Button>
-          }
-          className="pb-4"
-        />
-
-        {isLoading && projects.length === 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <LoadingSkeleton className="h-[120px] w-full rounded-xl" />
-            <LoadingSkeleton className="h-[120px] w-full rounded-xl" />
-            <LoadingSkeleton className="h-[120px] w-full rounded-xl" />
+            {isLoading && projects.length === 0 ? (
+              <div className="grid gap-6 sm:grid-cols-2">
+                <LoadingSkeleton className="h-[140px] w-full rounded-xl" />
+                <LoadingSkeleton className="h-[140px] w-full rounded-xl" />
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="text-center py-16 border border-zinc-200 dark:border-white/10 rounded-2xl bg-zinc-50 dark:bg-black/20">
+                <Code className="mx-auto h-12 w-12 text-zinc-400 dark:text-zinc-600 mb-4" />
+                <h3 className="text-lg font-semibold mb-1 text-zinc-900 dark:text-white">No projects yet</h3>
+                <p className="text-zinc-500 dark:text-zinc-400 mb-6">Create your first project to get started.</p>
+                <Button className="bg-green-600 hover:bg-green-500 text-white border-0" onClick={() => setIsCreateModalOpen(true)}>Create Project</Button>
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2">
+                {recentProjects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    {...project}
+                    onFavorite={toggleFavorite}
+                    onOpen={(id) => navigate(`/app/projects/${id}`)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        ) : projects.length === 0 ? (
-          <div className="text-center py-12 border rounded-xl border-dashed">
-            <Code className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
 
-            <h3 className="text-lg font-medium mb-1">
-              No projects yet
-            </h3>
-
-            <p className="text-muted-foreground mb-4">
-              Create your first project to get started.
-            </p>
-
-            <Button onClick={() => setIsCreateModalOpen(true)}>
-              Create Project
-            </Button>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {recentProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                {...project}
-                onFavorite={toggleFavorite}
-                onOpen={(id) => navigate(`/app/projects/${id}`)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
           <GithubRepositories />
         </div>
+
+        {/* Sidebar Column */}
         <div className="space-y-6">
-          {/* Storage / Usage panel could go here in the future */}
-          <div className="rounded-xl border bg-card p-6 shadow-sm">
-            <h3 className="text-lg font-medium mb-2">Workspace Usage</h3>
-            <p className="text-sm text-muted-foreground mb-4">You have used 120MB of your 5GB storage limit.</p>
-            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-              <div className="h-full bg-primary" style={{ width: '5%' }}></div>
+          {/* Project Stats */}
+          <StatCard
+            title="Total Projects"
+            value={totalProjects.toString()}
+            icon={Code}
+            description="Your active workspaces"
+          />
+
+          {/* Workspace Usage */}
+          <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-black/40 p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">Workspace Usage</h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">You have used 120MB of your 5GB storage limit.</p>
+            </div>
+            <div className="h-2.5 w-full bg-zinc-100 dark:bg-white/5 rounded-full overflow-hidden">
+              <div className="h-full bg-green-500 transition-all" style={{ width: '5%' }}></div>
             </div>
           </div>
+
+          {/* Account Role */}
+          <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-black/40 p-6 shadow-sm flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Account Role</h3>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white">{(user?.role || "USER").toUpperCase()}</p>
+            </div>
+            <Cloud className="h-10 w-10 text-zinc-200 dark:text-white/10" />
+          </div>
         </div>
-      </div>
-      
+      </div>      
       <CreateProjectModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

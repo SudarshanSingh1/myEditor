@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.schemas.responses import SuccessResponse
-from app.api.v1 import auth, system_settings, projects, workspace, execution, execution_ws, feedback, system_errors, admin, system
+from app.api.v1 import auth, system_settings, projects, workspace, execution, execution_ws, feedback, system_errors, admin, system_status
 
 router = APIRouter()
 
@@ -13,11 +13,11 @@ router.include_router(execution_ws.router, prefix="/execution", tags=["Execution
 router.include_router(feedback.router, prefix="/feedback", tags=["Feedback"])
 router.include_router(system_errors.router, prefix="/system-errors", tags=["System Errors"])
 router.include_router(admin.router, prefix="/admin", tags=["Admin Dashboard"])
-router.include_router(system.router, prefix="/system", tags=["System"])
+router.include_router(system_status.router, prefix="/system", tags=["System"])
 
-from app.api.v1 import sessions, security, oauth, github, git
+from app.api.v1 import sessions, two_factor_auth, oauth, github, git
 router.include_router(sessions.router, tags=["Sessions"])
-router.include_router(security.router, tags=["Security"])
+router.include_router(two_factor_auth.router, tags=["Security"])
 router.include_router(oauth.router, tags=["OAuth"])
 router.include_router(github.router, tags=["GitHub"])
 router.include_router(git.router, tags=["Git"])

@@ -33,7 +33,7 @@ const Help = lazy(() => import("../pages/app/Help"));
 const About = lazy(() => import("../pages/app/About"));
 
 // Admin Pages (Lazy)
-const AdminPortalDashboard = lazy(() => import("../pages/admin/AdminPortalDashboard"));
+const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
 const AdminAnalytics = lazy(() => import("../pages/admin/AdminAnalytics"));
 const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
 const AdminProjectsPage = lazy(() => import("../pages/admin/AdminProjectsPage"));
@@ -134,7 +134,7 @@ export function AppRouter() {
                 </AuthGuard>
               }
             >
-              <Route index element={<Suspense fallback={<AdminLoader />}><AdminPortalDashboard /></Suspense>} />
+              <Route index element={<Suspense fallback={<AdminLoader />}><AdminDashboardPage /></Suspense>} />
               <Route path="analytics" element={<Suspense fallback={<AdminLoader />}><AdminAnalytics /></Suspense>} />
               <Route path="users" element={<Suspense fallback={<AdminLoader />}><AdminUsersPage /></Suspense>} />
               <Route path="projects" element={<Suspense fallback={<AdminLoader />}><AdminProjectsPage /></Suspense>} />

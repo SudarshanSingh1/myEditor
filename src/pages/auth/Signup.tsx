@@ -5,7 +5,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { fetchApi } from "../../lib/api";
 import { PasswordStrength } from "../../components/auth/PasswordStrength";
-import { Loader2, User, Mail, Lock, AlertCircle, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, User, Mail, Lock, AlertCircle, ArrowRight, ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -21,6 +21,8 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -69,7 +71,8 @@ export default function Signup() {
       });
 
       if (response.success) {
-        navigate("/login");
+        const token = response.data.verification_token;
+        navigate(`/verify-email?email=${encodeURIComponent(email)}&token=${token}`);
       }
     } catch (err: any) {
       const errorText = (err.message || "").toLowerCase();
@@ -102,18 +105,18 @@ export default function Signup() {
   };
 
   return (
-    <div className="w-full space-y-8 p-8 rounded-2xl bg-white/[0.02] border border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden relative">
+    <div className="w-full space-y-8 p-8 sm:p-10 rounded-2xl bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden relative">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-white">Create an account</h2>
-        <p className="text-sm text-zinc-400">
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">Create an account</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Step {step} of 3
         </p>
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+      <div className="w-full h-1 bg-zinc-200 dark:bg-white/10 rounded-full overflow-hidden">
         <motion.div 
-          className="h-full bg-purple-500 rounded-full"
+          className="h-full bg-green-500 rounded-full"
           initial={{ width: "33%" }}
           animate={{ width: `${(step / 3) * 100}%` }}
           transition={{ duration: 0.3 }}
@@ -146,41 +149,41 @@ export default function Signup() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-zinc-300">First Name</label>
+                    <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">First Name</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
                         <User className="h-4 w-4" />
                       </div>
                       <Input 
-                        placeholder="John" 
+                        placeholder="First Name"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
-                        className="pl-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
+                        className="pl-10 bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white h-11"
                       />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-zinc-300">Last Name</label>
+                    <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Last Name</label>
                     <Input 
-                      placeholder="Doe" 
+                      placeholder="Last Name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
+                      className="bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white h-11"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-zinc-300">Username</label>
+                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Username</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
                       <User className="h-4 w-4" />
                     </div>
                     <Input 
                       placeholder="johndoe" 
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="pl-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
+                      className="pl-10 bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white h-11"
                     />
                   </div>
                   {username.length > 0 && !/^[a-zA-Z0-9_.-]+$/.test(username) && (
@@ -189,9 +192,9 @@ export default function Signup() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-zinc-300">Email address</label>
+                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Email address</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
                       <Mail className="h-4 w-4" />
                     </div>
                     <Input 
@@ -199,7 +202,7 @@ export default function Signup() {
                       placeholder="you@example.com" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
+                      className="pl-10 bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white h-11"
                     />
                   </div>
                 </div>
@@ -208,7 +211,7 @@ export default function Signup() {
                   type="button" 
                   onClick={nextStep}
                   disabled={!isStep1Valid}
-                  className="w-full h-11 mt-4 bg-white text-black hover:bg-zinc-200 font-semibold transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]"
+                  className="w-full h-11 mt-4 bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-semibold transition-all shadow-md dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] dark:hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]"
                 >
                   Continue <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -218,31 +221,50 @@ export default function Signup() {
             {step === 2 && (
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-zinc-300">Create a password</label>
+                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Create a password</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
                       <Lock className="h-4 w-4" />
                     </div>
                     <Input 
-                      type="password" 
+                      type={showPassword ? "text" : "password"}
                       placeholder="••••••••" 
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
+                      className="pl-10 pr-10 bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white h-11"
                     />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                   <PasswordStrength password={password} />
                 </div>
 
                 <div className="space-y-1.5 pt-2">
-                  <label className="text-sm font-medium text-zinc-300">Confirm password</label>
-                  <Input 
-                    type="password" 
-                    placeholder="••••••••" 
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
-                  />
+                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Confirm password</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
+                      <Lock className="h-4 w-4" />
+                    </div>
+                    <Input 
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••" 
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10 pr-10 bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white h-11"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {confirmPassword.length > 0 && password !== confirmPassword && (
                     <p className="text-xs text-red-400 mt-1">Passwords do not match</p>
                   )}
@@ -253,7 +275,7 @@ export default function Signup() {
                     type="button" 
                     variant="outline"
                     onClick={prevStep}
-                    className="w-full h-11 bg-transparent border-white/10 text-white hover:bg-white/5"
+                    className="w-full h-11 bg-transparent border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back
                   </Button>
@@ -261,7 +283,7 @@ export default function Signup() {
                     type="button" 
                     onClick={nextStep}
                     disabled={!isStep2Valid}
-                    className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-semibold"
+                    className="w-full h-11 bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-semibold"
                   >
                     Continue <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -271,13 +293,13 @@ export default function Signup() {
 
             {step === 3 && (
               <div className="space-y-6 flex flex-col items-center justify-center text-center pt-4">
-                <div className="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 border border-purple-500/30">
+                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 border border-green-500/20">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 
                 <div className="space-y-2">
-                  <h3 className="text-xl font-medium text-white">Ready to go</h3>
-                  <p className="text-sm text-zinc-400 max-w-[280px]">
+                  <h3 className="text-xl font-medium text-zinc-900 dark:text-white">Ready to go</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-[280px]">
                     Your account is ready to be created. Click the button below to join Hamara Editor.
                   </p>
                 </div>
@@ -288,7 +310,7 @@ export default function Signup() {
                     variant="outline"
                     onClick={prevStep}
                     disabled={isLoading}
-                    className="w-full h-11 bg-transparent border-white/10 text-white hover:bg-white/5"
+                    className="w-full h-11 bg-transparent border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back
                   </Button>
@@ -296,7 +318,7 @@ export default function Signup() {
                     type="button" 
                     onClick={handleSubmit}
                     disabled={isLoading}
-                    className="w-full h-11 bg-purple-600 text-white hover:bg-purple-500 font-semibold border border-purple-500 shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_25px_rgba(147,51,234,0.4)] transition-all"
+                    className="w-full h-11 bg-green-600 text-white hover:bg-green-500 font-semibold border border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.2)] hover:shadow-[0_0_25px_rgba(34,197,94,0.3)] transition-all"
                   >
                     {isLoading ? (
                       <>
@@ -316,10 +338,10 @@ export default function Signup() {
 
       <div className="relative py-2">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-white/10" />
+          <span className="w-full border-t border-zinc-200 dark:border-white/10" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-[#09090b] px-2 text-zinc-500">Or continue with</span>
+          <span className="bg-white dark:bg-[#09090b] px-2 text-zinc-500">Or continue with</span>
         </div>
       </div>
       
@@ -327,7 +349,7 @@ export default function Signup() {
         <Button
           type="button"
           variant="outline"
-          className="h-11 border-white/10 text-white hover:bg-white/5"
+          className="h-11 border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
           onClick={() => window.location.href = '/api/v1/auth/oauth/github/authorize'}
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -338,7 +360,7 @@ export default function Signup() {
         <Button
           type="button"
           variant="outline"
-          className="h-11 border-white/10 text-white hover:bg-white/5"
+          className="h-11 border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
           onClick={() => window.location.href = '/api/v1/auth/oauth/google/authorize'}
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -351,9 +373,9 @@ export default function Signup() {
         </Button>
       </div>
 
-      <div className="text-center text-sm text-zinc-400 pt-4">
+      <div className="text-center text-sm text-zinc-500 dark:text-zinc-400 pt-4">
         Already have an account?{" "}
-        <Link to="/login" className="font-medium text-white hover:text-purple-400 transition-colors">
+        <Link to="/login" className="font-medium text-zinc-900 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition-colors">
           Sign in
         </Link>
       </div>

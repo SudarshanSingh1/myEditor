@@ -5,6 +5,7 @@ import type * as MonacoEditor from 'monaco-editor';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useSaveStore } from '../../store/useSaveStore';
+import { THEMES } from '../../lib/monaco-themes';
 import { useConfirm } from "../../components/ui/ConfirmProvider";
 import { useStatusBarStore } from '../../store/useStatusBarStore';
 import { useNotificationStore } from '../../store/useNotificationStore';
@@ -53,11 +54,14 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
   const { 
     settings, 
     localContents, 
-    setFileContent, 
-    clearDirtyState,
     viewStates,
-    setViewState
+    setViewState,
+    clearDirtyState,
+    setFileContent
   } = useEditorStore();
+  
+  const activeFileId = useEditorStore((state) => state.activeFileId);
+  const activeFileMarkers = useEditorStore((state) => activeFileId ? state.markers[activeFileId] : undefined);
   
   const appTheme = useThemeStore((state) => state.theme);
   const { confirm } = useConfirm();
@@ -68,7 +72,32 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
   // Keep IDisposable refs so we can call .dispose() on unmount to prevent listener leaks.
   const listenerDisposablesRef = useRef<MonacoEditor.IDisposable[]>([]);
   
-  const [computedTheme, setComputedTheme] = useState<'vs-dark' | 'vs-light'>('vs-dark');
+  const [computedTheme, setComputedTheme] = useState<string>('vs-dark');
+
+  // Register custom themes via beforeMount instead of useEffect
+  const handleEditorWillMount = useCallback((monacoInstance: Monaco) => {
+    Object.entries(THEMES).forEach(([name, theme]) => {
+      monacoInstance.editor.defineTheme(name, theme as MonacoEditor.editor.IStandaloneThemeData);
+    });
+  }, []);
+
+  // Syntax validation toggle
+  useEffect(() => {
+    if (monaco) {
+      const disable = !settings.syntaxValidation;
+      const ts = (monaco.languages as any).typescript;
+      if (ts && ts.typescriptDefaults && ts.javascriptDefaults) {
+        ts.typescriptDefaults.setDiagnosticsOptions({
+          noSemanticValidation: disable,
+          noSyntaxValidation: disable,
+        });
+        ts.javascriptDefaults.setDiagnosticsOptions({
+          noSemanticValidation: disable,
+          noSyntaxValidation: disable,
+        });
+      }
+    }
+  }, [monaco, settings.syntaxValidation]);
 
   // Compute theme
   useEffect(() => {
@@ -80,8 +109,18 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
         resolvedTheme = appTheme === 'dark' ? 'vs-dark' : 'vs-light';
       }
     }
-    setComputedTheme(resolvedTheme as 'vs-dark' | 'vs-light');
+    setComputedTheme(resolvedTheme);
   }, [settings.theme, appTheme]);
+
+  // Apply markers (compiler errors)
+  useEffect(() => {
+    if (monaco && activeFileId) {
+      const model = monaco.editor.getModel(monaco.Uri.parse(activeFileId));
+      if (model) {
+        monaco.editor.setModelMarkers(model, 'compiler', activeFileMarkers || []);
+      }
+    }
+  }, [monaco, activeFileId, activeFileMarkers]);
 
   // Cleanup Monaco event listeners when fileId changes or component unmounts
   useEffect(() => {
@@ -259,6 +298,7 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
           theme={computedTheme}
           value={content}
           onChange={handleEditorChange}
+          beforeMount={handleEditorWillMount}
           onMount={handleEditorMount}
           loading={
             <div className="flex items-center justify-center w-full h-full text-gray-400">

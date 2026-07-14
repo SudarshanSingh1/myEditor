@@ -21,7 +21,8 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
   const fitAddonRef = useRef<FitAddon | null>(null);
   const shellWsRef = useRef<WebSocket | null>(null);
   const execWsRef = useRef<WebSocket | null>(null);
-  const [preserveOutput, setPreserveOutput] = React.useState(false);
+  const execOutputBuffer = useRef<string>('');
+  const [preserveOutput, setPreserveOutput] = React.useState(true);
 
   const pendingExecution = useExecutionStore((state: any) => state.pendingExecution);
   const setPendingExecution = useExecutionStore((state: any) => state.setPendingExecution);
@@ -205,10 +206,11 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
     currentMode.current = 'execution';
     
     // Reset terminal on new run and focus it if preserve is false
+    execOutputBuffer.current = '';
     if (!preserveOutput) {
       term.reset();
     } else {
-      term.writeln('\r\n\x1b[38;5;8m--- New Execution ---\x1b[0m\r\n');
+      term.write('\x1b[2K\r'); // Erase current line (old prompt)
     }
     term.focus();
     term.scrollToBottom();
@@ -240,6 +242,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         if (currentMode.current !== 'execution') return;
         
         if (typeof event.data === 'string') {
+          execOutputBuffer.current += event.data;
           try {
             const trimmedData = event.data.trim();
             if (trimmedData.startsWith('{') && trimmedData.endsWith('}')) {
@@ -260,6 +263,37 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
       ws.onclose = (event) => {
         setExecutionFinished(0); // Mark done
         if (execWsRef.current === ws) execWsRef.current = null;
+        
+        // Parse compiler output for markers
+        if (pendingExecution.language === 'cpp' || pendingExecution.language === 'c') {
+          const rawOutput = execOutputBuffer.current.replace(/\x1b\[[0-9;]*m/g, ''); // strip ansi
+          const regex = /^([a-zA-Z0-9_\-\.]+):(\d+):(?:(\d+):)?\s+(error|warning|fatal error):\s+(.*)$/gm;
+          let match;
+          const markers = [];
+          while ((match = regex.exec(rawOutput)) !== null) {
+            const [, file, line, col, severityStr, msg] = match;
+            // Severity mapping
+            let severity = 8; // Error
+            if (severityStr === 'warning') severity = 4; // Warning
+            
+            // Only add if it's the executed file (or ideally check file structure)
+            markers.push({
+              severity,
+              message: msg,
+              startLineNumber: parseInt(line),
+              startColumn: col ? parseInt(col) : 1,
+              endLineNumber: parseInt(line),
+              endColumn: col ? parseInt(col) + 100 : 100, // Arbitrary length if not provided
+            });
+          }
+          
+          if (markers.length > 0) {
+            useEditorStore.getState().setMarkers(pendingExecution.fileId, markers);
+          } else {
+            useEditorStore.getState().clearMarkers(pendingExecution.fileId);
+          }
+        }
+        
         // Restore shell mode after execution finishes
         currentMode.current = 'shell';
         

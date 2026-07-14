@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { FileNode } from '../lib/api/workspace';
 
 export interface EditorSettings {
-  theme: 'vs-dark' | 'vs-light' | 'system';
+  theme: 'vs-dark' | 'vs-light' | 'system' | 'dracula' | 'monokai' | 'github-dark' | 'night-owl';
   fontSize: number;
   tabSize: number;
   wordWrap: 'on' | 'off' | 'wordWrapColumn' | 'bounded';
@@ -14,6 +14,7 @@ export interface EditorSettings {
   autoSave: 'on' | 'off';
   autoSaveDelay: number; // in seconds
   terminalPrompt?: string;
+  syntaxValidation: boolean;
 }
 
 export interface TabFile {
@@ -37,6 +38,7 @@ interface EditorState {
   dirtyFiles: Record<string, boolean>;
   localContents: Record<string, string>; // fileId -> string
   viewStates: Record<string, ViewState>; // fileId -> ViewState
+  markers: Record<string, any[]>; // fileId -> monaco.editor.IMarkerData[]
   settings: EditorSettings;
 
   // Actions
@@ -52,6 +54,8 @@ interface EditorState {
   clearDirtyState: (fileId: string) => void;
   
   setViewState: (fileId: string, viewState: ViewState) => void;
+  setMarkers: (fileId: string, markers: any[]) => void;
+  clearMarkers: (fileId: string) => void;
   updateSettings: (settings: Partial<EditorSettings>) => void;
   reset: () => void;
 }
@@ -68,6 +72,7 @@ const defaultSettings: EditorSettings = {
   autoSave: 'on',
   autoSaveDelay: 3,
   terminalPrompt: '',
+  syntaxValidation: true,
 };
 
 export const useEditorStore = create<EditorState>()(
@@ -80,6 +85,7 @@ export const useEditorStore = create<EditorState>()(
       dirtyFiles: {},
       localContents: {},
       viewStates: {},
+      markers: {},
       settings: defaultSettings,
 
       setProject: (projectId) => {
@@ -92,6 +98,7 @@ export const useEditorStore = create<EditorState>()(
           dirtyFiles: {},
           localContents: {},
           viewStates: {},
+          markers: {},
         });
       },
       setProjectLanguage: (projectLanguage) => set({ projectLanguage }),
@@ -103,6 +110,7 @@ export const useEditorStore = create<EditorState>()(
         dirtyFiles: {},
         localContents: {},
         viewStates: {},
+        markers: {},
       }),
 
       openTab: (file, isPreview = false) =>
@@ -134,9 +142,11 @@ export const useEditorStore = create<EditorState>()(
                 const newDirtyFiles = { ...state.dirtyFiles };
                 const newLocalContents = { ...state.localContents };
                 const newViewStates = { ...state.viewStates };
+                const newMarkers = { ...state.markers };
                 delete newDirtyFiles[previewTabId];
                 delete newLocalContents[previewTabId];
                 delete newViewStates[previewTabId];
+                delete newMarkers[previewTabId];
                 
                 return {
                   tabs: newTabs,
@@ -144,6 +154,7 @@ export const useEditorStore = create<EditorState>()(
                   dirtyFiles: newDirtyFiles,
                   localContents: newLocalContents,
                   viewStates: newViewStates,
+                  markers: newMarkers,
                 };
               }
             }
@@ -184,10 +195,12 @@ export const useEditorStore = create<EditorState>()(
           const newDirtyFiles = { ...state.dirtyFiles };
           const newLocalContents = { ...state.localContents };
           const newViewStates = { ...state.viewStates };
+          const newMarkers = { ...state.markers };
           
           delete newDirtyFiles[fileId];
           delete newLocalContents[fileId];
           delete newViewStates[fileId];
+          delete newMarkers[fileId];
 
           return {
             tabs: newTabs,
@@ -195,6 +208,7 @@ export const useEditorStore = create<EditorState>()(
             dirtyFiles: newDirtyFiles,
             localContents: newLocalContents,
             viewStates: newViewStates,
+            markers: newMarkers,
           };
         }),
 
@@ -220,6 +234,16 @@ export const useEditorStore = create<EditorState>()(
         set((state) => ({
           viewStates: { ...state.viewStates, [fileId]: viewState },
         })),
+
+      setMarkers: (fileId, markers) => set((state) => ({
+        markers: { ...state.markers, [fileId]: markers }
+      })),
+
+      clearMarkers: (fileId) => set((state) => {
+        const newMarkers = { ...state.markers };
+        delete newMarkers[fileId];
+        return { markers: newMarkers };
+      }),
 
       updateSettings: (newSettings) =>
         set((state) => ({

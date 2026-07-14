@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router-dom";
 import { Shield, Monitor, FileKey, Database } from "lucide-react";
-import { Toggle } from "./components";
-import type { Settings } from "./types";
+import { Toggle } from "./SettingsFormControls";
+import type { Settings } from "./adminSettingsTypes";
 
 interface ContextType {
   settings: Settings;

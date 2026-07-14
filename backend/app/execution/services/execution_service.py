@@ -12,8 +12,8 @@ from app.execution.languages.python_runner import PythonRunner
 from app.execution.languages.cpp_runner import CppRunner
 from app.execution.languages.java_runner import JavaRunner
 from app.execution.languages.c_runner import CRunner
-from app.execution.languages.js_runner import JsRunner
-from app.execution.languages.ts_runner import TsRunner
+from app.execution.languages.javascript_runner import JsRunner
+from app.execution.languages.typescript_runner import TsRunner
 from app.execution.languages.go_runner import GoRunner
 from app.execution.languages.rust_runner import RustRunner
 from app.repositories.workspace_repository import WorkspaceRepository

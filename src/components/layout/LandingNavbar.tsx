@@ -14,7 +14,7 @@ const NAV_LINKS = [
   { name: "Contact", href: "#contact" },
 ];
 
-export function Navbar() {
+export function LandingNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 

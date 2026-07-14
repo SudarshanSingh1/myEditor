@@ -10,7 +10,7 @@ from app.models.oauth_account import OAuthAccount
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token
 from app.schemas.responses import StandardResponse
-from app.api.v1.security import get_current_active_user
+from app.api.v1.two_factor_auth import get_current_active_user
 from pydantic import BaseModel
 import httpx
 

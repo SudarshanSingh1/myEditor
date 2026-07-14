@@ -8,6 +8,8 @@ import { cn } from '../../lib/utils';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { FileIcon } from './FileIcon';
+import { EditorSettingsModal } from './EditorSettingsModal';
+import { Settings } from 'lucide-react';
 
 export const EditorTabs: React.FC = () => {
   const tabs = useEditorStore(state => state.tabs);
@@ -137,6 +139,7 @@ const EditorActions: React.FC = () => {
   const activeFileId = useEditorStore(state => state.activeFileId);
   const projectLanguage = useEditorStore(state => state.projectLanguage);
   const tabs = useEditorStore(state => state.tabs);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   
   const runCode = useExecutionStore(state => state.runCode);
   const stopCode = useExecutionStore(state => state.stopCode);
@@ -215,6 +218,18 @@ const EditorActions: React.FC = () => {
           <span>{isCancelling ? 'Stopping' : 'Stop'}</span>
         </button>
       )}
+
+      <div className="w-px h-4 bg-border mx-1" />
+      
+      <button
+        onClick={() => setIsSettingsOpen(true)}
+        className="flex items-center justify-center p-1.5 rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        title="Editor Settings"
+      >
+        <Settings className="w-4 h-4" />
+      </button>
+
+      <EditorSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 };

@@ -3,7 +3,7 @@ import { Container } from "./Container";
 import { Logo } from "../ui/Logo";
 import { Code, MessageSquare, Briefcase } from "lucide-react";
 
-export function Footer() {
+export function LandingFooter() {
   return (
     <footer className="bg-background border-t py-12 md:py-16">
       <Container>

@@ -5,7 +5,7 @@ import { RightPanel } from "../components/layout/RightPanel";
 
 export function AppLayout() {
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground overflow-hidden">
+    <div className="flex h-screen flex-col bg-background text-foreground overflow-hidden">
       <AppNavbar />
       <div className="flex flex-1 overflow-hidden">
         <AppSidebar />

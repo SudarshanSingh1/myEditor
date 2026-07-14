@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router-dom";
 import { Mail, Server, Monitor, FileKey, Shield, RotateCcw } from "lucide-react";
-import { TextInput, NumberInput, Toggle } from "./components";
-import type { Settings } from "./types";
+import { TextInput, NumberInput, Toggle } from "./SettingsFormControls";
+import type { Settings } from "./adminSettingsTypes";
 
 interface ContextType {
   settings: Settings;

@@ -66,7 +66,7 @@ const quickLinks = [
   { label: "System Settings", to: "/super-admin/settings", icon: Settings, desc: "Platform configuration" },
 ];
 
-export default function AdminPortalDashboard() {
+export default function AdminDashboardPage() {
   const [data, setData] = useState<DashData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

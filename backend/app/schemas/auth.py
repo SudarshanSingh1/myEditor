@@ -59,3 +59,11 @@ class UserProfileUpdateRequest(BaseModel):
     bio: str | None = Field(None, max_length=500)
     timezone: str | None = Field(None, max_length=50)
     theme_preference: str | None = Field(None, max_length=20)
+
+class UserRegisterResponse(BaseModel):
+    user: UserProfileResponse
+    verification_token: str
+
+class ResendVerificationResponse(BaseModel):
+    verification_token: str
+

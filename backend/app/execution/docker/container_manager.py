@@ -6,7 +6,7 @@ import logging
 import asyncio
 from fastapi import WebSocket
 
-from app.execution.docker.security import get_secure_container_config, MAX_EXECUTION_TIME, MAX_OUTPUT_SIZE
+from app.execution.docker.container_security import get_secure_container_config, MAX_EXECUTION_TIME, MAX_OUTPUT_SIZE
 
 logger = logging.getLogger(__name__)
 

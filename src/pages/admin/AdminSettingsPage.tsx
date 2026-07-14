@@ -3,8 +3,8 @@ import { Outlet, NavLink } from "react-router-dom";
 import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
 import { Settings as SettingsIcon, Shield, Zap, Save, RotateCcw, Mail, Wrench } from "lucide-react";
-import type { Settings } from "./settings/types";
-import { defaultSettings as defaults } from "./settings/types";
+import type { Settings } from "./settings/adminSettingsTypes";
+import { defaultSettings as defaults } from "./settings/adminSettingsTypes";
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Settings>(defaults);

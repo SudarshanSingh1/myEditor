@@ -126,10 +126,10 @@ export default function Login() {
   };
 
   return (
-    <div className="w-full space-y-8 p-8 rounded-2xl bg-white/[0.02] border border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+    <div className="w-full space-y-8 p-8 sm:p-10 rounded-2xl bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-white">{is2FA ? "Two-Factor Authentication" : "Welcome back"}</h2>
-        <p className="text-sm text-zinc-400">
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{is2FA ? "Two-Factor Authentication" : "Welcome back"}</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           {is2FA ? "Enter the 6-digit code from your authenticator app" : "Enter your credentials to access your workspace"}
         </p>
       </div>
@@ -152,11 +152,11 @@ export default function Login() {
         {is2FA ? (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-300" htmlFor="totpCode">
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="totpCode">
                 Authenticator Code
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
                   <Lock className="h-4 w-4" />
                 </div>
                 <Input 
@@ -168,14 +168,14 @@ export default function Login() {
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value.replace(/[^0-9]/g, ''))}
                   disabled={isLoading}
-                  className="pl-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white placeholder:text-zinc-600 h-11 tracking-[0.5em] text-center"
+                  className="pl-10 bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 h-11 tracking-[0.5em] text-center"
                 />
               </div>
             </div>
             <Button 
               type="submit" 
               disabled={isLoading || totpCode.length !== 6}
-              className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-semibold text-sm transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]"
+              className="w-full h-11 bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-semibold text-sm transition-all shadow-md dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] dark:hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]"
             >
               {isLoading ? (
                 <>
@@ -197,7 +197,7 @@ export default function Login() {
                 setTwoFaToken("");
               }}
               disabled={isLoading}
-              className="w-full h-11 border-white/10 text-white hover:bg-white/5"
+              className="w-full h-11 border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
             >
               Back to Login
             </Button>
@@ -206,11 +206,11 @@ export default function Login() {
           <>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-zinc-300" htmlFor="email">
+                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="email">
                   Email address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
                     <Mail className="h-4 w-4" />
                   </div>
                   <Input 
@@ -221,22 +221,22 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading}
-                    className="pl-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white placeholder:text-zinc-600 h-11"
+                    className="pl-10 bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 h-11"
                   />
                 </div>
               </div>
               
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-zinc-300" htmlFor="password">
+                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="password">
                     Password
                   </label>
-                  <Link to="/forgot-password" className="text-sm text-purple-400 hover:text-purple-300 transition-colors">
+                  <Link to="/forgot-password" className="text-sm text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 transition-colors">
                     Forgot password?
                   </Link>
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
                     <Lock className="h-4 w-4" />
                   </div>
                   <Input 
@@ -246,7 +246,7 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoading}
-                    className="pl-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
+                    className="pl-10 bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white h-11"
                   />
                 </div>
               </div>
@@ -256,9 +256,9 @@ export default function Login() {
               <input 
                 type="checkbox" 
                 id="remember" 
-                className="w-4 h-4 rounded border-white/10 bg-black/50 text-purple-600 focus:ring-purple-500/30 focus:ring-offset-0" 
+                className="w-4 h-4 rounded border-zinc-300 dark:border-white/10 bg-zinc-50 dark:bg-black/50 text-green-600 focus:ring-green-500/30 focus:ring-offset-0" 
               />
-              <label htmlFor="remember" className="text-sm text-zinc-400 cursor-pointer select-none">
+              <label htmlFor="remember" className="text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer select-none">
                 Remember me for 30 days
               </label>
             </div>
@@ -266,7 +266,7 @@ export default function Login() {
             <Button 
               type="submit" 
               disabled={isLoading || !email || !password}
-              className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-semibold text-sm transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]"
+              className="w-full h-11 bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-semibold text-sm transition-all shadow-md dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] dark:hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]"
             >
               {isLoading ? (
                 <>
@@ -282,10 +282,10 @@ export default function Login() {
             
             <div className="relative py-4">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-white/10" />
+                <span className="w-full border-t border-zinc-200 dark:border-white/10" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#09090b] px-2 text-zinc-500">Or continue with</span>
+                <span className="bg-white dark:bg-[#09090b] px-2 text-zinc-500">Or continue with</span>
               </div>
             </div>
             
@@ -293,7 +293,7 @@ export default function Login() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 border-white/10 text-white hover:bg-white/5"
+                className="h-11 border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
                 onClick={() => window.location.href = '/api/v1/auth/oauth/github/authorize'}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -304,7 +304,7 @@ export default function Login() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 border-white/10 text-white hover:bg-white/5"
+                className="h-11 border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
                 onClick={() => window.location.href = '/api/v1/auth/oauth/google/authorize'}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -321,9 +321,9 @@ export default function Login() {
       </form>
 
       {!is2FA && (
-        <div className="text-center text-sm text-zinc-400">
+        <div className="text-center text-sm text-zinc-500 dark:text-zinc-400">
           Don't have an account?{" "}
-          <Link to="/signup" className="font-medium text-white hover:text-purple-400 transition-colors">
+          <Link to="/signup" className="font-medium text-zinc-900 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition-colors">
             Create an account
           </Link>
         </div>

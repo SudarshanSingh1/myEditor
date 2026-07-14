@@ -39,8 +39,8 @@ export function AppSidebar() {
           isOpen ? "w-64 translate-x-0" : "w-16 -translate-x-full md:translate-x-0"
         )}
       >
-        <div className="flex-1 overflow-y-auto py-4 px-2 scrollbar-hide">
-          <nav className="flex flex-col gap-1">
+        <div className="flex-1 overflow-y-auto py-4 px-2 scrollbar-hide flex flex-col">
+          <nav className="flex flex-col gap-4 flex-1 justify-evenly">
             {SIDEBAR_ITEMS.map((item) => (
               item.disabled ? (
                 <div 

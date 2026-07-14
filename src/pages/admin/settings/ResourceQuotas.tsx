@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router-dom";
 import { Zap, Monitor, FileKey, Shield } from "lucide-react";
-import { NumberInput } from "./components";
-import type { Settings } from "./types";
+import { NumberInput } from "./SettingsFormControls";
+import type { Settings } from "./adminSettingsTypes";
 
 interface ContextType {
   settings: Settings;

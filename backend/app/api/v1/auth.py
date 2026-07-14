@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Cookie
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from app.dependencies.database import get_db
 from app.dependencies.auth import get_current_user_dep
@@ -12,7 +13,9 @@ from app.schemas.auth import (
     ChangePasswordRequest,
     PasswordResetRequest,
     ResetPasswordConfirmRequest,
-    UserProfileUpdateRequest
+    UserProfileUpdateRequest,
+    UserRegisterResponse,
+    ResendVerificationResponse
 )
 from app.services.auth_service import AuthService
 from app.core.config import settings
@@ -20,12 +23,64 @@ from app.core.rate_limit import limiter
 
 router = APIRouter()
 
-@router.post("/register", response_model=SuccessResponse[UserProfileResponse])
+class VerifyEmailRequest(BaseModel):
+    token: str
+    otp: str
+
+class ResendVerificationRequest(BaseModel):
+    email: str
+
+@router.post("/register", response_model=SuccessResponse[UserRegisterResponse])
 @limiter.limit("3/minute")
 def register(req: UserRegisterRequest, request: Request, db: Session = Depends(get_db)):
+    # Block registration if maintenance mode is active
+    from app.models.system_settings import SystemSettings
+    settings_obj = db.query(SystemSettings).first()
+    if settings_obj and settings_obj.maintenance_mode:
+        raise HTTPException(status_code=503, detail=settings_obj.maintenance_message or "System is under maintenance.")
+
     ip_address = request.client.host if request.client else None
-    user = AuthService.register_user(db, req, ip_address)
-    return SuccessResponse(message="Registration successful.", data=user)
+    user, verification_token = AuthService.register_user(db, req, ip_address)
+    return SuccessResponse(
+        message="Registration successful. Please check your email to verify your account.",
+        data=UserRegisterResponse(user=UserProfileResponse.model_validate(user), verification_token=verification_token)
+    )
+
+@router.post("/verify-email", response_model=SuccessResponse[TokenResponse])
+def verify_email(req: VerifyEmailRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+    ip_address = request.client.host if request.client else None
+    user = AuthService.verify_email(db, req.token, req.otp)
+    
+    access_token = AuthService.create_access_token(user.id)
+    refresh_token = AuthService.create_refresh_token(user.id, ip_address)
+    
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+    
+    return SuccessResponse(message="Email verified successfully.", data=TokenResponse(access_token=access_token, refresh_token=refresh_token))
+
+@router.post("/resend-verification", response_model=SuccessResponse[ResendVerificationResponse])
+@limiter.limit("3/minute")
+def resend_verification(req: ResendVerificationRequest, request: Request, db: Session = Depends(get_db)):
+    verification_token = AuthService.resend_verification(db, req.email)
+    return SuccessResponse(
+        message="If the email exists and is unverified, a new verification code has been sent.",
+        data=ResendVerificationResponse(verification_token=verification_token)
+    )
 
 @router.post("/login", response_model=SuccessResponse[TokenResponse])
 @limiter.limit("5/minute")

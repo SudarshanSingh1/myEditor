@@ -48,7 +48,8 @@ export default function ProjectWorkspace() {
   const [isDragging, setIsDragging] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'FILES' | 'GIT' | null>(() => {
     const saved = localStorage.getItem('hamara-sidebar-tab');
-    if (saved === 'null' || saved === null) return 'FILES';
+    if (saved === 'null') return null;
+    if (saved === null) return 'FILES';
     return saved as 'FILES' | 'GIT' | null;
   });
 

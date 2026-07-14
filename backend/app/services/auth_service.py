@@ -1,5 +1,8 @@
 import uuid
 import logging
+import random
+import string
+import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Tuple
 from sqlalchemy.orm import Session
@@ -60,7 +63,78 @@ class AuthService:
         db.add(log)
         db.commit()
         
-        return new_user
+        # Generate 6-digit OTP
+        otp = ''.join(random.choices(string.digits, k=6))
+        otp_hash = hashlib.sha256(otp.encode()).hexdigest()
+        
+        # Generate verification token containing the hash
+        expire = datetime.now(timezone.utc) + timedelta(hours=24)
+        to_encode = {"exp": expire, "sub": str(new_user.id), "type": "verification", "otp_hash": otp_hash}
+        verification_token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+        
+        # Send email
+        try:
+            EmailService.send_verification_email(str(new_user.id), otp)
+        except Exception as e:
+            logger.error(f"Failed to send verification email to {email_normalized}: {e}")
+            # We don't fail registration if email fails, but we log it
+        
+        return new_user, verification_token
+
+    @staticmethod
+    def verify_email(db: Session, token: str, otp: str) -> User:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+            user_id = payload.get("sub")
+            token_type = payload.get("type")
+            token_otp_hash = payload.get("otp_hash")
+            if not user_id or token_type != "verification" or not token_otp_hash:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
+                
+            # Verify OTP
+            provided_hash = hashlib.sha256(otp.encode()).hexdigest()
+            if provided_hash != token_otp_hash:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification code")
+        except JWTError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
+            
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            
+        if user.email_verified:
+            return user
+            
+        user.email_verified = True
+        user.status = StatusEnum.ACTIVE
+        db.commit()
+        return user
+
+    @staticmethod
+    def resend_verification(db: Session, email: str):
+        email_normalized = email.lower().strip()
+        user = db.query(User).filter(User.email == email_normalized).first()
+        if not user:
+            return # Silent return
+            
+        if user.email_verified:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already verified.")
+            
+        # Generate 6-digit OTP
+        otp = ''.join(random.choices(string.digits, k=6))
+        otp_hash = hashlib.sha256(otp.encode()).hexdigest()
+        
+        expire = datetime.now(timezone.utc) + timedelta(hours=24)
+        to_encode = {"exp": expire, "sub": str(user.id), "type": "verification", "otp_hash": otp_hash}
+        verification_token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+        
+        try:
+            EmailService.send_verification_email(str(user.id), otp)
+        except Exception as e:
+            logger.error(f"Failed to resend verification email to {email_normalized}: {e}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to send email. Please try again later.")
+            
+        return verification_token
 
     @staticmethod
     def authenticate_user(db: Session, req: UserLoginRequest, ip_address: str = None, user_agent_string: str = None) -> Tuple[User, str, str]:

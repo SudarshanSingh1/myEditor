@@ -235,6 +235,44 @@ class EmailService:
             EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
         finally:
             db.close()
+    @staticmethod
+    def send_verification_email(user_id: str, otp: str):
+        """Send an email verification OTP to a new user."""
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user:
+                raise Exception("User not found.")
+                
+            subject = f"Verify Your Email - {settings.APP_NAME}"
+            name = user.first_name or user.username
+            
+            body = f"""
+            <div style="font-size: 19px; font-weight: 600; color: #ffffff; margin-bottom: 24px;">
+                Hello {name},
+            </div>
+            <div style="color: #d4d4d8; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+                Welcome to <strong>{settings.APP_NAME}</strong>! We're excited to have you on board.
+            </div>
+            <div style="color: #d4d4d8; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+                Before you can start using your account, you need to verify your email address. Please use the following 6-digit verification code. This code will expire in 24 hours.
+            </div>
+            <div style="text-align: center; margin-bottom: 36px;">
+                <div style="display: inline-block; background-color: #09090b; color: #a78bfa; border: 1px solid #27272a; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 24px; letter-spacing: 4px;">
+                    {otp}
+                </div>
+            </div>
+            <div style="color: #a1a1aa; font-size: 15px; line-height: 1.6;">
+                If you did not create this account, you can safely ignore this email.<br><br>
+                Regards,<br>
+                The {settings.APP_NAME} Team
+            </div>
+            """
+            html_content = EmailService._get_base_template(subject, body)
+            EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
+        finally:
+            db.close()
+
 
     @staticmethod
     def send_password_reset_email(user_id: str, reset_token: str, reset_url: str):

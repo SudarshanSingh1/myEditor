@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import type { Settings } from "./types";
+import type { Settings } from "./adminSettingsTypes";
 import { Wrench, Settings as SettingsIcon, AlertTriangle, ShieldAlert, Clock, Power, ArrowRight, Calendar } from "lucide-react";
-import { Toggle, TextInput } from "./components";
+import { Toggle, TextInput } from "./SettingsFormControls";
 
 interface ContextType {
   settings: Settings;

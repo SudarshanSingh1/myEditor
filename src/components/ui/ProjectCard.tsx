@@ -5,8 +5,11 @@ import { Badge } from "./Badge"
 import { Button } from "./Button"
 import { cn } from "../../lib/utils"
 import { Dropdown, DropdownItem, DropdownSeparator } from "./Dropdown"
+import { useState } from "react"
 import { useProjectsStore } from "../../stores/useProjectsStore"
 import { useConfirm } from "../../components/ui/ConfirmProvider"
+import { Modal } from "./Modal"
+import { Input } from "./Input"
 
 interface ProjectCardProps {
   id: string;
@@ -35,7 +38,21 @@ export function ProjectCard({
 }: ProjectCardProps) {
   const navigate = useNavigate();
   const { confirm } = useConfirm();
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState(name);
+  const [isRenaming, setIsRenaming] = useState(false);
   const date = new Date(updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const handleRename = async () => {
+    if (!renameValue.trim() || renameValue === name) {
+      setIsRenameModalOpen(false);
+      return;
+    }
+    setIsRenaming(true);
+    await useProjectsStore.getState().updateProject(id, { name: renameValue });
+    setIsRenaming(false);
+    setIsRenameModalOpen(false);
+  };
 
   return (
     <Card 
@@ -86,7 +103,8 @@ export function ProjectCard({
             <DropdownSeparator />
             <DropdownItem onClick={(e) => {
               e?.stopPropagation();
-              // Rename modal
+              setRenameValue(name);
+              setIsRenameModalOpen(true);
             }}>
               Rename
             </DropdownItem>
@@ -147,6 +165,40 @@ export function ProjectCard({
           Open Editor
         </Button>
       </CardContent>
+
+      <Modal
+        isOpen={isRenameModalOpen}
+        onClose={() => setIsRenameModalOpen(false)}
+        title="Rename Project"
+        description="Enter a new name for your project."
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setIsRenameModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleRename}
+              disabled={isRenaming || !renameValue.trim() || renameValue === name}
+            >
+              {isRenaming ? 'Renaming...' : 'Rename'}
+            </Button>
+          </>
+        }
+      >
+        <div className="py-4">
+          <Input 
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            placeholder="Project name"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleRename();
+              }
+            }}
+          />
+        </div>
+      </Modal>
     </Card>
   )
 }

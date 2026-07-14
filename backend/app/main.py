@@ -9,12 +9,12 @@ from slowapi.errors import RateLimitExceeded
 
 from app.core.rate_limit import limiter
 from app.core.config import settings
-from app.core.exceptions import setup_exception_handlers
+from app.core.exception_handlers import setup_exception_handlers
 from app.middleware.request_id import RequestIDMiddleware
-from app.middleware.logging import LoggingMiddleware
-from app.middleware.timing import TimingMiddleware
+from app.middleware.request_logging import LoggingMiddleware
+from app.middleware.response_timing import TimingMiddleware
 from app.middleware.maintenance import MaintenanceMiddleware
-from app.middleware.security import SecurityHeadersMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.api.v1.router import router as api_v1_router
 from app.api.v1 import health
 from app.schemas.responses import SuccessResponse

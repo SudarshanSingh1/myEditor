@@ -12,7 +12,7 @@ services:
       - /tmp:/tmp
     environment:
       - APP_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql+psycopg://hamara_user:hamara_password@host.docker.internal:5432/hamara_db
       - SECRET_KEY=${SECRET_KEY}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
       - DEBUG=False
