@@ -51,8 +51,17 @@ export default function Dashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert("File is too large. Please select a file under 2MB.");
+    // Strict check for coding files
+    const validExtensions = /\.(js|ts|jsx|tsx|py|html|css|json|md|cpp|c|go|rs|java|sh|sql)$/i;
+    if (!validExtensions.test(file.name)) {
+      alert("Invalid file type. Please upload a source code file.");
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > 4 * 1024 * 1024) {
+      alert("File is too large. Please select a file under 4MB.");
+      e.target.value = '';
       return;
     }
 
@@ -190,7 +199,7 @@ export default function Dashboard() {
                 >
                   <FolderUp className="h-8 w-8 mb-3 opacity-80" />
                   <span className="font-medium text-sm">{isImporting ? 'Importing...' : 'Import File'}</span>
-                  <span className="text-xs mt-1 opacity-70">Code files max 2MB</span>
+                  <span className="text-xs mt-1 opacity-70">Code files max 4MB</span>
                 </button>
               </div>
             )}
