@@ -17,7 +17,8 @@ export const usersApi = {
     return response.data;
   },
   
-  recordActivity: async (): Promise<void> => {
-    await fetchApi("/users/activity/record", { method: "POST" });
+  recordActivity: async (): Promise<{ count: number; date: string }> => {
+    const response = await fetchApi("/users/activity/record", { method: "POST" });
+    return response.data;
   }
 };
