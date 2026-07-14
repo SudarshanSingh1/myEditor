@@ -19,6 +19,10 @@ if [ -S /var/run/docker.sock ]; then
     usermod -aG "$DOCKER_GROUP" appuser
 fi
 
+# Run database migrations
+echo "Running database migrations..."
+gosu appuser alembic upgrade head || echo "Warning: Alembic migrations failed. App might not start correctly."
+
 # Execute the main command dropping privileges to appuser
 # Use gosu to properly step down from root
 exec gosu appuser "$@"
