@@ -5,6 +5,8 @@ import { useOutputStore } from './useOutputStore';
 import { useEditorStore } from './useEditorStore';
 import { queryClient } from '../lib/queryClient';
 import { useSaveStore } from './useSaveStore';
+import { usersApi } from '../lib/api/users';
+import confetti from 'canvas-confetti';
 
 export type ExecutionStatus = 
   | 'Ready' 
@@ -104,6 +106,33 @@ export const useExecutionStore = create<ExecutionState>()(
       // Invalidate heatmap to update streak immediately, slightly delayed to allow DB commit
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['activity-heatmap'] });
+        
+        if (isSuccess) {
+          usersApi.getHeatmap().then(res => {
+            const today = new Date().toISOString().split('T')[0];
+            const todayActivity = res.heatmap.find(h => h.date === today);
+            if (todayActivity && todayActivity.count === 1) {
+              const duration = 3 * 1000;
+              const animationEnd = Date.now() + duration;
+              const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+              const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+              const interval: any = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) {
+                  return clearInterval(interval);
+                }
+                const particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount,
+                  origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+                }));
+                confetti(Object.assign({}, defaults, { particleCount,
+                  origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+                }));
+              }, 250);
+            }
+          }).catch(console.error);
+        }
       }, 500);
 
       // Keep only last 20 items
