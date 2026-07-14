@@ -4,6 +4,7 @@ import type { ExecutionResponse } from '../lib/api/execution';
 import { useOutputStore } from './useOutputStore';
 import { useEditorStore } from './useEditorStore';
 import { useSaveStore } from './useSaveStore';
+import { queryClient } from '../lib/queryClient';
 
 export type ExecutionStatus = 
   | 'Ready' 
@@ -100,6 +101,11 @@ export const useExecutionStore = create<ExecutionState>()(
         execution_time_ms: 0,
         memory_used_kb: 0
       };
+      // Invalidate heatmap to update streak immediately, slightly delayed to allow DB commit
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['activity-heatmap'] });
+      }, 500);
+
       // Keep only last 20 items
       const newHistory = [newHistoryItem, ...history].slice(0, 20);
       set({ isRunning: false, isCancelling: false, status: isSuccess ? 'Completed' : 'Failed', history: newHistory });
