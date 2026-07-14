@@ -12,7 +12,8 @@ export default function Help() {
     <div className="p-6 md:p-8 lg:p-10 max-w-5xl mx-auto space-y-8">
       <PageHeader 
         title="Help & Support" 
-        description="Find answers to your questions and learn how to use Hamara Editor."
+        description="Find answers to common questions and learn how to use the editor."
+        showBack
       />
 
       <div className="grid gap-6 md:grid-cols-2">

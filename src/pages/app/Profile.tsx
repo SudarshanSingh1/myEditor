@@ -93,7 +93,8 @@ export default function Profile() {
     <div className="p-6 md:p-8 lg:p-10 max-w-4xl mx-auto space-y-8">
       <PageHeader 
         title="Profile" 
-        description="Manage your public profile and personal details."
+        description="Manage your public profile and personal information."
+        showBack
       />
 
       <div className="grid gap-8 md:grid-cols-[1fr_250px]">

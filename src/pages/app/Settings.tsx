@@ -23,6 +23,7 @@ export default function Settings() {
       <PageHeader
         title="Settings"
         description="Manage your account settings and preferences."
+        showBack
       />
 
       {/* Admin Portal Banner */}

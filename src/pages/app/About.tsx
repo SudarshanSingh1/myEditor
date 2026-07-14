@@ -6,7 +6,8 @@ export default function About() {
     <div className="p-6 md:p-8 lg:p-10 max-w-5xl mx-auto space-y-8">
       <PageHeader 
         title="About Hamara Editor" 
-        description="Version 1.0.0 Release Candidate 1"
+        description="Learn more about the project and its capabilities."
+        showBack
       />
 
       <Card>

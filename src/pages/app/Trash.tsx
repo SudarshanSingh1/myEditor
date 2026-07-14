@@ -26,7 +26,8 @@ export default function Trash() {
     <div className="p-6 md:p-8 lg:p-10 max-w-7xl mx-auto space-y-6">
       <PageHeader 
         title="Trash" 
-        description="Projects in trash will be permanently deleted after 30 days."
+        description="Items in trash will be permanently deleted after 30 days."
+        showBack
       />
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
