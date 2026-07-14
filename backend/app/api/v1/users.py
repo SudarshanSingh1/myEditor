@@ -2,7 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select, update, func
 from datetime import date, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel
+
+class RecordActivityRequest(BaseModel):
+    date: Optional[str] = None
 
 from app.dependencies.database import get_db
 from app.dependencies.auth import get_current_user_dep as get_current_user
@@ -76,10 +80,14 @@ def get_activity_heatmap(
 
 @router.post("/activity/record", response_model=SuccessResponse[dict])
 def record_activity(
+    req: RecordActivityRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    today = date.today()
+    if req.date:
+        today = date.fromisoformat(req.date)
+    else:
+        today = date.today()
     
     # Check if activity already exists for today
     result = db.execute(

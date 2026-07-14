@@ -104,7 +104,10 @@ export const useExecutionStore = create<ExecutionState>()(
         memory_used_kb: 0
       };
       if (isSuccess) {
-        usersApi.recordActivity().then((res) => {
+        const todayDate = new Date();
+        const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+        
+        usersApi.recordActivity(todayStr).then((res) => {
           queryClient.invalidateQueries({ queryKey: ['activity-heatmap'] });
           
           if (res && res.count === 1) {
