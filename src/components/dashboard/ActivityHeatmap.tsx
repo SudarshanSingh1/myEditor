@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { usersApi } from '../../lib/api/users';
 import { Flame, Trophy } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { Confetti } from './Confetti';
 
 // Helper to generate the last 365 days
 const generateDateRange = () => {
@@ -76,14 +77,15 @@ export function ActivityHeatmap() {
 
   return (
     <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-black/40 p-6 shadow-sm flex flex-col gap-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative">
+        {data?.current_streak && data.current_streak > 0 ? <Confetti /> : null}
         <div>
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Coding Activity</h3>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">{data?.heatmap.reduce((a, b) => a + b.count, 0) || 0} contributions in the last year</p>
         </div>
         <div className="flex gap-4">
           <div className="flex items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-500" />
+            <Flame className="w-6 h-6 text-orange-500 animate-fire" />
             <div className="flex flex-col">
               <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold">Current Streak</span>
               <span className="text-lg font-bold leading-none text-zinc-900 dark:text-white">{data?.current_streak || 0} days</span>

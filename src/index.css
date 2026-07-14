@@ -130,3 +130,31 @@
 .font-cursive {
   font-family: 'Caveat', cursive;
 }
+
+@keyframes fire-flicker {
+  0%, 100% { transform: scale(1) rotate(-2deg); opacity: 0.9; }
+  25% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+  50% { transform: scale(1.05) rotate(-1deg); opacity: 0.8; }
+  75% { transform: scale(1.15) rotate(3deg); opacity: 1; }
+}
+.animate-fire {
+  animation: fire-flicker 1.2s infinite ease-in-out alternate;
+  transform-origin: bottom center;
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop-in {
+  animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(200px) rotate(720deg); opacity: 0; }
+}
+.animate-confetti {
+  animation: confetti-fall 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
