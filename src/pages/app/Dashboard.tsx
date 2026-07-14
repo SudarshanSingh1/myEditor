@@ -18,7 +18,8 @@ import { ProjectCard } from "../../components/ui/ProjectCard";
 import { Button } from "../../components/ui/Button";
 import { CreateProjectModal } from "../../components/projects/CreateProjectModal";
 import { LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
-import { GithubRepositories } from "../../components/dashboard/GithubRepositories";
+import { ActivityHeatmap } from "../../components/dashboard/ActivityHeatmap";
+import { usersApi } from "../../lib/api/users";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -40,6 +41,9 @@ export default function Dashboard() {
       size: 3,
       sort_by: "last_opened_at",
     });
+    
+    // Record activity for the day
+    usersApi.recordActivity().catch(console.error);
   }, [fetchProjects]);
 
   const recentProjects = projects.slice(0, 3);
@@ -112,41 +116,11 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-
-          <GithubRepositories />
         </div>
-
-        {/* Sidebar Column */}
-        <div className="space-y-6">
-          {/* Project Stats */}
-          <StatCard
-            title="Total Projects"
-            value={totalProjects.toString()}
-            icon={Code}
-            description="Your active workspaces"
-          />
-
-          {/* Workspace Usage */}
-          <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-black/40 p-6 shadow-sm flex flex-col justify-between">
-            <div>
-              <h3 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">Workspace Usage</h3>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">You have used 120MB of your 5GB storage limit.</p>
-            </div>
-            <div className="h-2.5 w-full bg-zinc-100 dark:bg-white/5 rounded-full overflow-hidden">
-              <div className="h-full bg-green-500 transition-all" style={{ width: '5%' }}></div>
-            </div>
-          </div>
-
-          {/* Account Role */}
-          <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-black/40 p-6 shadow-sm flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Account Role</h3>
-              <p className="text-2xl font-bold text-zinc-900 dark:text-white">{(user?.role || "USER").toUpperCase()}</p>
-            </div>
-            <Cloud className="h-10 w-10 text-zinc-200 dark:text-white/10" />
-          </div>
-        </div>
-      </div>      
+      </div>
+      
+      {/* Activity Heatmap Section */}
+      <ActivityHeatmap />      
       <CreateProjectModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

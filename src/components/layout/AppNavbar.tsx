@@ -46,7 +46,7 @@ export function AppNavbar() {
           <Bell className="h-5 w-5" />
           <span className="sr-only">Notifications</span>
         </Button>
-        <Button variant="ghost" size="icon" asChild className="hidden sm:flex">
+        <Button variant="ghost" size="icon" asChild>
           <Link to="/app/settings">
             <Settings className="h-5 w-5" />
             <span className="sr-only">Settings</span>

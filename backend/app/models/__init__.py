@@ -10,6 +10,7 @@ from app.models.execution_log import ExecutionLog, ExecutionStatus
 from app.models.email_log import EmailLog, EmailStatus
 from app.models.oauth_account import OAuthAccount
 from app.models.user_session import UserSession
+from app.models.user_activity import UserActivity
 
 __all__ = [
     "Base",
@@ -33,5 +34,6 @@ __all__ = [
     "EmailLog",
     "EmailStatus",
     "OAuthAccount",
-    "UserSession"
+    "UserSession",
+    "UserActivity"
 ]

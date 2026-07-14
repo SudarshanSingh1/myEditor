@@ -15,12 +15,13 @@ router.include_router(system_errors.router, prefix="/system-errors", tags=["Syst
 router.include_router(admin.router, prefix="/admin", tags=["Admin Dashboard"])
 router.include_router(system_status.router, prefix="/system", tags=["System"])
 
-from app.api.v1 import sessions, two_factor_auth, oauth, github, git
+from app.api.v1 import sessions, two_factor_auth, oauth, github, git, users
 router.include_router(sessions.router, tags=["Sessions"])
 router.include_router(two_factor_auth.router, tags=["Security"])
 router.include_router(oauth.router, tags=["OAuth"])
 router.include_router(github.router, tags=["GitHub"])
 router.include_router(git.router, tags=["Git"])
+router.include_router(users.router)
 
 @router.get("/status", response_model=SuccessResponse[dict])
 async def v1_status():

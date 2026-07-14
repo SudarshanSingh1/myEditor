@@ -15,7 +15,6 @@ const SIDEBAR_ITEMS = [
 ];
 
 const SIDEBAR_BOTTOM_ITEMS = [
-  { name: "Settings", href: "/app/settings", icon: Settings },
   { name: "Help", href: "/app/help", icon: HelpCircle },
 ];
 
