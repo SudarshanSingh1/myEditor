@@ -42,6 +42,9 @@ export function ActivityHeatmap() {
     return map;
   }, [data]);
 
+  const todayString = new Date().toISOString().split('T')[0];
+  const hasContributedToday = (activityMap.get(todayString) || 0) > 0;
+
   const getColorClass = (count: number) => {
     if (count === 0) return 'bg-zinc-200 dark:bg-zinc-800';
     if (count <= 2) return 'bg-green-300 dark:bg-green-900/80';
@@ -83,7 +86,10 @@ export function ActivityHeatmap() {
         </div>
         <div className="flex gap-4">
           <div className="flex items-center gap-2">
-            <Flame className="w-6 h-6 text-orange-500 animate-fire" />
+            <Flame 
+              className={cn("w-6 h-6 text-orange-500", hasContributedToday ? "animate-fire" : "")} 
+              fill={hasContributedToday ? "currentColor" : "none"}
+            />
             <div className="flex flex-col">
               <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold">Current Streak</span>
               <span className="text-lg font-bold leading-none text-zinc-900 dark:text-white">{data?.current_streak || 0} days</span>
