@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef, ChangeEvent } from "react";
+import { useEffect, useState, useRef } from "react";
+import type { ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Code,
@@ -19,6 +20,7 @@ import { Button } from "../../components/ui/Button";
 import { CreateProjectModal } from "../../components/projects/CreateProjectModal";
 import { LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
 import { ActivityHeatmap } from "../../components/dashboard/ActivityHeatmap";
+import { Confetti } from "../../components/dashboard/Confetti";
 import { usersApi } from "../../lib/api/users";
 import { workspaceApi } from "../../lib/api/workspace";
 
@@ -38,6 +40,7 @@ export default function Dashboard() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportClick = () => {
@@ -92,13 +95,18 @@ export default function Dashboard() {
     });
     
     // Record activity for the day
-    usersApi.recordActivity().catch(console.error);
+    usersApi.recordActivity().then((res: any) => {
+      if (res?.data?.count === 1) {
+        setShowConfetti(true);
+      }
+    }).catch(console.error);
   }, [fetchProjects]);
 
   const recentProjects = projects.slice(0, 3);
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 max-w-7xl mx-auto space-y-10">
+    <div className="p-6 md:p-8 lg:p-10 max-w-7xl mx-auto space-y-10 relative">
+      {showConfetti && <Confetti />}
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 md:p-8 rounded-2xl bg-white dark:bg-black/40 border border-zinc-200 dark:border-white/10 shadow-sm">
         <div>
@@ -188,6 +196,7 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+      </div>
       
       {/* Activity Heatmap Section */}
       <ActivityHeatmap />      

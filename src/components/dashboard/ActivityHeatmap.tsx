@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { usersApi } from '../../lib/api/users';
 import { Flame, Trophy } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { Confetti } from './Confetti';
 
 // Helper to generate the last 365 days
 const generateDateRange = () => {
@@ -78,7 +77,6 @@ export function ActivityHeatmap() {
   return (
     <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-black/40 p-6 shadow-sm flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative">
-        {data?.current_streak && data.current_streak > 0 ? <Confetti /> : null}
         <div>
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Coding Activity</h3>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">{data?.heatmap.reduce((a, b) => a + b.count, 0) || 0} contributions in the last year</p>
@@ -110,14 +108,20 @@ export function ActivityHeatmap() {
                 const dateString = date.toISOString().split('T')[0];
                 const count = activityMap.get(dateString) || 0;
                 return (
-                  <div
-                    key={dIdx}
-                    className={cn(
-                      "w-3 h-3 rounded-sm transition-colors",
-                      getColorClass(count)
-                    )}
-                    title={`${count} contributions on ${dateString}`}
-                  />
+                  <div key={dIdx} className="group relative">
+                    <div
+                      className={cn(
+                        "w-3 h-3 rounded-sm transition-colors cursor-pointer",
+                        getColorClass(count)
+                      )}
+                    />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
+                      <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-nowrap bg-zinc-900 dark:bg-white dark:text-black shadow-lg rounded-md font-medium">
+                        {count} contributions on {dateString}
+                      </span>
+                      <div className="w-2 h-2 -mt-1 rotate-45 bg-zinc-900 dark:bg-white"></div>
+                    </div>
+                  </div>
                 );
               })}
             </div>

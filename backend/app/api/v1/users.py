@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy import update, func
+from sqlalchemy.orm import Session
+from sqlalchemy import select, update, func
 from datetime import date, timedelta
 from typing import List, Dict, Any
 
-from app.database.session import get_db
-from app.api.dependencies import get_current_user
+from app.dependencies.database import get_db
+from app.dependencies.auth import get_current_user_dep as get_current_user
 from app.models.user import User
 from app.models.user_activity import UserActivity
 from app.schemas.responses import SuccessResponse
@@ -14,14 +13,14 @@ from app.schemas.responses import SuccessResponse
 router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("/activity/heatmap", response_model=SuccessResponse[Dict[str, Any]])
-async def get_activity_heatmap(
+def get_activity_heatmap(
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     # Get last 365 days of activity
     one_year_ago = date.today() - timedelta(days=365)
     
-    result = await db.execute(
+    result = db.execute(
         select(UserActivity)
         .where(UserActivity.user_id == current_user.id)
         .where(UserActivity.activity_date >= one_year_ago)
@@ -76,14 +75,14 @@ async def get_activity_heatmap(
     )
 
 @router.post("/activity/record", response_model=SuccessResponse[dict])
-async def record_activity(
+def record_activity(
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     today = date.today()
     
     # Check if activity already exists for today
-    result = await db.execute(
+    result = db.execute(
         select(UserActivity).where(
             UserActivity.user_id == current_user.id,
             UserActivity.activity_date == today
@@ -101,6 +100,6 @@ async def record_activity(
         )
         db.add(activity)
         
-    await db.commit()
+    db.commit()
     
     return SuccessResponse(message="Activity recorded", data={"count": activity.count, "date": today.isoformat()})
