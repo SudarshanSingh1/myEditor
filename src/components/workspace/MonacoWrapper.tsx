@@ -5,6 +5,7 @@ import type * as MonacoEditor from 'monaco-editor';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useSaveStore } from '../../store/useSaveStore';
+import { useSettingsStore } from '../../stores/useSettingsStore';
 import { THEMES } from '../../lib/monaco-themes';
 import { useConfirm } from "../../components/ui/ConfirmProvider";
 import { useStatusBarStore } from '../../store/useStatusBarStore';
@@ -210,6 +211,12 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
 
     // Add Ctrl+S action to trigger real save API
     editor.addCommand(monacoInstance.KeyMod.CtrlCmd | monacoInstance.KeyCode.KeyS, async () => {
+      // Check for format on save setting from global store
+      const formatOnSave = useSettingsStore.getState().editor.formatOnSave;
+      if (formatOnSave) {
+        await editor.getAction('editor.action.formatDocument')?.run();
+      }
+
       const currentVal = editor.getValue();
       const saveStore = useSaveStore.getState();
       

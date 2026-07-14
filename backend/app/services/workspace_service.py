@@ -16,6 +16,11 @@ import re
 class WorkspaceService:
     RESERVED_NAMES = {".git", ".env", "node_modules", "dist", "build"}
     INVALID_CHARS_REGEX = re.compile(r'[<>:"/\\|?*]')
+    ALLOWED_EXTENSIONS = {
+        "py", "js", "ts", "jsx", "tsx", "html", "css", "scss", "less", "json", "md",
+        "txt", "csv", "sql", "sh", "yaml", "yml", "xml", "c", "cpp", "h", "hpp",
+        "java", "go", "rs", "rb", "php", "swift", "kt", "scala", "bat", "ps1"
+    }
 
     @classmethod
     def _validate_name(cls, name: str, is_folder: bool = False):
@@ -28,6 +33,11 @@ class WorkspaceService:
             
         if is_folder and name in cls.RESERVED_NAMES:
             raise HTTPException(status_code=400, detail="Reserved folder name")
+
+        if not is_folder:
+            ext = cls._extract_extension(name)
+            if not ext or ext.lower() not in cls.ALLOWED_EXTENSIONS:
+                raise HTTPException(status_code=400, detail="Only coding files are allowed.")
 
         return name
 

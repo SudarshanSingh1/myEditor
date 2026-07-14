@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { FileNode } from '../../lib/api/workspace';
 import { useEditorStore } from '../../store/useEditorStore';
-import { FileIcon, MoreVertical, Edit2, Trash2, Copy } from 'lucide-react';
+import { FileIcon, MoreVertical, Edit2, Trash2, Copy, FileJson, FileCode2, FileText, Terminal, Database, FileImage, Image as ImageIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useOnClickOutside } from '../../hooks/useOnClickOutside';
 
@@ -51,6 +51,44 @@ export const FileItem: React.FC<FileItemProps> = React.memo(({ file, level, onRe
     }
   };
 
+  const getFileIcon = (filename: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    switch(ext) {
+      case 'ts':
+      case 'tsx':
+        return <FileCode2 size={14} className="mr-2 flex-shrink-0 text-blue-500" />;
+      case 'js':
+      case 'jsx':
+        return <FileCode2 size={14} className="mr-2 flex-shrink-0 text-yellow-400" />;
+      case 'json':
+        return <FileJson size={14} className="mr-2 flex-shrink-0 text-green-500" />;
+      case 'html':
+        return <FileCode2 size={14} className="mr-2 flex-shrink-0 text-orange-500" />;
+      case 'css':
+        return <FileCode2 size={14} className="mr-2 flex-shrink-0 text-blue-400" />;
+      case 'py':
+        return <FileCode2 size={14} className="mr-2 flex-shrink-0 text-yellow-500" />;
+      case 'c':
+      case 'cpp':
+        return <FileCode2 size={14} className="mr-2 flex-shrink-0 text-indigo-500" />;
+      case 'md':
+      case 'txt':
+        return <FileText size={14} className="mr-2 flex-shrink-0 text-gray-400" />;
+      case 'sh':
+      case 'bash':
+        return <Terminal size={14} className="mr-2 flex-shrink-0 text-green-400" />;
+      case 'sql':
+        return <Database size={14} className="mr-2 flex-shrink-0 text-pink-500" />;
+      case 'png':
+      case 'jpg':
+      case 'jpeg':
+      case 'svg':
+        return <ImageIcon size={14} className="mr-2 flex-shrink-0 text-purple-400" />;
+      default:
+        return <FileIcon size={14} className="mr-2 flex-shrink-0 opacity-70" />;
+    }
+  };
+
   return (
     <div className="relative group"
       draggable
@@ -73,7 +111,7 @@ export const FileItem: React.FC<FileItemProps> = React.memo(({ file, level, onRe
         tabIndex={0}
       >
         <div className="flex items-center overflow-hidden">
-          <FileIcon size={14} className="mr-2 flex-shrink-0 opacity-70" />
+          {getFileIcon(file.name)}
           <span className={cn("truncate", isDirty && "text-amber-600 dark:text-amber-400")}>{file.name}</span>
         </div>
 

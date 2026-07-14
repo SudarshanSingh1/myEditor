@@ -238,9 +238,14 @@ class EmailService:
     @staticmethod
     def send_verification_email(user_id: str, otp: str):
         """Send an email verification OTP to a new user."""
+        import uuid
         db = SessionLocal()
         try:
-            user = db.query(User).filter(User.id == user_id).first()
+            if isinstance(user_id, str):
+                user_id_obj = uuid.UUID(user_id)
+            else:
+                user_id_obj = user_id
+            user = db.query(User).filter(User.id == user_id_obj).first()
             if not user:
                 raise Exception("User not found.")
                 

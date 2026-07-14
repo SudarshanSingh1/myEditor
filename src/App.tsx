@@ -6,7 +6,7 @@ import { resetUnauthorizedFlag } from "./lib/api";
 
 import { Toaster } from 'sonner';
 import { NetworkStatus } from './components/network/NetworkStatus';
-import { GlobalErrorBoundary } from './components/error/ErrorBoundaries';
+import { GlobalErrorBoundary } from './components/error/ErrorBoundary';
 import { ConfirmProvider } from './components/ui/ConfirmProvider';
 
 function App() {

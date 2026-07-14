@@ -42,7 +42,7 @@ class SystemSettings(Base):
     # Resource Limits
     max_execution_time_seconds = Column(Integer, nullable=False, default=30, server_default="30")
     max_memory_mb = Column(Integer, nullable=False, default=256, server_default="256")
-    max_file_size_mb = Column(Integer, nullable=False, default=10, server_default="10")
+    max_file_size_mb = Column(Integer, nullable=False, default=20, server_default="20")
     max_projects_per_user = Column(Integer, nullable=False, default=10, server_default="10")
     rate_limit_per_minute = Column(Integer, nullable=False, default=100, server_default="100")
 

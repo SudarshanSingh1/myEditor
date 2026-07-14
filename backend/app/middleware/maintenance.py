@@ -81,7 +81,12 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
                             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
                             user_id = payload.get("sub")
                             if user_id:
-                                user = db.query(User).filter(User.id == user_id).first()
+                                import uuid
+                                try:
+                                    uid = uuid.UUID(user_id)
+                                    user = db.query(User).filter(User.id == uid).first()
+                                except ValueError:
+                                    user = None
                                 if user:
                                     if user.role == RoleEnum.SUPER_ADMIN:
                                         is_admin_allowed = True

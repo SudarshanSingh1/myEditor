@@ -23,7 +23,7 @@ export function PageHeader({
       <div className="flex items-start gap-3">
         {showBack && (
           <button 
-            onClick={() => navigate(-1)} 
+            onClick={() => window.history.length > 2 ? navigate(-1) : navigate('/app')} 
             className="mt-1 p-1.5 -ml-2 text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors shrink-0"
             title="Go back"
           >

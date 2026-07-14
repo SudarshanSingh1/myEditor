@@ -34,7 +34,7 @@ const About = lazy(() => import("../pages/app/About"));
 
 // Admin Pages (Lazy)
 const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
-const AdminAnalytics = lazy(() => import("../pages/admin/AdminAnalytics"));
+const AdminAnalyticsPage = lazy(() => import("../pages/admin/AdminAnalyticsPage"));
 const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
 const AdminProjectsPage = lazy(() => import("../pages/admin/AdminProjectsPage"));
 const AdminExecutionsPage = lazy(() => import("../pages/admin/AdminExecutionsPage"));
@@ -135,7 +135,7 @@ export function AppRouter() {
               }
             >
               <Route index element={<Suspense fallback={<AdminLoader />}><AdminDashboardPage /></Suspense>} />
-              <Route path="analytics" element={<Suspense fallback={<AdminLoader />}><AdminAnalytics /></Suspense>} />
+              <Route path="analytics" element={<Suspense fallback={<AdminLoader />}><AdminAnalyticsPage /></Suspense>} />
               <Route path="users" element={<Suspense fallback={<AdminLoader />}><AdminUsersPage /></Suspense>} />
               <Route path="projects" element={<Suspense fallback={<AdminLoader />}><AdminProjectsPage /></Suspense>} />
               <Route path="executions" element={<Suspense fallback={<AdminLoader />}><AdminExecutionsPage /></Suspense>} />

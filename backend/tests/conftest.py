@@ -16,7 +16,7 @@ from app.database.base import Base
 import app.models
 
 # Setup in-memory SQLite for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///file:memdb1?mode=memory&cache=shared&uri=true"
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -40,15 +40,9 @@ def setup_database():
 @pytest.fixture
 def db_session():
     """Returns an sqlalchemy session, and after the test tears down everything properly."""
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = TestingSessionLocal(bind=connection)
-    
+    session = TestingSessionLocal()
     yield session
-    
     session.close()
-    transaction.rollback()
-    connection.close()
 
 @pytest.fixture
 def client(db_session):
@@ -60,7 +54,14 @@ def client(db_session):
     limiter.enabled = False
     
     fastapi_app.dependency_overrides[get_db] = override_get_db
-    with TestClient(fastapi_app) as test_client:
-        yield test_client
+    
+    # Mock EmailService
+    from unittest.mock import patch
+    with patch('app.services.email_service.EmailService.send_verification_email'), \
+         patch('app.services.email_service.EmailService.send_new_login_alert'), \
+         patch('app.services.email_service.EmailService.send_password_reset_email'):
+        with TestClient(fastapi_app) as test_client:
+            yield test_client
+            
     fastapi_app.dependency_overrides.clear()
     limiter.enabled = True

@@ -8,9 +8,12 @@ from typing import Any
 from app.dependencies.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
+from app.models.user_activity import UserActivity
 from app.schemas.responses import SuccessResponse
 from app.execution.schemas.execution import ExecutionRequest, ExecutionResponse
 from app.execution.services.execution_service import ExecutionService
+from datetime import date
+from sqlalchemy import select
 
 router = APIRouter()
 
@@ -26,6 +29,21 @@ def run_code(
     service = ExecutionService(db)
     try:
         result = service.run_code(request, current_user.id)
+        
+        # Record activity
+        try:
+            today = date.today()
+            activity_result = db.execute(select(UserActivity).where(UserActivity.user_id == current_user.id, UserActivity.activity_date == today))
+            activity = activity_result.scalar_one_or_none()
+            if activity:
+                activity.count += 1
+            else:
+                activity = UserActivity(user_id=current_user.id, activity_date=today, count=1)
+                db.add(activity)
+            db.commit()
+        except Exception as act_err:
+            logger.error(f"Failed to record activity: {act_err}")
+            
         return SuccessResponse(message="Execution complete", data=result)
     except ValueError as e:
         raise HTTPException(

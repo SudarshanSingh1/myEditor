@@ -9,7 +9,7 @@ import { AdminStatsPanel } from "./AdminStatsPanel";
 import { Card, CardHeader, CardTitle } from "../ui/Card";
 import { useUserStore } from "../../stores/useUserStore";
 
-export function AdminDashboard() {
+export function AdminDashboardPanel() {
   const { user } = useUserStore();
   const isAdmin = user?.role?.toUpperCase() === "ADMIN" || user?.role?.toUpperCase() === "SUPER_ADMIN";
   const [activeTab, setActiveTab] = useState("stats");

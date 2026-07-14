@@ -7,7 +7,9 @@ from app.execution.services.execution_service import ExecutionService
 from app.services.auth_service import AuthService
 from app.models.system_settings import SystemSettings
 from app.models.user import RoleEnum
-from datetime import datetime, timezone
+from app.models.user_activity import UserActivity
+from datetime import datetime, timezone, date
+from sqlalchemy import select
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -82,6 +84,20 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
             logger.info(f"Calling run_code_interactive with fileId: {file_id}")
             await service.run_code_interactive(websocket, project_id, file_id, user_id)
             logger.info("Finished run_code_interactive")
+            
+            # Record activity
+            try:
+                today = date.today()
+                result = db.execute(select(UserActivity).where(UserActivity.user_id == user_id, UserActivity.activity_date == today))
+                activity = result.scalar_one_or_none()
+                if activity:
+                    activity.count += 1
+                else:
+                    activity = UserActivity(user_id=user_id, activity_date=today, count=1)
+                    db.add(activity)
+                db.commit()
+            except Exception as act_err:
+                logger.error(f"Failed to record activity: {act_err}")
         
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected gracefully")

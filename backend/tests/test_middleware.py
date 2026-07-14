@@ -7,13 +7,13 @@ import threading
 import time
 import websockets
 
-class TestMiddleware(BaseHTTPMiddleware):
+class MockMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         print(f"Middleware intercepted: {request.url.path}")
         return await call_next(request)
 
 app = FastAPI()
-app.add_middleware(TestMiddleware)
+app.add_middleware(MockMiddleware)
 
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
@@ -35,6 +35,7 @@ async def test_client():
     except Exception as e:
         print("WS Error:", e)
 
-threading.Thread(target=run_server, daemon=True).start()
-time.sleep(1)
-asyncio.run(test_client())
+if __name__ == "__main__":
+    threading.Thread(target=run_server, daemon=True).start()
+    time.sleep(1)
+    asyncio.run(test_client())

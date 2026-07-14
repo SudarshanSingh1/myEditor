@@ -32,7 +32,7 @@ def test_create_project(client: TestClient, test_user_token: str):
     assert data["slug"] == "test-project"
     assert "id" in data
     
-    return data["id"]
+
 
 def test_get_projects(client: TestClient, test_user_token: str):
     cookies = {"access_token": test_user_token}

@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useStatusBarStore } from "../../store/useStatusBarStore";
 import { AlertCircle, WifiOff, Copy, Search, GitBranch, BugPlay, Blocks, CircleUser, Settings, LogOut, Check } from 'lucide-react';
-import { PanelErrorBoundary } from "../../components/error/ErrorBoundaries";
+import { PanelErrorBoundary } from "../../components/error/ErrorBoundary";
 import { Dropdown, DropdownItem, DropdownSeparator } from "../../components/ui/Dropdown";
 import { EditorSettingsModal } from "../../components/workspace/EditorSettingsModal";
 
@@ -267,7 +267,7 @@ export default function ProjectWorkspace() {
       style={isDragging ? { cursor: 'col-resize' } : undefined}
     >
       {/* Activity Bar */}
-      <div className="w-12 h-full border-r bg-[#1e1e1e] border-[#333] flex flex-col justify-between py-2 z-10 flex-shrink-0 text-gray-400 select-none">
+      <div className="w-12 h-full border-r bg-[#1e1e1e] border-[#333] flex flex-col justify-between py-2 z-50 flex-shrink-0 text-gray-400 select-none">
         
         {/* Top Icons */}
         <div className="flex flex-col items-center gap-1">
@@ -327,19 +327,6 @@ export default function ProjectWorkspace() {
             )}
           </button>
 
-          <button
-            onClick={() => setSidebarTab(prev => prev === 'EXTENSIONS' ? null : 'EXTENSIONS')}
-            className={cn(
-              "p-3 transition-colors group relative w-full flex justify-center",
-              sidebarTab === 'EXTENSIONS' ? "text-white" : "hover:text-white"
-            )}
-            title="Extensions"
-          >
-            <Blocks className="w-6 h-6 stroke-[1.5px]" />
-            {sidebarTab === 'EXTENSIONS' && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-full bg-primary" />
-            )}
-          </button>
         </div>
 
         {/* Bottom Icons */}

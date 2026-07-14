@@ -11,7 +11,7 @@ import { TrendingUp, Users, Activity, BarChart3, Database } from "lucide-react";
 const COLORS = ["#8b5cf6", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
 const PREMIUM_COLORS = ["#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899", "#f43f5e"];
 
-export default function AdminAnalytics() {
+export default function AdminAnalyticsPage() {
   const [timeline, setTimeline] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [statusRatio, setStatusRatio] = useState([]);

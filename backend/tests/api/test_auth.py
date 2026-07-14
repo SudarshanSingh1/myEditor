@@ -11,9 +11,9 @@ def test_register_user_success(client):
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
-    assert data["data"]["username"] == "johndoe"
-    assert "id" in data["data"]
-    assert "password_hash" not in data["data"]
+    assert data["data"]["user"]["username"] == "johndoe"
+    assert "id" in data["data"]["user"]
+    assert "password_hash" not in data["data"]["user"]
 
 def test_register_duplicate_email(client):
     payload = {

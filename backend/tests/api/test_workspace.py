@@ -49,7 +49,7 @@ def test_create_and_get_folder(client: TestClient, workspace_user_token: str, pr
     assert len(tree_data["folders"]) == 1
     assert tree_data["folders"][0]["name"] == "src"
     
-    return folder_id
+
 
 def test_create_file(client: TestClient, workspace_user_token: str, project_id: str):
     cookies = {"access_token": workspace_user_token}
