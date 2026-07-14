@@ -17,8 +17,10 @@ import { projectsApi } from "../../lib/api/projects";
 import { useQuery } from "@tanstack/react-query";
 
 import { useStatusBarStore } from "../../store/useStatusBarStore";
-import { AlertCircle, WifiOff, Copy, Search, GitBranch, BugPlay, Blocks, CircleUser, Settings } from 'lucide-react';
+import { AlertCircle, WifiOff, Copy, Search, GitBranch, BugPlay, Blocks, CircleUser, Settings, Github, LogOut, Check } from 'lucide-react';
 import { PanelErrorBoundary } from "../../components/error/ErrorBoundaries";
+import { Dropdown, DropdownItem, DropdownSeparator } from "../../components/ui/Dropdown";
+import { EditorSettingsModal } from "../../components/workspace/EditorSettingsModal";
 
 type Tab = 'PROBLEMS' | 'OUTPUT' | 'INPUT' | 'EXECUTION' | 'TERMINAL';
 
@@ -39,6 +41,7 @@ export default function ProjectWorkspace() {
     return (saved as Tab) || 'PROBLEMS';
   });
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Explorer Resizer State
   const [explorerWidth, setExplorerWidth] = useState(() => {
@@ -341,14 +344,43 @@ export default function ProjectWorkspace() {
 
         {/* Bottom Icons */}
         <div className="flex flex-col items-center gap-1 mb-2">
-          <button
-            className="p-3 transition-colors hover:text-white w-full flex justify-center"
-            title="Accounts"
+          <Dropdown
+            align="left"
+            side="top"
+            trigger={
+              <button
+                className="p-3 transition-colors hover:text-white w-full flex justify-center"
+                title="Accounts"
+              >
+                <CircleUser className="w-6 h-6 stroke-[1.5px]" />
+              </button>
+            }
           >
-            <CircleUser className="w-6 h-6 stroke-[1.5px]" />
-          </button>
+            <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground flex items-center justify-between">
+              Accounts
+            </div>
+            <DropdownSeparator />
+            <DropdownItem onClick={() => window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/oauth/login/github`}>
+              <Github className="mr-2 h-4 w-4" />
+              <span>Connect GitHub</span>
+            </DropdownItem>
+            <DropdownSeparator />
+            <DropdownItem>
+              <Check className="mr-2 h-4 w-4 opacity-0" />
+              <span>Settings Sync is On</span>
+            </DropdownItem>
+            <DropdownItem>
+              <Check className="mr-2 h-4 w-4 opacity-0" />
+              <span>Turn on Cloud Changes...</span>
+            </DropdownItem>
+            <DropdownItem>
+              <Check className="mr-2 h-4 w-4 opacity-0" />
+              <span>Turn on Remote Tunnel Access...</span>
+            </DropdownItem>
+          </Dropdown>
           
           <button
+            onClick={() => setIsSettingsOpen(true)}
             className="p-3 transition-colors hover:text-white w-full flex justify-center"
             title="Manage"
           >
@@ -356,6 +388,7 @@ export default function ProjectWorkspace() {
           </button>
         </div>
       </div>
+      <EditorSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
       {/* Sidebar / Explorer */}
       {sidebarTab !== null && (

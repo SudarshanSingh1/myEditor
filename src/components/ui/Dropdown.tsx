@@ -5,10 +5,12 @@ export function Dropdown({
   trigger,
   children,
   align = "right",
+  side = "bottom",
 }: {
   trigger: React.ReactNode;
   children: React.ReactNode;
   align?: "left" | "right";
+  side?: "top" | "bottom";
 }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -29,8 +31,9 @@ export function Dropdown({
       {isOpen && (
         <div 
           className={cn(
-            "absolute z-50 mt-2 w-56 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in-80 zoom-in-95",
-            align === "right" ? "right-0" : "left-0"
+            "absolute z-50 w-56 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in-80 zoom-in-95",
+            align === "right" ? "right-0" : "left-0",
+            side === "bottom" ? "top-full mt-2" : "bottom-full mb-2"
           )}
         >
           <div className="p-1" onClick={() => setIsOpen(false)}>
