@@ -23,6 +23,7 @@ from app.models.workspace import File
 from app.models.execution_log import ExecutionLog
 from app.models.system_settings import SystemSettings
 from app.models.email_log import EmailLog
+from app.models.user_activity import UserActivity
 from app.schemas.responses import SuccessResponse
 from app.services.audit_service import AuditService
 from app.services.email_service import EmailService
@@ -530,6 +531,7 @@ def delete_user(
         db.query(AuditLog).filter(AuditLog.user_id == target_user.id).delete(synchronize_session=False)
         db.query(SystemError).filter(SystemError.user_id == target_user.id).delete(synchronize_session=False)
         db.query(FileVersion).filter(FileVersion.created_by == target_user.id).delete(synchronize_session=False)
+        db.query(UserActivity).filter(UserActivity.user_id == target_user.id).delete(synchronize_session=False)
         
         projects = db.query(Project).filter(Project.owner_id == target_user.id).all()
         if projects:

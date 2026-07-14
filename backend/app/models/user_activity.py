@@ -12,7 +12,7 @@ class UserActivity(Base):
     activity_date = Column(Date, nullable=False, default=date.today)
     count = Column(Integer, default=1, nullable=False)
 
-    user = relationship("User", backref="activities")
+    user = relationship("User", back_populates="activities")
 
     __table_args__ = (
         UniqueConstraint('user_id', 'activity_date', name='uix_user_date'),

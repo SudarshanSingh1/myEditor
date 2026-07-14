@@ -63,3 +63,4 @@ class User(Base):
     feedback_submissions = relationship("Feedback", foreign_keys="[Feedback.user_id]", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
     oauth_accounts = relationship("OAuthAccount", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
     sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
+    activities = relationship("UserActivity", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
