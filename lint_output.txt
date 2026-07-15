@@ -1,0 +1,1116 @@
+
+> myeditor@0.0.0 lint
+> oxlint
+
+
+  ! eslint(no-unused-vars): Identifier 'GitCommit' is imported but never used.
+   ,-[src/components/workspace/GitPanel.tsx:2:21]
+ 1 | import { useState } from "react";
+ 2 | import { GitBranch, GitCommit, GitMerge, RefreshCw, Plus, Check } from "lucide-react";
+   :                     ^^^^|^^^^
+   :                         `-- 'GitCommit' is imported here
+ 3 | import { Button } from "../ui/Button";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'GitMerge' is imported but never used.
+   ,-[src/components/workspace/GitPanel.tsx:2:32]
+ 1 | import { useState } from "react";
+ 2 | import { GitBranch, GitCommit, GitMerge, RefreshCw, Plus, Check } from "lucide-react";
+   :                                ^^^^|^^^
+   :                                    `-- 'GitMerge' is imported here
+ 3 | import { Button } from "../ui/Button";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Plus' is imported but never used.
+   ,-[src/components/workspace/GitPanel.tsx:2:53]
+ 1 | import { useState } from "react";
+ 2 | import { GitBranch, GitCommit, GitMerge, RefreshCw, Plus, Check } from "lucide-react";
+   :                                                     ^^|^
+   :                                                       `-- 'Plus' is imported here
+ 3 | import { Button } from "../ui/Button";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'useMemo' is imported but never used.
+   ,-[src/pages/MaintenancePage.tsx:1:46]
+ 1 | import React, { useEffect, useRef, useState, useMemo } from "react";
+   :                                              ^^^|^^^
+   :                                                 `-- 'useMemo' is imported here
+ 2 | import { Server, ShieldAlert, Activity, Terminal } from "lucide-react";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Variable 'setTotalDuration' is declared but never used. Unused variables should start with a '_'.
+     ,-[src/pages/MaintenancePage.tsx:211:25]
+ 210 |   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+ 211 |   const [totalDuration, setTotalDuration] = useState<number>(3600); // Default 1hr baseline for progress
+     :                         ^^^^^^^^|^^^^^^^
+     :                                 `-- 'setTotalDuration' is declared here
+ 212 |   const [stageIndex, setStageIndex] = useState(0);
+     `----
+  help: Consider removing this declaration.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'statusColors.length'
+     ,-[src/pages/MaintenancePage.tsx:232:6]
+ 228 |     const id = setInterval(() => {
+ 229 |       setStatusColorIdx(prev => (prev + 1) % statusColors.length);
+     :                                              ^^^^^^|^^^^^
+     :                                                    `-- useEffect uses `statusColors.length` here
+ 230 |     }, 1500);
+ 231 |     return () => clearInterval(id);
+ 232 |   }, []);
+     :      ^^
+ 233 | 
+     `----
+  help: Either include it or remove the dependency array.
+
+  ! eslint(no-unused-vars): Identifier 'Scatter' is imported but never used.
+   ,-[src/pages/admin/AdminAnalyticsPage.tsx:7:18]
+ 6 |   BarChart, Bar, Legend, LineChart, Line, PieChart, Pie, Cell,
+ 7 |   ComposedChart, Scatter, ScatterChart, ZAxis
+   :                  ^^^|^^^
+   :                     `-- 'Scatter' is imported here
+ 8 | } from "recharts";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'ScatterChart' is imported but never used.
+   ,-[src/pages/admin/AdminAnalyticsPage.tsx:7:27]
+ 6 |   BarChart, Bar, Legend, LineChart, Line, PieChart, Pie, Cell,
+ 7 |   ComposedChart, Scatter, ScatterChart, ZAxis
+   :                           ^^^^^^|^^^^^
+   :                                 `-- 'ScatterChart' is imported here
+ 8 | } from "recharts";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'ZAxis' is imported but never used.
+   ,-[src/pages/admin/AdminAnalyticsPage.tsx:7:41]
+ 6 |   BarChart, Bar, Legend, LineChart, Line, PieChart, Pie, Cell,
+ 7 |   ComposedChart, Scatter, ScatterChart, ZAxis
+   :                                         ^^|^^
+   :                                           `-- 'ZAxis' is imported here
+ 8 | } from "recharts";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Users' is imported but never used.
+    ,-[src/pages/admin/AdminAnalyticsPage.tsx:9:22]
+  8 | } from "recharts";
+  9 | import { TrendingUp, Users, Activity, BarChart3, Database } from "lucide-react";
+    :                      ^^|^^
+    :                        `-- 'Users' is imported here
+ 10 | 
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Variable 'COLORS' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/pages/admin/AdminAnalyticsPage.tsx:11:7]
+ 10 | 
+ 11 | const COLORS = ["#8b5cf6", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
+    :       ^^^|^^
+    :          `-- 'COLORS' is declared here
+ 12 | const PREMIUM_COLORS = ["#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899", "#f43f5e"];
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Catch parameter 'err' is caught but never used.
+    ,-[src/pages/admin/AdminAnalyticsPage.tsx:51:16]
+ 50 |         }
+ 51 |       } catch (err: any) {
+    :                ^|^
+    :                 `-- 'err' is declared here
+ 52 |         toast.error("Failed to load analytics");
+    `----
+  help: Consider handling this error.
+
+  ! eslint(no-unused-vars): Identifier 'resetUnauthorizedFlag' is imported but never used.
+   ,-[src/App.tsx:5:10]
+ 4 | import { useSystemStore } from "./stores/useSystemStore";
+ 5 | import { resetUnauthorizedFlag } from "./lib/api";
+   :          ^^^^^^^^^^|^^^^^^^^^^
+   :                    `-- 'resetUnauthorizedFlag' is imported here
+ 6 | 
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'screen' is imported but never used.
+   ,-[src/App.test.tsx:1:18]
+ 1 | import { render, screen } from '@testing-library/react';
+   :                  ^^^|^^
+   :                     `-- 'screen' is imported here
+ 2 | import { describe, it, expect } from 'vitest';
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'CheckCircle2' is imported but never used.
+   ,-[src/components/dashboard/GithubRepositories.tsx:4:57]
+ 3 | import { Button } from "../ui/Button";
+ 4 | import { GitBranch, FolderGit2, Star, GitFork, Loader2, CheckCircle2 } from "lucide-react";
+   :                                                         ^^^^^^|^^^^^
+   :                                                               `-- 'CheckCircle2' is imported here
+ 5 | import { githubApi, gitApi } from "../../lib/api/github";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'FileImage' is imported but never used.
+   ,-[src/components/workspace/FileItem.tsx:4:106]
+ 3 | import { useEditorStore } from '../../store/useEditorStore';
+ 4 | import { FileIcon, MoreVertical, Edit2, Trash2, Copy, FileJson, FileCode2, FileText, Terminal, Database, FileImage, Image as ImageIcon } from 'lucide-react';
+   :                                                                                                          ^^^^|^^^^
+   :                                                                                                              `-- 'FileImage' is imported here
+ 5 | import { cn } from '../../lib/utils';
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Parameter 'onDropItem' is declared but never used. Unused parameters should start with a '_'.
+    ,-[src/components/workspace/FileItem.tsx:17:110]
+ 16 | 
+ 17 | export const FileItem: React.FC<FileItemProps> = React.memo(({ file, level, onRename, onDelete, onDuplicate, onDropItem }) => {
+    :                                                                                                              ^^^^^|^^^^
+    :                                                                                                                   `-- 'onDropItem' is declared here
+ 18 |   const activeFileId = useEditorStore(state => state.activeFileId);
+    `----
+  help: Consider removing this parameter.
+
+  ! eslint(no-unused-vars): Parameter 'e' is declared but never used. Unused parameters should start with a '_'.
+    ,-[src/components/workspace/FileItem.tsx:31:24]
+ 30 | 
+ 31 |   const handleClick = (e: React.MouseEvent) => {
+    :                        |
+    :                        `-- 'e' is declared here
+ 32 |     // Single click opens in preview mode
+    `----
+  help: Consider removing this parameter.
+
+  ! eslint(no-unused-vars): Parameter 'e' is declared but never used. Unused parameters should start with a '_'.
+    ,-[src/components/workspace/FileItem.tsx:36:30]
+ 35 | 
+ 36 |   const handleDoubleClick = (e: React.MouseEvent) => {
+    :                              |
+    :                              `-- 'e' is declared here
+ 37 |     // Double click opens/pins the tab permanently
+    `----
+  help: Consider removing this parameter.
+
+  ! eslint(no-unused-vars): Type 'FileNode' is imported but never used.
+   ,-[src/store/useEditorStore.ts:3:15]
+ 2 | import { persist } from 'zustand/middleware';
+ 3 | import type { FileNode } from '../lib/api/workspace';
+   :               ^^^^|^^^
+   :                   `-- 'FileNode' is imported here
+ 4 | 
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Parameter 'get' is declared but never used. Unused parameters should start with a '_'.
+    ,-[src/stores/useProjectsStore.ts:36:61]
+ 35 | 
+ 36 | export const useProjectsStore = create<ProjectsState>((set, get) => ({
+    :                                                             ^|^
+    :                                                              `-- 'get' is declared here
+ 37 |   projects: [],
+    `----
+  help: Consider removing this parameter.
+
+  ! eslint(no-unused-vars): Catch parameter 'error' is caught but never used.
+    ,-[src/components/feedback/FeedbackModal.tsx:50:14]
+ 49 |       setDescription('');
+ 50 |     } catch (error) {
+    :              ^^|^^
+    :                `-- 'error' is declared here
+ 51 |       // Error handled by fetchApi
+    `----
+  help: Consider handling this error.
+
+  ! eslint(no-unused-vars): Catch parameter 'error' is caught but never used.
+    ,-[src/components/feedback/FeedbackModal.tsx:66:18]
+ 65 |           }
+ 66 |         } catch (error) {
+    :                  ^^|^^
+    :                    `-- 'error' is declared here
+ 67 |           toast.error('Failed to load your feedback');
+    `----
+  help: Consider handling this error.
+
+  ! eslint(no-unused-vars): Catch parameter 'error' is caught but never used.
+    ,-[src/components/admin/AdminFeedbackPanel.tsx:38:14]
+ 37 |       }
+ 38 |     } catch (error: any) {
+    :              ^^|^^
+    :                `-- 'error' is declared here
+ 39 |       // toast already shown by API
+    `----
+  help: Consider handling this error.
+
+  ! eslint(no-unused-vars): Identifier 'toast' is imported but never used.
+   ,-[src/pages/admin/AdminServerPage.tsx:3:10]
+ 2 | import { fetchApi } from "../../lib/api";
+ 3 | import { toast } from "sonner";
+   :          ^^|^^
+   :            `-- 'toast' is imported here
+ 4 | import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'YAxis' is imported but never used.
+   ,-[src/pages/admin/AdminServerPage.tsx:4:34]
+ 3 | import { toast } from "sonner";
+ 4 | import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+   :                                  ^^|^^
+   :                                    `-- 'YAxis' is imported here
+ 5 | import { Server, Cpu, MemoryStick, HardDrive, Network, Container, RefreshCw, Activity } from "lucide-react";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Catch parameter 'e' is caught but never used.
+    ,-[src/pages/admin/AdminServerPage.tsx:93:14]
+ 92 |       }
+ 93 |     } catch (e: any) {
+    :              |
+    :              `-- 'e' is declared here
+ 94 |       // Silent fail on poll
+    `----
+  help: Consider handling this error.
+
+  ! eslint(no-unused-vars): Identifier 'Code2' is imported but never used.
+   ,-[src/layouts/AuthLayout.tsx:4:10]
+ 3 | import { AuthBackground } from "../components/auth/AuthBackground";
+ 4 | import { Code2, Zap, Shield, Globe } from "lucide-react";
+   :          ^^|^^
+   :            `-- 'Code2' is imported here
+ 5 | 
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Shield' is imported but never used.
+   ,-[src/layouts/AuthLayout.tsx:4:22]
+ 3 | import { AuthBackground } from "../components/auth/AuthBackground";
+ 4 | import { Code2, Zap, Shield, Globe } from "lucide-react";
+   :                      ^^^|^^
+   :                         `-- 'Shield' is imported here
+ 5 | 
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Globe' is imported but never used.
+   ,-[src/layouts/AuthLayout.tsx:4:30]
+ 3 | import { AuthBackground } from "../components/auth/AuthBackground";
+ 4 | import { Code2, Zap, Shield, Globe } from "lucide-react";
+   :                              ^^|^^
+   :                                `-- 'Globe' is imported here
+ 5 | 
+   `----
+  help: Consider removing this import.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'error'
+    ,-[src/pages/auth/ForgotPassword.tsx:22:6]
+ 20 |   useEffect(() => {
+ 21 |     if (error) setError("");
+    :         ^^|^^
+    :           `-- useEffect uses `error` here
+ 22 |   }, [email, otp]);
+    :      ^^^^^^^^^^^^
+ 23 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  x react-hooks(rules-of-hooks): React Hook "useCallback" is called conditionally. React Hooks must be called in the exact same order in every component render.
+    ,-[src/pages/admin/AdminAuditPage.tsx:17:21]
+ 16 |     
+ 17 | ,->   const fetchData = useCallback(async () => {
+ 18 | |       setLoading(true);
+ 19 | |       try {
+ 20 | |         const resp = await fetchApi(`/admin/audit?skip=${page * limit}&limit=${limit}`);
+ 21 | |         if (resp?.success) { setLogs(resp.data.items || []); setTotal(resp.data.total || 0); }
+ 22 | |       } catch (e: any) { toast.error(e.message || "Failed to load audit logs"); }
+ 23 | |       finally { setLoading(false); }
+ 24 | |->   }, [page]);
+    : `---- This Hook call is not reachable on every render path.
+ 25 |     
+    `----
+  help: Move the Hook call before the condition, or call it unconditionally and branch inside the Hook/effect instead.
+
+  x react-hooks(rules-of-hooks): React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render.
+    ,-[src/pages/admin/AdminAuditPage.tsx:26:3]
+ 25 | 
+ 26 |   useEffect(() => { fetchData(); }, [fetchData]);
+    :   ^^^^^^^^^^^^^^^^^^^^^^^|^^^^^^^^^^^^^^^^^^^^^^
+    :                          `-- This Hook call is not reachable on every render path.
+ 27 | 
+    `----
+  help: Move the Hook call before the condition, or call it unconditionally and branch inside the Hook/effect instead.
+
+  ! eslint(no-unused-vars): Parameter 'get' is declared but never used. Unused parameters should start with a '_'.
+    ,-[src/store/useVersionStore.ts:31:59]
+ 30 | 
+ 31 | export const useVersionStore = create<VersionStore>((set, get) => ({
+    :                                                           ^|^
+    :                                                            `-- 'get' is declared here
+ 32 |   versions: {},
+    `----
+  help: Consider removing this parameter.
+
+  ! eslint(no-unused-vars): Parameter 'color' is declared but never used. Unused parameters should start with a '_'.
+    ,-[src/components/ui/ProjectCard.tsx:33:3]
+ 32 |   favorite = false,
+ 33 |   color,
+    :   ^^|^^
+    :     `-- 'color' is declared here
+ 34 |   icon,
+    `----
+  help: Consider removing this parameter.
+
+  ! eslint(no-unused-vars): Identifier 'LineChart' is imported but never used.
+   ,-[src/components/admin/AdminStatsPanel.tsx:4:10]
+ 3 | import { fetchApi } from "../../lib/api";
+ 4 | import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+   :          ^^^^|^^^^
+   :              `-- 'LineChart' is imported here
+ 5 | import { Users, FolderGit2, AlertTriangle, MessageSquare, Database, Activity } from "lucide-react";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Line' is imported but never used.
+   ,-[src/components/admin/AdminStatsPanel.tsx:4:21]
+ 3 | import { fetchApi } from "../../lib/api";
+ 4 | import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+   :                     ^^|^
+   :                       `-- 'Line' is imported here
+ 5 | import { Users, FolderGit2, AlertTriangle, MessageSquare, Database, Activity } from "lucide-react";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Catch parameter 'error' is caught but never used.
+    ,-[src/components/admin/AdminStatsPanel.tsx:49:14]
+ 48 |       }
+ 49 |     } catch (error) {
+    :              ^^|^^
+    :                `-- 'error' is declared here
+ 50 |       console.error("Failed to fetch server stats");
+    `----
+  help: Consider handling this error.
+
+  ! eslint(no-unused-vars): Identifier 'Play' is imported but never used.
+    ,-[src/components/workspace/panels/TerminalPanel.tsx:10:19]
+  9 | import { useUserStore } from '../../../stores/useUserStore';
+ 10 | import { History, Play } from 'lucide-react';
+    :                   ^^|^
+    :                     `-- 'Play' is imported here
+ 11 | import { Modal } from '../../ui/Modal';
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Button' is imported but never used.
+    ,-[src/components/workspace/panels/TerminalPanel.tsx:12:10]
+ 11 | import { Modal } from '../../ui/Modal';
+ 12 | import { Button } from '../../ui/Button';
+    :          ^^^|^^
+    :             `-- 'Button' is imported here
+ 13 | 
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Variable 'setPendingExecution' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/components/workspace/panels/TerminalPanel.tsx:28:9]
+ 27 |   const pendingExecution = useExecutionStore((state: any) => state.pendingExecution);
+ 28 |   const setPendingExecution = useExecutionStore((state: any) => state.setPendingExecution);
+    :         ^^^^^^^^^|^^^^^^^^^
+    :                  `-- 'setPendingExecution' is declared here
+ 29 |   const setExecutionFinished = useExecutionStore((state: any) => state.setExecutionFinished);
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Variable 'runCode' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/components/workspace/panels/TerminalPanel.tsx:32:9]
+ 31 |   const history = useExecutionStore((state: any) => state.history);
+ 32 |   const runCode = useExecutionStore((state: any) => state.runCode);
+    :         ^^^|^^^
+    :            `-- 'runCode' is declared here
+ 33 |   const { settings: editorSettings } = useEditorStore();
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Variable 'user' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/components/workspace/panels/TerminalPanel.tsx:34:9]
+ 33 |   const { settings: editorSettings } = useEditorStore();
+ 34 |   const user = useUserStore((state: any) => state.user);
+    :         ^^|^
+    :           `-- 'user' is declared here
+ 35 |   
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Catch parameter 'e' is caught but never used.
+    ,-[src/components/workspace/panels/TerminalPanel.tsx:76:18]
+ 75 |           fitAddon.fit();
+ 76 |         } catch (e) {}
+    :                  |
+    :                  `-- 'e' is declared here
+ 77 |       });
+    `----
+  help: Consider handling this error.
+
+  ! eslint(no-unused-vars): Catch parameter 'e' is caught but never used.
+     ,-[src/components/workspace/panels/TerminalPanel.tsx:168:20]
+ 167 |             xtermRef.current.write(event.data.replace(/\r?\n/g, '\r\n'));
+ 168 |           } catch (e) {
+     :                    |
+     :                    `-- 'e' is declared here
+ 169 |             xtermRef.current.write(event.data.replace(/\r?\n/g, '\r\n'));
+     `----
+  help: Consider handling this error.
+
+  ! eslint(no-unused-vars): Catch parameter 'e' is caught but never used.
+     ,-[src/components/workspace/panels/TerminalPanel.tsx:257:20]
+ 256 |             term.write(event.data.replace(/\r?\n/g, '\r\n'));
+ 257 |           } catch (e) {
+     :                    |
+     :                    `-- 'e' is declared here
+ 258 |             term.write(event.data.replace(/\r?\n/g, '\r\n'));
+     `----
+  help: Consider handling this error.
+
+  ! eslint(no-unused-vars): Parameter 'event' is declared but never used. Unused parameters should start with a '_'.
+     ,-[src/components/workspace/panels/TerminalPanel.tsx:263:21]
+ 262 | 
+ 263 |       ws.onclose = (event) => {
+     :                     ^^|^^
+     :                       `-- 'event' is declared here
+ 264 |         setExecutionFinished(0); // Mark done
+     `----
+  help: Consider removing this parameter.
+
+  ! eslint(no-unused-vars): Variable 'file' is declared but never used. Unused variables should start with a '_'.
+     ,-[src/components/workspace/panels/TerminalPanel.tsx:274:22]
+ 273 |           while ((match = regex.exec(rawOutput)) !== null) {
+ 274 |             const [, file, line, col, severityStr, msg] = match;
+     :                      ^^|^
+     :                        `-- 'file' is declared here
+ 275 |             // Severity mapping
+     `----
+  help: Consider removing this declaration.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'editorSettings.terminalPrompt'
+     ,-[src/components/workspace/panels/TerminalPanel.tsx:195:6]
+ 144 |           projectId: projectId,
+ 145 |           terminalPrompt: editorSettings.terminalPrompt
+     :                           ^^^^^^^|^^^^^^
+     :                                  `-- useEffect uses `editorSettings.terminalPrompt` here
+ 146 |         };
+ 147 |         console.log("[TerminalPanel] Sending shell init packet");
+ 148 |         console.log(payload);
+ 149 |         ws.send(JSON.stringify(payload));
+ 150 |         console.log("[TerminalPanel] Shell packet sent");
+ 151 |       };
+ 152 | 
+ 153 |       ws.onmessage = (event) => {
+ 154 |         // Only render shell output if we are in shell mode
+ 155 |         if (currentMode.current !== 'shell') return;
+ 156 |         
+ 157 |         if (typeof event.data === 'string' && xtermRef.current) {
+ 158 |           try {
+ 159 |             const trimmedData = event.data.trim();
+ 160 |             if (trimmedData.startsWith('{') && trimmedData.endsWith('}')) {
+ 161 |               const parsed = JSON.parse(event.data);
+ 162 |               if (parsed.type === 'error') {
+ 163 |                 xtermRef.current.writeln(`\r\n\x1b[38;5;1m[Shell Error] ${parsed.message}\x1b[0m\r\n`);
+ 164 |                 return;
+ 165 |               }
+ 166 |             }
+ 167 |             xtermRef.current.write(event.data.replace(/\r?\n/g, '\r\n'));
+ 168 |           } catch (e) {
+ 169 |             xtermRef.current.write(event.data.replace(/\r?\n/g, '\r\n'));
+ 170 |           }
+ 171 |         }
+ 172 |       };
+ 173 | 
+ 174 |       ws.onclose = () => {
+ 175 |         if (currentMode.current === 'shell') {
+ 176 |             currentMode.current = 'none';
+ 177 |         }
+ 178 |         if (shellWsRef.current === ws) shellWsRef.current = null;
+ 179 |       };
+ 180 | 
+ 181 |       ws.onerror = () => {
+ 182 |         if (currentMode.current === 'shell') {
+ 183 |             currentMode.current = 'none';
+ 184 |         }
+ 185 |         if (shellWsRef.current === ws) shellWsRef.current = null;
+ 186 |       };
+ 187 |       
+ 188 |     }, 200);
+ 189 |     
+ 190 |     return () => {
+ 191 |       clearTimeout(timeoutId);
+ 192 |       // We DO NOT close the shell websocket here, so it persists across re-renders!
+ 193 |       // This solves the persistent shell requirement.
+ 194 |     };
+ 195 |   }, [projectId]);
+     :      ^^^^^^^^^^^
+ 196 | 
+     `----
+  help: Either include it or remove the dependency array.
+
+  ! eslint(no-control-regex): Unexpected control character
+     ,-[src/components/workspace/panels/TerminalPanel.tsx:269:63]
+ 268 |         if (pendingExecution.language === 'cpp' || pendingExecution.language === 'c') {
+ 269 |           const rawOutput = execOutputBuffer.current.replace(/\x1b\[[0-9;]*m/g, ''); // strip ansi
+     :                                                               ^^|^
+     :                                                                 `-- 'U+001B' is a control character.
+ 270 |           const regex = /^([a-zA-Z0-9_\-\.]+):(\d+):(?:(\d+):)?\s+(error|warning|fatal error):\s+(.*)$/gm;
+     `----
+  help: Avoid matching control characters in regular expressions. If intentional, consider using a Unicode escape instead.
+
+  ! eslint(no-useless-escape): Unnecessary escape character '.'
+     ,-[src/components/workspace/panels/TerminalPanel.tsx:270:41]
+ 269 |           const rawOutput = execOutputBuffer.current.replace(/\x1b\[[0-9;]*m/g, ''); // strip ansi
+ 270 |           const regex = /^([a-zA-Z0-9_\-\.]+):(\d+):(?:(\d+):)?\s+(error|warning|fatal error):\s+(.*)$/gm;
+     :                                         ^^
+ 271 |           let match;
+     `----
+  help: Replace `\.` with `.`.
+
+  ! eslint(no-unused-vars): Identifier 'Input' is imported but never used.
+   ,-[src/components/admin/AdminSettingsPanel.tsx:4:10]
+ 3 | import { Button } from "../ui/Button";
+ 4 | import { Input } from "../ui/Input";
+   :          ^^|^^
+   :            `-- 'Input' is imported here
+ 5 | import { fetchApi } from "../../lib/api";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Variable 'determineErrorCategory' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/store/useExecutionStore.ts:55:7]
+ 54 | 
+ 55 | const determineErrorCategory = (result: ExecutionResponse): ErrorCategory => {
+    :       ^^^^^^^^^^^|^^^^^^^^^^
+    :                  `-- 'determineErrorCategory' is declared here
+ 56 |   if (result.exit_code === 0) return 'None';
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Variable 'determineFinalStatus' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/store/useExecutionStore.ts:66:7]
+ 65 | 
+ 66 | const determineFinalStatus = (category: ErrorCategory, exitCode: number): ExecutionStatus => {
+    :       ^^^^^^^^^^|^^^^^^^^^
+    :                 `-- 'determineFinalStatus' is declared here
+ 67 |   if (exitCode === 0) return 'Completed';
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Catch parameter 'error' is caught but never used.
+     ,-[src/store/useExecutionStore.ts:201:14]
+ 200 |       await executionApi.stop("current"); // Dummy ID for now
+ 201 |     } catch (error) {
+     :              ^^|^^
+     :                `-- 'error' is declared here
+ 202 |       // Ignore stop errors if container already died
+     `----
+  help: Consider handling this error.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'error'
+    ,-[src/pages/auth/Login.tsx:28:6]
+ 26 |   useEffect(() => {
+ 27 |     if (error) setError("");
+    :         ^^|^^
+    :           `-- useEffect uses `error` here
+ 28 |   }, [email, password, totpCode]);
+    :      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 29 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! eslint(no-unused-vars): Variable 'isChecking' is declared but never used. Unused variables should start with a '_'.
+   ,-[src/components/auth/MaintenanceGuard.tsx:7:43]
+ 6 | export function MaintenanceGuard({ children }: { children: ReactNode }) {
+ 7 |   const { isMaintenanceMode, checkStatus, isChecking, allowAdmin } = useSystemStore();
+   :                                           ^^^^^|^^^^
+   :                                                `-- 'isChecking' is declared here
+ 8 |   const { user, isLoading } = useUserStore();
+   `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Variable 'hasCheckedOnce' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/components/auth/MaintenanceGuard.tsx:10:10]
+  9 |   const location = useLocation();
+ 10 |   const [hasCheckedOnce, setHasCheckedOnce] = useState(false);
+    :          ^^^^^^^|^^^^^^
+    :                 `-- 'hasCheckedOnce' is declared here
+ 11 | 
+    `----
+  help: Consider removing this declaration.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'fetchTrash'
+    ,-[src/pages/app/Trash.tsx:23:6]
+ 19 |     const timer = setTimeout(() => {
+ 20 |       fetchTrash({ search: search || undefined });
+    :       ^^^^^|^^^^
+    :            `-- useEffect uses `fetchTrash` here
+ 21 |     }, 300);
+ 22 |     return () => clearTimeout(timer);
+ 23 |   }, [search]);
+    :      ^^^^^^^^
+ 24 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'error'
+    ,-[src/pages/auth/ResetPassword.tsx:36:6]
+ 34 |   useEffect(() => {
+ 35 |     if (error && token) setError("");
+    :         ^^|^^
+    :           `-- useEffect uses `error` here
+ 36 |   }, [password, confirmPassword, token]);
+    :      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 37 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'fetchProjects'
+    ,-[src/components/admin/AdminProjectsPanel.tsx:27:6]
+ 25 |   useEffect(() => {
+ 26 |     fetchProjects();
+    :     ^^^^^^|^^^^^^
+    :           `-- useEffect uses `fetchProjects` here
+ 27 |   }, []);
+    :      ^^
+ 28 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! eslint(no-unused-vars): Identifier 'Settings' is imported but never used.
+   ,-[src/components/layout/AppSidebar.tsx:2:71]
+ 1 | import { NavLink } from "react-router-dom";
+ 2 | import { LayoutDashboard, Folder, LayoutTemplate, Users, Clock, Star, Settings, HelpCircle, PanelLeftClose, PanelLeftOpen, Trash2 } from "lucide-react";
+   :                                                                       ^^^^|^^^
+   :                                                                           `-- 'Settings' is imported here
+ 3 | import { useSidebarStore } from "../../stores/useSidebarStore";
+   `----
+  help: Consider removing this import.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'loadEmails'
+    ,-[src/pages/admin/AdminEmailsPage.tsx:50:6]
+ 46 |     const delay = setTimeout(() => {
+ 47 |       loadEmails();
+    :       ^^^^^|^^^^
+    :            `-- useEffect uses `loadEmails` here
+ 48 |     }, 300);
+ 49 |     return () => clearTimeout(delay);
+ 50 |   }, [page, search, statusFilter]);
+    :      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 51 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'error'
+    ,-[src/pages/auth/Signup.tsx:40:6]
+ 38 |   useEffect(() => {
+ 39 |     if (error) setError("");
+    :         ^^|^^
+    :           `-- useEffect uses `error` here
+ 40 |   }, [firstName, lastName, username, email, password, confirmPassword]);
+    :      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 41 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+    ,-[src/components/auth/AdminAuthGuard.tsx:21:14]
+ 20 | 
+ 21 | export const useAdminContext = () => useContext(AdminContext);
+    :              ^^^^^^^^^^^^^^^
+ 22 | 
+    `----
+
+  ! eslint(no-unused-vars): Variable 'clearDirtyState' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/components/workspace/MonacoWrapper.tsx:60:5]
+ 59 |     setViewState,
+ 60 |     clearDirtyState,
+    :     ^^^^^^^|^^^^^^^
+    :            `-- 'clearDirtyState' is declared here
+ 61 |     setFileContent
+    `----
+  help: Consider removing this declaration.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'fetchUsers'
+    ,-[src/components/admin/AdminUsersPanel.tsx:28:6]
+ 26 |   useEffect(() => {
+ 27 |     fetchUsers();
+    :     ^^^^^|^^^^
+    :          `-- useEffect uses `fetchUsers` here
+ 28 |   }, []);
+    :      ^^
+ 29 | 
+    `----
+  help: Either include it or remove the dependency array.
+
+  ! eslint(no-unused-vars): Variable 'COLORS' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/components/projects/CreateProjectModal.tsx:16:7]
+ 15 | const LANGUAGES = ["TypeScript", "JavaScript", "Python", "Java", "C", "C++", "Rust", "Go", "HTML/CSS"];
+ 16 | const COLORS = ["blue", "green", "purple", "orange", "red", "yellow", "cyan", "pink"];
+    :       ^^^|^^
+    :          `-- 'COLORS' is declared here
+ 17 | const ICONS = ["💻", "📚", "⚡", "🚀", "🧠", "🔥", "✨", "🛠️"];
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Variable 'setColor' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/components/projects/CreateProjectModal.tsx:26:17]
+ 25 |   const [visibility, setVisibility] = useState<ProjectVisibility>("PRIVATE");
+ 26 |   const [color, setColor] = useState("blue");
+    :                 ^^^^|^^^
+    :                     `-- 'setColor' is declared here
+ 27 |   const [icon, setIcon] = useState("💻");
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Identifier 'useWorkspaceStore' is imported but never used.
+    ,-[src/pages/app/ProjectWorkspace.tsx:15:10]
+ 14 | import { useExecutionStore } from "../../store/useExecutionStore";
+ 15 | import { useWorkspaceStore } from "../../store/useWorkspaceStore";
+    :          ^^^^^^^^|^^^^^^^^
+    :                  `-- 'useWorkspaceStore' is imported here
+ 16 | import { projectsApi } from "../../lib/api/projects";
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'AlertCircle' is imported but never used.
+    ,-[src/pages/app/ProjectWorkspace.tsx:20:10]
+ 19 | import { useStatusBarStore } from "../../store/useStatusBarStore";
+ 20 | import { AlertCircle, WifiOff, Copy, Search, GitBranch, BugPlay, Blocks, CircleUser, Settings, LogOut, Check } from 'lucide-react';
+    :          ^^^^^|^^^^^
+    :               `-- 'AlertCircle' is imported here
+ 21 | import { PanelErrorBoundary } from "../../components/error/ErrorBoundary";
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Blocks' is imported but never used.
+    ,-[src/pages/app/ProjectWorkspace.tsx:20:66]
+ 19 | import { useStatusBarStore } from "../../store/useStatusBarStore";
+ 20 | import { AlertCircle, WifiOff, Copy, Search, GitBranch, BugPlay, Blocks, CircleUser, Settings, LogOut, Check } from 'lucide-react';
+    :                                                                  ^^^|^^
+    :                                                                     `-- 'Blocks' is imported here
+ 21 | import { PanelErrorBoundary } from "../../components/error/ErrorBoundary";
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'LogOut' is imported but never used.
+    ,-[src/pages/app/ProjectWorkspace.tsx:20:96]
+ 19 | import { useStatusBarStore } from "../../store/useStatusBarStore";
+ 20 | import { AlertCircle, WifiOff, Copy, Search, GitBranch, BugPlay, Blocks, CircleUser, Settings, LogOut, Check } from 'lucide-react';
+    :                                                                                                ^^^|^^
+    :                                                                                                   `-- 'LogOut' is imported here
+ 21 | import { PanelErrorBoundary } from "../../components/error/ErrorBoundary";
+    `----
+  help: Consider removing this import.
+
+  ! react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'sidebarTab'
+     ,-[src/pages/app/ProjectWorkspace.tsx:237:6]
+ 211 |       } else {
+ 212 |         if (!sidebarTab) {
+     :              ^^^^^|^^^^
+     :                   `-- useEffect uses `sidebarTab` here
+ 213 |           // If dragging out from closed, default to FILES
+ 214 |           setSidebarTab('FILES');
+ 215 |         }
+ 216 |         if (newWidth > 500) newWidth = 500;
+ 217 |       }
+ 218 |       setExplorerWidth(newWidth);
+ 219 |     };
+ 220 | 
+ 221 |     const handleMouseUp = () => {
+ 222 |       if (isDragging) {
+ 223 |         setIsDragging(false);
+ 224 |         localStorage.setItem('hamara-explorer-width', explorerWidth.toString());
+ 225 |       }
+ 226 |     };
+ 227 | 
+ 228 |     if (isDragging) {
+ 229 |       document.addEventListener('mousemove', handleMouseMove);
+ 230 |       document.addEventListener('mouseup', handleMouseUp);
+ 231 |     }
+ 232 | 
+ 233 |     return () => {
+ 234 |       document.removeEventListener('mousemove', handleMouseMove);
+ 235 |       document.removeEventListener('mouseup', handleMouseUp);
+ 236 |     };
+ 237 |   }, [isDragging, explorerWidth]);
+     :      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 238 | 
+     `----
+  help: Either include it or remove the dependency array.
+
+  ! react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+    ,-[src/components/ui/ConfirmProvider.tsx:20:14]
+ 19 | 
+ 20 | export const useConfirm = () => {
+    :              ^^^^^^^^^^
+ 21 |   const context = useContext(ConfirmContext);
+    `----
+
+  ! eslint(no-unused-vars): Identifier 'FileText' is imported but never used.
+   ,-[src/components/sections/ActivityShowcase.tsx:4:41]
+ 3 | import { Container } from "../layout/Container";
+ 4 | import { TerminalSquare, Flame, Trophy, FileText, CheckCircle2, XCircle } from "lucide-react";
+   :                                         ^^^^|^^^
+   :                                             `-- 'FileText' is imported here
+ 5 | import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'CheckCircle2' is imported but never used.
+   ,-[src/components/sections/ActivityShowcase.tsx:4:51]
+ 3 | import { Container } from "../layout/Container";
+ 4 | import { TerminalSquare, Flame, Trophy, FileText, CheckCircle2, XCircle } from "lucide-react";
+   :                                                   ^^^^^^|^^^^^
+   :                                                         `-- 'CheckCircle2' is imported here
+ 5 | import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'XCircle' is imported but never used.
+   ,-[src/components/sections/ActivityShowcase.tsx:4:65]
+ 3 | import { Container } from "../layout/Container";
+ 4 | import { TerminalSquare, Flame, Trophy, FileText, CheckCircle2, XCircle } from "lucide-react";
+   :                                                                 ^^^|^^^
+   :                                                                    `-- 'XCircle' is imported here
+ 5 | import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'cn' is imported but never used.
+   ,-[src/components/sections/ActivityShowcase.tsx:6:10]
+ 5 | import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+ 6 | import { cn } from "../../lib/utils";
+   :          ^|
+   :           `-- 'cn' is imported here
+ 7 | 
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Cloud' is imported but never used.
+   ,-[src/pages/app/Dashboard.tsx:6:3]
+ 5 |   Code,
+ 6 |   Cloud,
+   :   ^^|^^
+   :     `-- 'Cloud' is imported here
+ 7 |   Terminal,
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Terminal' is imported but never used.
+   ,-[src/pages/app/Dashboard.tsx:7:3]
+ 6 |   Cloud,
+ 7 |   Terminal,
+   :   ^^^^|^^^
+   :       `-- 'Terminal' is imported here
+ 8 |   GitMerge,
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'GitMerge' is imported but never used.
+   ,-[src/pages/app/Dashboard.tsx:8:3]
+ 7 |   Terminal,
+ 8 |   GitMerge,
+   :   ^^^^|^^^
+   :       `-- 'GitMerge' is imported here
+ 9 |   FilePlus,
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'StatCard' is imported but never used.
+    ,-[src/pages/app/Dashboard.tsx:17:10]
+ 16 | import { PageHeader } from "../../components/ui/PageHeader";
+ 17 | import { StatCard } from "../../components/ui/StatCard";
+    :          ^^^^|^^^
+    :              `-- 'StatCard' is imported here
+ 18 | import { ProjectCard } from "../../components/ui/ProjectCard";
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Variable 'totalProjects' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/pages/app/Dashboard.tsx:35:5]
+ 34 |     projects,
+ 35 |     totalProjects,
+    :     ^^^^^^|^^^^^^
+    :           `-- 'totalProjects' is declared here
+ 36 |     toggleFavorite,
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Identifier 'Mail' is imported but never used.
+   ,-[src/components/settings/SecuritySettings.tsx:8:30]
+ 7 | import { Modal } from "../../components/ui/Modal";
+ 8 | import { Shield, Smartphone, Mail, Laptop, Globe, LogOut, CheckCircle } from "lucide-react";
+   :                              ^^|^
+   :                                `-- 'Mail' is imported here
+ 9 | import { toast } from "sonner";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Globe' is imported but never used.
+   ,-[src/components/settings/SecuritySettings.tsx:8:44]
+ 7 | import { Modal } from "../../components/ui/Modal";
+ 8 | import { Shield, Smartphone, Mail, Laptop, Globe, LogOut, CheckCircle } from "lucide-react";
+   :                                            ^^|^^
+   :                                              `-- 'Globe' is imported here
+ 9 | import { toast } from "sonner";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'CheckCircle' is imported but never used.
+   ,-[src/components/settings/SecuritySettings.tsx:8:59]
+ 7 | import { Modal } from "../../components/ui/Modal";
+ 8 | import { Shield, Smartphone, Mail, Laptop, Globe, LogOut, CheckCircle } from "lucide-react";
+   :                                                           ^^^^^|^^^^^
+   :                                                                `-- 'CheckCircle' is imported here
+ 9 | import { toast } from "sonner";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Variable 'isLoading' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/components/settings/SecuritySettings.tsx:15:10]
+ 14 |   const [sessions, setSessions] = useState<any[]>([]);
+ 15 |   const [isLoading, setIsLoading] = useState(false);
+    :          ^^^^|^^^^
+    :              `-- 'isLoading' is declared here
+ 16 |   const [show2FAModal, setShow2FAModal] = useState(false);
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Variable 'setIsLoading' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/components/settings/SecuritySettings.tsx:15:21]
+ 14 |   const [sessions, setSessions] = useState<any[]>([]);
+ 15 |   const [isLoading, setIsLoading] = useState(false);
+    :                     ^^^^^^|^^^^^
+    :                           `-- 'setIsLoading' is declared here
+ 16 |   const [show2FAModal, setShow2FAModal] = useState(false);
+    `----
+  help: Consider removing this declaration.
+
+  ! eslint(no-unused-vars): Identifier 'Link' is imported but never used.
+   ,-[src/pages/app/ProjectOverview.tsx:2:34]
+ 1 | import { useEffect, useState } from "react";
+ 2 | import { useParams, useNavigate, Link } from "react-router-dom";
+   :                                  ^^|^
+   :                                    `-- 'Link' is imported here
+ 3 | import { useProjectsStore } from "../../stores/useProjectsStore";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Users' is imported but never used.
+   ,-[src/pages/app/ProjectOverview.tsx:6:28]
+ 5 | import { 
+ 6 |   Code, FolderOpen, Clock, Users, PlaySquare, Calendar, 
+   :                            ^^|^^
+   :                              `-- 'Users' is imported here
+ 7 |   Settings, ArrowLeft, Terminal, GitBranch, ChevronRight, Activity 
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'ChevronRight' is imported but never used.
+   ,-[src/pages/app/ProjectOverview.tsx:7:45]
+ 6 |   Code, FolderOpen, Clock, Users, PlaySquare, Calendar, 
+ 7 |   Settings, ArrowLeft, Terminal, GitBranch, ChevronRight, Activity 
+   :                                             ^^^^^^|^^^^^
+   :                                                   `-- 'ChevronRight' is imported here
+ 8 | } from "lucide-react";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'PageHeader' is imported but never used.
+    ,-[src/pages/app/ProjectOverview.tsx:11:10]
+ 10 | import { LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
+ 11 | import { PageHeader } from "../../components/ui/PageHeader";
+    :          ^^^^^|^^^^
+    :               `-- 'PageHeader' is imported here
+ 12 | 
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Globe' is imported but never used.
+   ,-[src/components/settings/ConnectedAccounts.tsx:5:16]
+ 4 | import { Button } from "../../components/ui/Button";
+ 5 | import { Mail, Globe } from "lucide-react";
+   :                ^^|^^
+   :                  `-- 'Globe' is imported here
+ 6 | import { toast } from "sonner";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'useEffect' is imported but never used.
+   ,-[src/components/workspace/EditorTabs.tsx:1:25]
+ 1 | import React, { useRef, useEffect } from 'react';
+   :                         ^^^^|^^^^
+   :                             `-- 'useEffect' is imported here
+ 2 | import type { WheelEvent } from 'react';
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'EditorSettingsModal' is imported but never used.
+    ,-[src/components/workspace/EditorTabs.tsx:11:10]
+ 10 | import { FileIcon } from './FileIcon';
+ 11 | import { EditorSettingsModal } from './EditorSettingsModal';
+    :          ^^^^^^^^^|^^^^^^^^^
+    :                   `-- 'EditorSettingsModal' is imported here
+ 12 | import { Settings } from 'lucide-react';
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Settings' is imported but never used.
+    ,-[src/components/workspace/EditorTabs.tsx:12:10]
+ 11 | import { EditorSettingsModal } from './EditorSettingsModal';
+ 12 | import { Settings } from 'lucide-react';
+    :          ^^^^|^^^
+    :              `-- 'Settings' is imported here
+ 13 | 
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Identifier 'Check' is imported but never used.
+   ,-[src/components/workspace/VersionHistoryPanel.tsx:4:37]
+ 3 | import { useEditorStore } from '../../store/useEditorStore';
+ 4 | import { History, Clock, Search, X, Check, ArrowLeftRight, Trash2 } from 'lucide-react';
+   :                                     ^^|^^
+   :                                       `-- 'Check' is imported here
+ 5 | import { useConfirm } from "../../components/ui/ConfirmProvider";
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Catch parameter 'err' is caught but never used.
+    ,-[src/components/workspace/FolderItem.tsx:87:17]
+ 86 |           if (onDropItem) onDropItem(data.id, data.type, folder.id);
+ 87 |         } catch(err) {}
+    :                 ^|^
+    :                  `-- 'err' is declared here
+ 88 |       }}>
+    `----
+  help: Consider handling this error.
+
+  ! eslint(no-unused-vars): Identifier 'Plus' is imported but never used.
+   ,-[src/components/workspace/FileExplorer.tsx:7:10]
+ 6 | import { FileItem } from './FileItem';
+ 7 | import { Plus, FolderPlus, FilePlus, RefreshCw, Loader2, ChevronsUp } from 'lucide-react';
+   :          ^^|^
+   :            `-- 'Plus' is imported here
+ 8 | import { useWorkspaceStore } from '../../store/useWorkspaceStore';
+   `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Catch parameter 'err' is caught but never used.
+     ,-[src/components/workspace/FileExplorer.tsx:304:19]
+ 303 |             handleDropItem(data.id, data.type, null);
+ 304 |           } catch(err) {}
+     :                   ^|^
+     :                    `-- 'err' is declared here
+ 305 |         }}
+     `----
+  help: Consider handling this error.
+
+Found 99 warnings and 2 errors.
+Finished in 49ms on 147 files with 103 rules using 8 threads.
