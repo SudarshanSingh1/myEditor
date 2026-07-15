@@ -32,7 +32,7 @@ export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="py-20 bg-secondary/30">
+    <section id="contact" className="py-20 bg-secondary/30">
       <Container className="max-w-3xl">
         <SectionTitle 
           title="Frequently Asked Questions"

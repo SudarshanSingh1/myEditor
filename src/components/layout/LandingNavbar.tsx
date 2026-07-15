@@ -17,13 +17,37 @@ const NAV_LINKS = [
 export function LandingNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    
+    // Intersection Observer for scroll spy
+    const observerOptions = {
+      root: null,
+      rootMargin: "-20% 0px -60% 0px", // triggers when section is in top 20-40% of viewport
+      threshold: 0,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const sections = document.querySelectorAll("section[id]");
+    sections.forEach((section) => observer.observe(section));
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      sections.forEach((section) => observer.unobserve(section));
+    };
   }, []);
 
   return (
@@ -48,7 +72,12 @@ export function LandingNavbar() {
                 <a
                   key={link.name}
                   href={link.href}
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  className={cn(
+                    "text-sm font-medium transition-all hover:text-foreground",
+                    activeSection === link.href.replace('#', '').replace('/', 'home')
+                      ? "text-foreground border-b-2 border-primary pb-1"
+                      : "text-muted-foreground"
+                  )}
                 >
                   {link.name}
                 </a>

@@ -77,7 +77,7 @@ export function ActivityShowcase() {
   };
 
   return (
-    <section className="py-24 overflow-hidden relative bg-zinc-50 dark:bg-[#050508] border-t border-zinc-200 dark:border-white/5 font-sans">
+    <section id="about" className="pt-12 pb-24 lg:pt-16 overflow-hidden relative bg-zinc-50 dark:bg-[#050508] border-t border-zinc-200 dark:border-white/5 font-sans">
       <div className="absolute inset-0 bg-gradient-to-b from-green-500/5 to-transparent -z-10" />
       
       <Container>
