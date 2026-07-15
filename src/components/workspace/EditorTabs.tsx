@@ -147,7 +147,7 @@ const EditorActions: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
 
   const activeFile = tabs.find(t => t.id === activeFileId);
-  const ext = activeFile?.name.split('.').pop()?.toLowerCase() || '';
+  const ext = (activeFile?.name || '').split('.').pop()?.toLowerCase() || '';
   const extToLabel: Record<string, string> = {
     'py': 'Python',
     'js': 'JavaScript',

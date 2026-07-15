@@ -16,6 +16,7 @@ export default function AdminAnalyticsPage() {
   const [languages, setLanguages] = useState([]);
   const [statusRatio, setStatusRatio] = useState([]);
   const [feedback, setFeedback] = useState([]);
+  const [feedbackResolution, setFeedbackResolution] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,16 +24,30 @@ export default function AdminAnalyticsPage() {
     
     const fetchAll = async () => {
       try {
-        const [t, l, s, f] = await Promise.all([
+        const [t, l, s, f, fr] = await Promise.all([
           fetchApi("/admin/analytics/master-timeline"),
           fetchApi("/admin/analytics/languages"),
           fetchApi("/admin/analytics/execution-status"),
-          fetchApi("/admin/analytics/feedback-ratings")
+          fetchApi("/admin/analytics/feedback-ratings"),
+          fetchApi("/admin/analytics/feedback-resolution")
         ]);
         if (t?.success) setTimeline(t.data.items || []);
         if (l?.success) setLanguages(l.data.items || []);
-        if (s?.success) setStatusRatio(s.data.items || []);
+        if (s?.success) {
+          const formatted = (s.data.items || []).map((item: any) => ({
+            ...item,
+            status: item.status.replace('ExecutionStatus.', '').replace('_', ' ')
+          }));
+          setStatusRatio(formatted);
+        }
         if (f?.success) setFeedback(f.data.items || []);
+        if (fr?.success) {
+          const formattedFR = (fr.data.items || []).map((item: any) => ({
+            ...item,
+            date: item.date.slice(5) // MM-DD format
+          }));
+          setFeedbackResolution(formattedFR);
+        }
       } catch (err: any) {
         toast.error("Failed to load analytics");
       } finally {
@@ -116,13 +131,12 @@ export default function AdminAnalyticsPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
               <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} axisLine={false} />
               <YAxis yAxisId="left" tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} axisLine={false} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} axisLine={false} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffffff05' }} />
               <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: 12, color: '#9ca3af' }} />
               
               <Area yAxisId="left" type="monotone" name="Registrations" dataKey="users" fillOpacity={1} fill="url(#colorUsers)" stroke="#8b5cf6" strokeWidth={2} />
               <Area yAxisId="left" type="monotone" name="Errors" dataKey="errors" fillOpacity={1} fill="url(#colorErrors)" stroke="#ef4444" strokeWidth={2} />
-              <Line yAxisId="right" type="monotone" name="Executions" dataKey="executions" stroke="#ec4899" strokeWidth={3} dot={{ fill: '#ec4899', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+              <Line yAxisId="left" type="monotone" name="Executions" dataKey="executions" stroke="#ec4899" strokeWidth={3} dot={{ fill: '#ec4899', strokeWidth: 2 }} activeDot={{ r: 6 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -143,7 +157,7 @@ export default function AdminAnalyticsPage() {
                 <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="executions" stroke="#ec4899" strokeWidth={3} dot={{ fill: '#ec4899', strokeWidth: 2 }} activeDot={{ r: 8, fill: '#fff', stroke: '#ec4899' }} />
+                <Line type="monotone" dataKey="executions" stroke="#0ea5e9" strokeWidth={3} dot={{ fill: '#0ea5e9', strokeWidth: 2 }} activeDot={{ r: 8, fill: '#fff', stroke: '#0ea5e9' }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -170,9 +184,9 @@ export default function AdminAnalyticsPage() {
                 >
                   {statusRatio.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={
-                      entry.status.includes('Success') ? '#10b981' : 
-                      entry.status.includes('Compile') ? '#f59e0b' : 
-                      entry.status.includes('Runtime') ? '#ef4444' : '#6b7280'
+                      entry.status.toUpperCase().includes('SUCCESS') ? '#10b981' : 
+                      entry.status.toUpperCase().includes('COMPILE') ? '#f59e0b' : 
+                      entry.status.toUpperCase().includes('RUNTIME') ? '#ef4444' : '#8b5cf6'
                     } />
                   ))}
                 </Pie>
@@ -221,17 +235,58 @@ export default function AdminAnalyticsPage() {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={feedback} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
+              <BarChart data={feedback} layout="vertical" margin={{ top: 0, right: 30, left: 30, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" horizontal={false} />
                 <XAxis type="number" tick={{ fill: "#6b7280" }} tickLine={false} axisLine={false} />
-                <YAxis type="category" dataKey="rating" tick={{ fill: "#fff", fontWeight: 600 }} tickLine={false} axisLine={false} />
+                <YAxis type="category" dataKey="rating" tick={{ fill: "#fff", fontWeight: 600 }} tickLine={false} axisLine={false} 
+                  tickFormatter={(val) => {
+                    const labels: any = { 1: "1 - Poor", 2: "2 - Fair", 3: "3 - Good", 4: "4 - Very Good", 5: "5 - Excellent" };
+                    return labels[val] || val;
+                  }}
+                />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffffff05' }} />
-                <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]}>
-                  {feedback.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  {feedback.map((entry: any, index: number) => {
+                    const ratingColors: any = { 1: "#ef4444", 2: "#f97316", 3: "#eab308", 4: "#84cc16", 5: "#22c55e" };
+                    return <Cell key={`cell-${index}`} fill={ratingColors[entry.rating] || "#3b82f6"} />;
+                  })}
                 </Bar>
               </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Feedback Resolution Timeline */}
+        <div className="col-span-1 lg:col-span-2 rounded-2xl border border-white/10 bg-[#18181b] p-6 backdrop-blur-sm shadow-xl">
+          <div className="flex items-center gap-2 mb-6">
+            <Activity className="w-5 h-5 text-green-400" />
+            <h2 className="text-lg font-semibold text-white tracking-wide">Feedback Resolution Status</h2>
+          </div>
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={feedbackResolution.length > 0 ? feedbackResolution : [
+                  { date: '00-00', resolved: 0, open: 0 }
+                ]}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.5}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorOpen" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6b7280" stopOpacity={0.5}/>
+                    <stop offset="95%" stopColor="#6b7280" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
+                <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#ffffff10', strokeWidth: 1 }} />
+                <Area type="monotone" dataKey="open" stroke="#6b7280" strokeWidth={2} fillOpacity={1} fill="url(#colorOpen)" activeDot={{ r: 6, fill: '#fff', stroke: '#6b7280' }} />
+                <Area type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorResolved)" activeDot={{ r: 8, fill: '#fff', stroke: '#10b981' }} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>

@@ -45,7 +45,7 @@ const EXTENSION_TO_LANGUAGE: Record<string, string> = {
 };
 
 function getLanguageFromFilename(filename: string): string {
-  const parts = filename.split('.');
+  const parts = (filename || '').split('.');
   if (parts.length < 2) return 'plaintext';
   const ext = parts[parts.length - 1].toLowerCase();
   return EXTENSION_TO_LANGUAGE[ext] || 'plaintext';

@@ -5,7 +5,7 @@ import { Input } from "../../components/ui/Input";
 import { fetchApi, resetUnauthorizedFlag } from "../../lib/api";
 import { useUserStore } from "../../stores/useUserStore";
 import { useSystemStore } from "../../stores/useSystemStore";
-import { Loader2, Mail, Lock, AlertCircle, ArrowRight } from "lucide-react";
+import { Loader2, Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -20,6 +20,7 @@ export default function Login() {
   const [is2FA, setIs2FA] = useState(false);
   const [totpCode, setTotpCode] = useState("");
   const [twoFaToken, setTwoFaToken] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   
   // Clear error when user types
   useEffect(() => {
@@ -241,13 +242,20 @@ export default function Login() {
                   </div>
                   <Input 
                     id="password" 
-                    type="password" 
+                    type={showPassword ? "text" : "password"} 
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoading}
-                    className="pl-10 bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white h-11"
+                    className="pl-10 pr-10 bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-white/10 focus:border-green-500/50 focus:ring-green-500/20 text-zinc-900 dark:text-white h-11"
                   />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
             </div>

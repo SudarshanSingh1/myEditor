@@ -16,6 +16,7 @@ class FeedbackCreate(BaseModel):
 
 class FeedbackUpdateStatus(BaseModel):
     status: FeedbackStatus
+    admin_reply: Optional[str] = None
 
 class FeedbackResponse(BaseModel):
     id: uuid.UUID
@@ -24,6 +25,7 @@ class FeedbackResponse(BaseModel):
     priority: FeedbackPriority
     subject: str
     description: str
+    admin_reply: Optional[str] = None
     browser_info: Optional[str]
     os: Optional[str]
     app_version: Optional[str]

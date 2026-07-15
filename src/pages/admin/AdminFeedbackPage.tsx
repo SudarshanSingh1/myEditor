@@ -10,6 +10,69 @@ const priorityColor = (p: string) => ({
 
 const FEEDBACK_STATUSES = ["New", "In Review", "Planned", "In Progress", "Completed", "Rejected"];
 
+function FeedbackItemCard({ f, onUpdate }: { f: any, onUpdate: (id: string, status: string, reply: string) => void }) {
+  const [status, setStatus] = useState(f.status);
+  const [reply, setReply] = useState(f.admin_reply || "");
+  const [isEditing, setIsEditing] = useState(false);
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/3 p-5 hover:bg-white/5 transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-white">{f.subject || "No Subject"}</h3>
+            {f.priority && (
+              <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${priorityColor(f.priority)}`}>{f.priority}</span>
+            )}
+            {f.rating && <span className="text-xs text-amber-400">{"★".repeat(f.rating)}</span>}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            By <span className="text-gray-400">{f.username}</span> · {f.category} · {new Date(f.created_at).toLocaleString()}
+          </p>
+          {f.description && <p className="text-sm text-gray-300 mt-2 whitespace-pre-wrap">{f.description}</p>}
+          
+          {(f.admin_reply || isEditing) && (
+            <div className="mt-4 bg-[#111118] p-3 rounded-lg border border-white/5">
+              <p className="text-xs text-gray-400 mb-1 font-semibold">Admin Reply:</p>
+              {isEditing ? (
+                <textarea 
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                  className="w-full bg-black/20 border border-white/10 rounded p-2 text-sm text-white focus:outline-none focus:border-violet-500/50"
+                  rows={3}
+                  placeholder="Type your reply here..."
+                />
+              ) : (
+                <p className="text-sm text-gray-300 whitespace-pre-wrap">{f.admin_reply}</p>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-2 flex-shrink-0 items-end">
+          <select
+            value={status}
+            onChange={e => {
+              setStatus(e.target.value);
+              if (!isEditing) onUpdate(f.id, e.target.value, reply);
+            }}
+            className="text-xs bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-gray-300 focus:outline-none focus:border-violet-500/50"
+          >
+            {FEEDBACK_STATUSES.map(s => <option key={s} value={s} className="bg-[#111118]">{s}</option>)}
+          </select>
+          {isEditing ? (
+            <div className="flex gap-2">
+              <button onClick={() => { setIsEditing(false); setReply(f.admin_reply || ""); }} className="text-xs px-2 py-1 bg-white/5 rounded text-gray-400 hover:text-white">Cancel</button>
+              <button onClick={() => { setIsEditing(false); onUpdate(f.id, status, reply); }} className="text-xs px-2 py-1 bg-violet-500/20 text-violet-400 rounded hover:bg-violet-500/30">Save Reply</button>
+            </div>
+          ) : (
+            <button onClick={() => setIsEditing(true)} className="text-xs text-blue-400 hover:text-blue-300 underline">Reply</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminFeedbackPage() {
   const [items, setItems] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -28,10 +91,10 @@ export default function AdminFeedbackPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const updateStatus = async (id: string, status: string) => {
+  const updateStatus = async (id: string, status: string, admin_reply: string) => {
     try {
-      await fetchApi(`/admin/feedback/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
-      toast.success("Status updated");
+      await fetchApi(`/admin/feedback/${id}`, { method: "PATCH", body: JSON.stringify({ status, admin_reply }) });
+      toast.success("Feedback updated");
       fetchData();
     } catch (e: any) { toast.error(e.message || "Failed"); }
   };
@@ -55,35 +118,12 @@ export default function AdminFeedbackPage() {
             </div>
           ))}
         </div>
-      ) : items.length === 0 ? (
-        <div className="rounded-xl border border-white/8 bg-white/3 p-12 text-center text-gray-600">No feedback submitted yet.</div>
+      ) : items.filter(f => !["Completed", "Rejected"].includes(f.status)).length === 0 ? (
+        <div className="rounded-xl border border-white/8 bg-white/3 p-12 text-center text-gray-600">No active feedback.</div>
       ) : (
         <div className="space-y-3">
-          {items.map(f => (
-            <div key={f.id} className="rounded-xl border border-white/8 bg-white/3 p-5 hover:bg-white/5 transition-colors">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-white">{f.subject || "No Subject"}</h3>
-                    {f.priority && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${priorityColor(f.priority)}`}>{f.priority}</span>
-                    )}
-                    {f.rating && <span className="text-xs text-amber-400">{"★".repeat(f.rating)}</span>}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    By <span className="text-gray-400">{f.username}</span> · {f.category} · {new Date(f.created_at).toLocaleString()}
-                  </p>
-                  {f.description && <p className="text-sm text-gray-400 mt-2 line-clamp-2">{f.description}</p>}
-                </div>
-                <select
-                  value={f.status}
-                  onChange={e => updateStatus(f.id, e.target.value)}
-                  className="text-xs bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-gray-300 focus:outline-none focus:border-violet-500/50 flex-shrink-0"
-                >
-                  {FEEDBACK_STATUSES.map(s => <option key={s} value={s} className="bg-[#111118]">{s}</option>)}
-                </select>
-              </div>
-            </div>
+          {items.filter(f => !["Completed", "Rejected"].includes(f.status)).map(f => (
+            <FeedbackItemCard key={f.id} f={f} onUpdate={updateStatus} />
           ))}
         </div>
       )}

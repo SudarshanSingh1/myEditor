@@ -159,12 +159,15 @@ def change_password(req: ChangePasswordRequest, request: Request, db: Session = 
     AuthService.change_password(db, current_user, req, ip_address)
     return SuccessResponse(message="Password changed successfully.")
 
-@router.post("/request-password-reset", response_model=SuccessResponse)
+class PasswordResetResponse(BaseModel):
+    reset_token: str
+
+@router.post("/request-password-reset", response_model=SuccessResponse[PasswordResetResponse])
 @limiter.limit("3/minute")
 def request_password_reset(req: PasswordResetRequest, request: Request, db: Session = Depends(get_db)):
     ip_address = request.client.host if request.client else None
-    message = AuthService.request_password_reset(db, req, ip_address)
-    return SuccessResponse(message=message)
+    token = AuthService.request_password_reset(db, req, ip_address)
+    return SuccessResponse(message="If the email is registered, a password reset link has been sent.", data=PasswordResetResponse(reset_token=token))
 
 @router.post("/reset-password", response_model=SuccessResponse)
 def reset_password(req: ResetPasswordConfirmRequest, request: Request, db: Session = Depends(get_db)):

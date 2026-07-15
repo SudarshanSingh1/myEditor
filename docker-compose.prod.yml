@@ -6,6 +6,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
+    ports:
+      - "127.0.0.1:8000:8000"
     env_file:
       - .env.production
     volumes:
@@ -25,7 +27,7 @@ services:
       dockerfile: Dockerfile.frontend
     restart: always
     ports:
-      - "80:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       - api
     logging:
@@ -33,3 +35,16 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: hamara_user
+      POSTGRES_PASSWORD: hamara_password
+      POSTGRES_DB: hamara_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

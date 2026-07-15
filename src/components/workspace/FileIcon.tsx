@@ -14,7 +14,7 @@ interface FileIconProps {
 
 export const FileIcon: React.FC<FileIconProps> = ({ name, className = "", size = 16 }) => {
   const getIconInfo = (filename: string) => {
-    const lowerName = filename.toLowerCase();
+    const lowerName = (filename || '').toLowerCase();
     
     // Exact matches
     if (lowerName === 'dockerfile' || lowerName === 'docker-compose.yml') {
@@ -28,7 +28,7 @@ export const FileIcon: React.FC<FileIconProps> = ({ name, className = "", size =
     }
 
     // Extensions
-    const ext = filename.split('.').pop()?.toLowerCase();
+    const ext = (filename || '').split('.').pop()?.toLowerCase();
     
     switch (ext) {
       case 'ts':

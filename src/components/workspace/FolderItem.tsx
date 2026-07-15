@@ -33,6 +33,8 @@ export const FolderItem: React.FC<FolderItemProps> = React.memo(({
 }) => {
   const expandedFolders = useWorkspaceStore(state => state.expandedFolders);
   const toggleFolder = useWorkspaceStore(state => state.toggleFolder);
+  const activeFolderId = useWorkspaceStore(state => state.activeFolderId);
+  const setActiveFolder = useWorkspaceStore(state => state.setActiveFolder);
   const [showMenu, setShowMenu] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -47,13 +49,14 @@ export const FolderItem: React.FC<FolderItemProps> = React.memo(({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (e.detail > 1) return; // ignore double clicks so it doesn't toggle twice
+    setActiveFolder(folder.id);
     toggleFolder(folder.id);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      setActiveFolder(folder.id);
       toggleFolder(folder.id);
     } else if (e.key === 'F2') {
       e.preventDefault();
@@ -86,8 +89,11 @@ export const FolderItem: React.FC<FolderItemProps> = React.memo(({
       <div className="relative group" ref={containerRef}>
         <div
           className={cn(
-            "flex items-center justify-between px-2 py-1 cursor-pointer text-sm font-medium outline-none focus:bg-primary/10",
-            "hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 text-foreground"
+            "flex items-center justify-between px-2 py-1 cursor-pointer text-sm font-medium outline-none",
+            "hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20",
+            activeFolderId === folder.id 
+              ? "bg-primary/20 text-primary dark:bg-primary/30" 
+              : "text-foreground"
           )}
           style={{ paddingLeft: `${level * 16 + 8}px` }}
           onClick={handleClick}

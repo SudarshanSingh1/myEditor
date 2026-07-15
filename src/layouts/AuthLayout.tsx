@@ -31,31 +31,31 @@ export function AuthLayout() {
             </p>
           </div>
 
-          {/* Feature Grid */}
-          <div className="relative z-10 grid grid-cols-2 gap-4 text-sm text-zinc-600 dark:text-zinc-400">
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 backdrop-blur-sm transition-all hover:border-green-500/50">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-600 dark:text-green-400">
-                <Code2 className="w-4 h-4" />
+          {/* Feature Image / Dashboard Preview */}
+          <div className="relative z-10 flex-1 w-full min-h-[240px] mt-8 mb-8 rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent z-10 opacity-90" />
+            <img 
+              src="https://images.unsplash.com/photo-1605379399642-870262d3d051?q=80&w=2106&auto=format&fit=crop" 
+              alt="Platform capabilities"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
+            />
+            
+            {/* Overlay stats/info */}
+            <div className="absolute bottom-6 left-6 z-20 space-y-3">
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 w-fit transition-colors hover:bg-black/60">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/20 text-green-400">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <div className="pr-2">
+                  <div className="text-xs text-zinc-400 font-medium">Processing Speed</div>
+                  <div className="text-sm font-bold text-white">Lightning Fast</div>
+                </div>
               </div>
-              <span className="font-medium text-zinc-900 dark:text-zinc-300">Intelligent Editor</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 backdrop-blur-sm transition-all hover:border-blue-500/50">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                <Zap className="w-4 h-4" />
+              
+              <div className="flex items-center gap-2 text-white">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-sm font-medium tracking-wide">All Systems Operational</span>
               </div>
-              <span className="font-medium text-zinc-900 dark:text-zinc-300">Lightning Fast</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 backdrop-blur-sm transition-all hover:border-emerald-500/50">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Shield className="w-4 h-4" />
-              </div>
-              <span className="font-medium text-zinc-900 dark:text-zinc-300">Enterprise Security</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 backdrop-blur-sm transition-all hover:border-orange-500/50">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400">
-                <Globe className="w-4 h-4" />
-              </div>
-              <span className="font-medium text-zinc-900 dark:text-zinc-300">Global CDN</span>
             </div>
           </div>
         </div>

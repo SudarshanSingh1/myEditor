@@ -75,8 +75,9 @@ function CreateAdminModal({ onClose, onSuccess }: { onClose: () => void; onSucce
     }
   };
 
-  const availableRoles = isSuperAdmin ? ["MODERATOR", "ADMIN", "SUPER_ADMIN"] : ["MODERATOR", "ADMIN"];
+  const availableRoles = isSuperAdmin ? ["USER", "MODERATOR", "ADMIN", "SUPER_ADMIN"] : ["USER", "MODERATOR", "ADMIN"];
   const permissionPreviews: Record<string, string[]> = {
+    USER: ["Basic system access", "Personal projects", "Standard features"],
     MODERATOR: ["View users", "View projects", "Manage feedback", "View errors"],
     ADMIN: ["All moderator perms", "Edit users", "Delete projects", "System settings", "View analytics"],
     SUPER_ADMIN: ["Full system access", "Role management", "Audit logs", "Delete admins"],
@@ -118,14 +119,14 @@ function CreateAdminModal({ onClose, onSuccess }: { onClose: () => void; onSucce
             </label>
           </div>
 
-          <div>
+          <div className="relative z-20">
             <label className="block text-sm font-medium text-gray-400 mb-1">Role</label>
             <select
               value={form.role}
               onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/50"
+              className="w-full bg-[#111118] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/50 appearance-none"
             >
-              {availableRoles.map(r => <option key={r} value={r} className="bg-[#111118]">{r.replace("_", " ")}</option>)}
+              {availableRoles.map(r => <option key={r} value={r} className="bg-[#111118] text-white">{r.replace("_", " ")}</option>)}
             </select>
           </div>
 

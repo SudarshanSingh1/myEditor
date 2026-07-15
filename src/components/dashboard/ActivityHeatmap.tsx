@@ -60,6 +60,14 @@ export function ActivityHeatmap() {
     return 'bg-green-600 dark:bg-green-400';
   };
 
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (scrollRef.current && !isLoading) {
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+    }
+  }, [isLoading, data]);
+
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-black/40 p-6 shadow-sm animate-pulse h-[250px]">
@@ -113,19 +121,24 @@ export function ActivityHeatmap() {
         </div>
       </div>
 
-      <div className="flex overflow-x-auto pb-2 scrollbar-hide">
-        <div className="flex gap-1">
+      <div ref={scrollRef} className="flex flex-col overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-1.5 pr-16 md:pr-24">
           {weeks.map((week, wIdx) => (
-            <div key={wIdx} className="flex flex-col gap-1">
+            <div key={wIdx} className="flex flex-col gap-1.5">
+              {/* padding for empty days at the start of the first week */}
+              {wIdx === 0 && Array.from({ length: week[0].getDay() }).map((_, i) => (
+                <div key={`empty-${i}`} className="w-3.5 h-3.5 md:w-4 md:h-4 bg-transparent" />
+              ))}
+              
               {week.map((date, dIdx) => {
                 const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                 const count = activityMap.get(dateString) || 0;
-                const isTopRow = dIdx < 2;
+                const isTopRow = (wIdx === 0 ? date.getDay() : dIdx) < 2;
                 return (
                   <div key={dIdx} className="group relative">
                     <div
                       className={cn(
-                        "w-3 h-3 rounded-sm transition-colors cursor-pointer",
+                        "w-3.5 h-3.5 md:w-4 md:h-4 rounded-[4px] transition-colors cursor-pointer",
                         getColorClass(count)
                       )}
                     />
@@ -144,6 +157,19 @@ export function ActivityHeatmap() {
               })}
             </div>
           ))}
+        </div>
+        
+        {/* Month labels */}
+        <div className="flex gap-1.5 mt-3 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+          {weeks.map((week, wIdx) => {
+            const firstDayOfWeek = week[0];
+            const isFirstWeekOfMonth = firstDayOfWeek.getDate() <= 7 && wIdx > 0;
+            return (
+              <div key={`month-${wIdx}`} className="w-3.5 md:w-4 flex justify-start overflow-visible">
+                {isFirstWeekOfMonth ? firstDayOfWeek.toLocaleString('default', { month: 'short' }) : ''}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

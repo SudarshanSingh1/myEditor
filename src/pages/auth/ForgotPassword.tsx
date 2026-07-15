@@ -1,23 +1,27 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { fetchApi } from "../../lib/api";
-import { Loader2, Mail, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Mail, ArrowLeft, AlertCircle, KeyRound } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [step, setStep] = useState<1 | 2>(1); // 1: Email, 2: OTP
+  
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Clear error on type
   useEffect(() => {
     if (error) setError("");
-  }, [email]);
+  }, [email, otp]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       setError("Please enter your email address");
@@ -32,8 +36,16 @@ export default function ForgotPassword() {
         method: "POST",
         body: JSON.stringify({ email }),
       });
-      if (response.success) {
-        setIsSuccess(true);
+      if (response.success && response.data?.reset_token) {
+        setResetToken(response.data.reset_token);
+        setStep(2);
+      } else {
+        // Fallback for security (if fake token generated for missing user, etc.)
+        // But backend sends token now
+        if (response.data?.reset_token) {
+           setResetToken(response.data.reset_token);
+        }
+        setStep(2);
       }
     } catch (err: any) {
       setError(err.message || "Failed to request password reset. Please try again.");
@@ -42,10 +54,21 @@ export default function ForgotPassword() {
     }
   };
 
+  const handleVerifyOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || otp.length !== 6) {
+      setError("Please enter a valid 6-digit verification code");
+      return;
+    }
+
+    // Redirect to ResetPassword with token and otp
+    navigate(`/reset-password?token=${resetToken}&otp=${otp}`);
+  };
+
   return (
     <div className="w-full p-8 rounded-2xl bg-white/[0.02] border border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden relative">
       <AnimatePresence mode="wait">
-        {!isSuccess ? (
+        {step === 1 ? (
           <motion.div 
             key="form"
             initial={{ opacity: 0, x: -20 }}
@@ -56,7 +79,7 @@ export default function ForgotPassword() {
             <div className="space-y-2 text-center">
               <h2 className="text-3xl font-bold tracking-tight text-white">Reset password</h2>
               <p className="text-sm text-zinc-400">
-                Enter your email address and we will send you a secure link to reset your password.
+                Enter your email address and we will send you a secure verification code to reset your password.
               </p>
             </div>
 
@@ -67,7 +90,7 @@ export default function ForgotPassword() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleRequestReset} className="space-y-5">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-zinc-300" htmlFor="email">
                   Email address
@@ -98,10 +121,10 @@ export default function ForgotPassword() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending link...
+                      Sending code...
                     </>
                   ) : (
-                    "Send Reset Link"
+                    "Send Verification Code"
                   )}
                 </Button>
                 
@@ -116,33 +139,68 @@ export default function ForgotPassword() {
           </motion.div>
         ) : (
           <motion.div 
-            key="success"
+            key="otp"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center text-center space-y-6 py-4"
+            className="space-y-8"
           >
-            <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 border border-green-500/30">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="text-xl font-medium text-white">Check your email</h3>
-              <p className="text-sm text-zinc-400 max-w-[280px]">
-                We've sent a password reset link to <span className="text-zinc-200 font-medium">{email}</span>. Please check your inbox and spam folder.
+            <div className="space-y-2 text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-white">Enter code</h2>
+              <p className="text-sm text-zinc-400 max-w-[280px] mx-auto">
+                We've sent a 6-digit verification code to <span className="text-zinc-200 font-medium">{email}</span>.
               </p>
             </div>
 
-            <div className="w-full pt-4">
-              <Link to="/login">
+            {error && (
+              <div className="p-4 flex gap-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyOtp} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-zinc-300" htmlFor="otp">
+                  Verification Code
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                    <KeyRound className="h-4 w-4" />
+                  </div>
+                  <Input 
+                    id="otp" 
+                    type="text" 
+                    maxLength={6}
+                    placeholder="123456" 
+                    required 
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="pl-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11 text-center font-mono tracking-widest text-lg"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-2">
                 <Button 
-                  type="button" 
-                  variant="outline"
-                  className="w-full h-11 bg-transparent border-white/10 text-white hover:bg-white/5"
+                  type="submit" 
+                  disabled={!otp || otp.length !== 6}
+                  className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-semibold transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]"
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to login
+                  Verify and Continue
                 </Button>
-              </Link>
-            </div>
+                
+                <div className="text-center">
+                  <button 
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="inline-flex items-center text-sm text-zinc-400 hover:text-white transition-colors"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Change email address
+                  </button>
+                </div>
+              </div>
+            </form>
           </motion.div>
         )}
       </AnimatePresence>

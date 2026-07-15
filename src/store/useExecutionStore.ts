@@ -90,6 +90,12 @@ export const useExecutionStore = create<ExecutionState>()(
     const { pendingExecution, history } = get();
     const isSuccess = exitCode === 0;
     
+    // Instantly update dashboard data across all charts when execution finishes
+    queryClient.invalidateQueries({ queryKey: ['activity-heatmap'] });
+    queryClient.invalidateQueries({ queryKey: ['executions-chart'] });
+    queryClient.invalidateQueries({ queryKey: ['execution-summary-today'] });
+    queryClient.invalidateQueries({ queryKey: ['execution-summary-total'] });
+    
     if (pendingExecution) {
       const newHistoryItem: ExecutionHistoryItem = {
         id: Math.random().toString(36).substring(7),
@@ -108,8 +114,6 @@ export const useExecutionStore = create<ExecutionState>()(
         const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
         
         usersApi.recordActivity(todayStr).then((res) => {
-          queryClient.invalidateQueries({ queryKey: ['activity-heatmap'] });
-          
           if (res && res.count === 1) {
             const duration = 3 * 1000;
             const animationEnd = Date.now() + duration;

@@ -4,16 +4,19 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { fetchApi } from "../../lib/api";
 import { PasswordStrength } from "../../components/auth/PasswordStrength";
-import { Loader2, Lock, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Lock, ArrowLeft, CheckCircle2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
+  const otp = searchParams.get("otp");
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -23,10 +26,10 @@ export default function ResetPassword() {
   const isValid = passwordMeetsRequirements && password === confirmPassword;
 
   useEffect(() => {
-    if (!token) {
-      setError("Invalid or missing reset token.");
+    if (!token || !otp) {
+      setError("Invalid or missing reset token/OTP.");
     }
-  }, [token]);
+  }, [token, otp]);
 
   useEffect(() => {
     if (error && token) setError("");
@@ -42,7 +45,7 @@ export default function ResetPassword() {
     try {
       const response = await fetchApi("/auth/reset-password", {
         method: "POST",
-        body: JSON.stringify({ token, new_password: password }),
+        body: JSON.stringify({ token, otp, new_password: password }),
       });
       if (response.success) {
         setIsSuccess(true);
@@ -96,14 +99,21 @@ export default function ResetPassword() {
                   </div>
                   <Input 
                     id="password" 
-                    type="password" 
+                    type={showPassword ? "text" : "password"} 
                     placeholder="••••••••" 
                     required 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoading || !token}
-                    className="pl-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
+                    className="pl-10 pr-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
                   />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
                 <PasswordStrength password={password} />
               </div>
@@ -118,14 +128,21 @@ export default function ResetPassword() {
                   </div>
                   <Input 
                     id="confirm-password" 
-                    type="password" 
+                    type={showConfirmPassword ? "text" : "password"} 
                     placeholder="••••••••" 
                     required 
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isLoading || !token}
-                    className="pl-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
+                    className="pl-10 pr-10 bg-black/50 border-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 text-white h-11"
                   />
+                  <button 
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
                 {confirmPassword.length > 0 && password !== confirmPassword && (
                   <p className="text-xs text-red-400 mt-1">Passwords do not match</p>

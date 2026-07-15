@@ -27,7 +27,7 @@ interface FileExplorerProps {
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const queryClient = useQueryClient();
-  const { expandFolder, collapseAll } = useWorkspaceStore();
+  const { expandFolder, collapseAll, activeFolderId, setActiveFolder } = useWorkspaceStore();
   
   const [dialog, setDialog] = useState<DialogState>({
     isOpen: false,
@@ -47,7 +47,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     queryClient.invalidateQueries({ queryKey: ['workspace', projectId] });
   };
 
-  const updateCacheItem = (id: string, name: string, isFolder: boolean) => {
+  const updateCacheItem = (id: string, name?: string, isFolder?: boolean) => {
+    if (!name) return;
     queryClient.setQueryData<ProjectTree>(['workspace', projectId], (old) => {
       if (!old) return old;
       const clone = JSON.parse(JSON.stringify(old)) as ProjectTree;
@@ -122,9 +123,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   });
 
   const updateFolderMut = useMutation({
-    mutationFn: (args: { id: string; name: string; parent_id?: string | null }) => workspaceApi.updateFolder(args.id, { name: args.name, parent_id: args.parent_id }),
+    mutationFn: (args: { id: string; name?: string; parent_id?: string | null }) => workspaceApi.updateFolder(args.id, { name: args.name, parent_id: args.parent_id }),
     onMutate: async (args) => {
-      updateCacheItem(args.id, args.name, true);
+      if (args.name) updateCacheItem(args.id, args.name, true);
     },
     onSettled: invalidateTree
   });
@@ -146,10 +147,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   });
 
   const updateFileMut = useMutation({
-    mutationFn: (args: { id: string; name: string; folder_id?: string | null }) => workspaceApi.updateFile(args.id, { name: args.name, folder_id: args.folder_id }),
+    mutationFn: (args: { id: string; name?: string; folder_id?: string | null }) => workspaceApi.updateFile(args.id, { name: args.name, folder_id: args.folder_id }),
     onMutate: async (args) => {
-      updateCacheItem(args.id, args.name, false);
-      useEditorStore.getState().updateTab(args.id, { name: args.name });
+      if (args.name) {
+        updateCacheItem(args.id, args.name, false);
+        useEditorStore.getState().updateTab(args.id, { name: args.name });
+      }
     },
     onSettled: invalidateTree
   });
@@ -171,10 +174,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
 
   const handleDropItem = (draggedId: string, type: 'file' | 'folder', targetFolderId: string | null) => {
     if (type === 'file') {
-      updateFileMut.mutate({ id: draggedId, name: undefined as any, folder_id: targetFolderId } as any);
+      updateFileMut.mutate({ id: draggedId, folder_id: targetFolderId });
     } else {
       if (draggedId === targetFolderId) return;
-      updateFolderMut.mutate({ id: draggedId, name: undefined as any, parent_id: targetFolderId } as any);
+      updateFolderMut.mutate({ id: draggedId, parent_id: targetFolderId });
     }
   };
 
@@ -255,14 +258,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         <span>Explorer</span>
         <div className="flex items-center space-x-1">
           <button 
-            onClick={() => handleCreateFile(null)} 
+            onClick={() => handleCreateFile(activeFolderId)} 
             className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
             title="New File"
           >
             <FilePlus size={14} />
           </button>
           <button 
-            onClick={() => handleCreateFolder(null)} 
+            onClick={() => handleCreateFolder(activeFolderId)} 
             className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
             title="New Folder"
           >
@@ -285,7 +288,22 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-2">
+      <div 
+        className="flex-1 overflow-y-auto py-2"
+        onClick={() => setActiveFolder(null)}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          try {
+            const data = JSON.parse(e.dataTransfer.getData("application/json"));
+            // If dropped on the root container directly (not a child folder)
+            handleDropItem(data.id, data.type, null);
+          } catch(err) {}
+        }}
+      >
         {(!tree?.folders?.length && !tree?.files?.length) ? (
           <div className="px-4 py-8 text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Workspace is empty</p>

@@ -105,7 +105,7 @@ class ProjectService:
         created = self.repo.create(project)
         
         # Auto-generate starter files
-        self._generate_starter_files(created, user_id)
+        # self._generate_starter_files(created, user_id)
         
         return ProjectResponse.model_validate(created)
 

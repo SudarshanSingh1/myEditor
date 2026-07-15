@@ -5,6 +5,7 @@ import type { FileNode } from '../lib/api/workspace';
 interface WorkspaceState {
   expandedFolders: Set<string>;
   activeFileId: string | null;
+  activeFolderId: string | null;
   openedFiles: FileNode[];
 
   toggleFolder: (folderId: string) => void;
@@ -15,6 +16,7 @@ interface WorkspaceState {
   openFile: (file: FileNode) => void;
   closeFile: (fileId: string) => void;
   setActiveFile: (fileId: string | null) => void;
+  setActiveFolder: (folderId: string | null) => void;
   reset: () => void;
 }
 
@@ -23,6 +25,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     (set) => ({
       expandedFolders: new Set<string>(),
       activeFileId: null,
+      activeFolderId: null,
       openedFiles: [],
 
       toggleFolder: (folderId) =>
@@ -78,10 +81,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         }),
 
       setActiveFile: (fileId) => set({ activeFileId: fileId }),
+      setActiveFolder: (folderId) => set({ activeFolderId: folderId }),
       
       reset: () => set({
         expandedFolders: new Set<string>(),
         activeFileId: null,
+        activeFolderId: null,
         openedFiles: [],
       }),
     }),

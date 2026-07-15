@@ -281,6 +281,34 @@ def get_feedback_ratings(db: Session = Depends(get_db), admin: User = Depends(re
     data = [{"rating": r.rating, "count": r.count} for r in rows]
     return SuccessResponse(message="Feedback ratings retrieved", data={"items": data})
 
+@router.get("/analytics/feedback-resolution", response_model=SuccessResponse)
+def get_feedback_resolution_timeline(db: Session = Depends(get_db), admin: User = Depends(require_moderator)):
+    """Open vs Resolved feedback over the last 30 days."""
+    since = datetime.now(timezone.utc) - timedelta(days=30)
+    
+    rows = db.query(
+        func.date(Feedback.created_at).label("date"),
+        Feedback.status,
+        func.count(Feedback.id).label("count")
+    ).filter(
+        Feedback.created_at >= since
+    ).group_by(func.date(Feedback.created_at), Feedback.status).all()
+    
+    timeline_dict = {}
+    
+    for r in rows:
+        d = str(r.date)
+        if d not in timeline_dict:
+            timeline_dict[d] = {"date": d, "open": 0, "resolved": 0}
+            
+        if r.status in [FeedbackStatus.COMPLETED, FeedbackStatus.REJECTED]:
+            timeline_dict[d]["resolved"] += r.count
+        else:
+            timeline_dict[d]["open"] += r.count
+            
+    sorted_items = sorted(list(timeline_dict.values()), key=lambda x: x["date"])
+    return SuccessResponse(message="Feedback resolution timeline retrieved", data={"items": sorted_items})
+
 @router.get("/database", response_model=SuccessResponse)
 def get_database_info(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     """Returns database size and table statistics."""
@@ -351,7 +379,7 @@ def get_users(
 @router.post("/users/create", response_model=SuccessResponse)
 def create_admin_user(
     req: CreateUserRequest, request: Request, background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db), admin: User = Depends(require_super_admin)
+    db: Session = Depends(get_db), admin: User = Depends(require_admin)
 ):
     # Only SUPER_ADMIN can create SUPER_ADMIN
     if req.role == RoleEnum.SUPER_ADMIN and admin.role != RoleEnum.SUPER_ADMIN:
@@ -636,7 +664,7 @@ def get_executions(
     for log, username in rows:
         items.append({
             "id": str(log.id), "language": log.language, "status": log.status,
-            "duration_ms": log.duration_ms, "created_at": log.created_at,
+            "duration_ms": log.execution_time_ms, "created_at": log.created_at,
             "username": username or "Anonymous",
         })
     return SuccessResponse(message="Executions retrieved", data={"items": items, "total": total})

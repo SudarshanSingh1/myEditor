@@ -280,7 +280,7 @@ class EmailService:
 
 
     @staticmethod
-    def send_password_reset_email(user_id: str, reset_token: str, reset_url: str):
+    def send_password_reset_email(user_id: str, otp: str):
         """Send a password reset email."""
         db = SessionLocal()
         try:
@@ -299,17 +299,11 @@ class EmailService:
                 We received a request to reset the password for your <strong>{settings.APP_NAME}</strong> account. If you didn't make this request, you can safely ignore this email.
             </div>
             <div style="color: #d4d4d8; font-size: 15px; line-height: 1.6; margin-bottom: 36px;">
-                To reset your password, click the secure link below. This link will automatically expire in 15 minutes.
+                To reset your password, please use the following Verification Code. This code will automatically expire in 15 minutes.
             </div>
             <div style="text-align: center; margin-bottom: 36px;">
-                <a href="{reset_url}?token={reset_token}" style="display: inline-block; background-color: #8b5cf6; color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);">
-                    Reset Password
-                </a>
-            </div>
-            <div style="background-color: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 16px; margin-bottom: 32px;">
-                <div style="color: #71717a; font-size: 13px; margin-bottom: 8px;">Or copy and paste this link into your browser:</div>
-                <div style="word-break: break-all;">
-                    <a href="{reset_url}?token={reset_token}" style="color: #a78bfa; font-size: 13px; text-decoration: none;">{reset_url}?token={reset_token}</a>
+                <div style="display: inline-block; background-color: #8b5cf6; color: #ffffff !important; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 24px; letter-spacing: 4px; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);">
+                    {otp}
                 </div>
             </div>
             <div style="color: #a1a1aa; font-size: 15px; line-height: 1.6;">

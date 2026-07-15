@@ -20,7 +20,10 @@ import { Button } from "../../components/ui/Button";
 import { CreateProjectModal } from "../../components/projects/CreateProjectModal";
 import { LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
 import { ActivityHeatmap } from "../../components/dashboard/ActivityHeatmap";
+import { ExecutionChart } from "../../components/dashboard/ExecutionChart";
 import { workspaceApi } from "../../lib/api/workspace";
+import { fetchApi } from "../../lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -39,6 +42,25 @@ export default function Dashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: todaySummaryResp } = useQuery({
+    queryKey: ['execution-summary-today'],
+    queryFn: () => fetchApi("/users/activity/execution-summary?today=true"),
+    refetchInterval: 5000,
+  });
+
+  const { data: totalSummaryResp } = useQuery({
+    queryKey: ['execution-summary-total'],
+    queryFn: () => fetchApi("/users/activity/execution-summary"),
+    enabled: todaySummaryResp?.success && todaySummaryResp.data.total === 0,
+    refetchInterval: 5000,
+  });
+
+  const executionSummary = todaySummaryResp?.success && todaySummaryResp.data.total > 0
+    ? todaySummaryResp.data
+    : (totalSummaryResp?.success ? totalSummaryResp.data : null);
+
+  const summaryType = todaySummaryResp?.success && todaySummaryResp.data.total > 0 ? "Today" : "Total";
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -107,13 +129,30 @@ export default function Dashboard() {
     <div className="p-6 md:p-8 lg:p-10 max-w-7xl mx-auto space-y-10 relative">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 md:p-8 rounded-2xl bg-white dark:bg-black/40 border border-zinc-200 dark:border-white/10 shadow-sm">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight mb-1 text-zinc-900 dark:text-white">
+        <div className="flex flex-col gap-3">
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
             Welcome back, {user?.first_name || user?.username}
           </h2>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400">
-            Ready to build something amazing today? You have {totalProjects} active projects.
-          </p>
+          
+          {executionSummary && executionSummary.total > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{summaryType === "Today" ? "Today's Activity" : "All-Time Activity"}</span>
+              <div className="flex flex-wrap items-center gap-3 text-sm font-medium">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  Total Submissions: {executionSummary.total}
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  Correct: {executionSummary.success} ({executionSummary.success_rate}%)
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  Mistakes: {executionSummary.error} ({executionSummary.error_rate}%)
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap gap-3">
           <Button
@@ -196,8 +235,12 @@ export default function Dashboard() {
         </div>
       </div>
       
-      {/* Activity Heatmap Section */}
-      <ActivityHeatmap />      
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ExecutionChart />
+        {/* Activity Heatmap Section */}
+        <ActivityHeatmap />
+      </div>      
       <CreateProjectModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

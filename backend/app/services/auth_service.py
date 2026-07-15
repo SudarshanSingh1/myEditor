@@ -396,7 +396,13 @@ class AuthService:
                     )
 
         if not user:
-            return "If the email is registered, a password reset link has been sent."
+            fake_token = jwt.encode({"sub": "fake", "type": "reset", "otp_hash": "fake"}, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+            return fake_token
+
+        import random, string, hashlib
+        # Generate 6-digit OTP
+        otp = "".join(random.choices(string.digits, k=6))
+        otp_hash = hashlib.sha256(otp.encode()).hexdigest()
 
         # Generate reset token (expires in 15 minutes)
         # Including a piece of the password hash ensures the token invalidates once used.
@@ -405,7 +411,8 @@ class AuthService:
             "sub": str(user.id), 
             "type": "reset", 
             "exp": expire,
-            "pwd_frag": user.password_hash[-10:]
+            "pwd_frag": user.password_hash[-10:],
+            "otp_hash": otp_hash
         }
         reset_token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
@@ -414,18 +421,13 @@ class AuthService:
         db.add(log)
         db.commit()
 
-        # Send email
-        # In a real setup, FRONTEND_URL should be in settings, fallback to localhost for now
-        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:8080")
-        reset_url = f"{frontend_url.rstrip('/')}/reset-password"
-        
         try:
-            EmailService.send_password_reset_email(user.id, reset_token, reset_url)
+            EmailService.send_password_reset_email(user.id, otp)
             logger.info(f"Password reset email sent to user {user.id}")
         except Exception as e:
             logger.error(f"Failed to send password reset email to {user.id}: {str(e)}")
 
-        return "If the email is registered, a password reset link has been sent."
+        return reset_token
 
     @staticmethod
     def reset_password_confirm(db: Session, req: ResetPasswordConfirmRequest, ip_address: str = None):
@@ -433,9 +435,15 @@ class AuthService:
             payload = jwt.decode(req.token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
             user_id = payload.get("sub")
             token_type = payload.get("type")
+            token_otp_hash = payload.get("otp_hash")
 
-            if token_type != "reset" or not user_id:
+            if token_type != "reset" or not user_id or not token_otp_hash:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token.")
+                
+            import hashlib
+            provided_hash = hashlib.sha256(req.otp.encode()).hexdigest()
+            if provided_hash != token_otp_hash:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification code.")
 
         except JWTError:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset token.")

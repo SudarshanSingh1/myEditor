@@ -52,7 +52,7 @@ export const FileItem: React.FC<FileItemProps> = React.memo(({ file, level, onRe
   };
 
   const getFileIcon = (filename: string) => {
-    const ext = filename.split('.').pop()?.toLowerCase();
+    const ext = (filename || '').split('.').pop()?.toLowerCase();
     switch(ext) {
       case 'ts':
       case 'tsx':

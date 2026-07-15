@@ -34,6 +34,11 @@ def submit_feedback(req: FeedbackCreate, request: Request, db: Session = Depends
     
     return SuccessResponse(message="Feedback submitted successfully.", data=new_feedback)
 
+@router.get("/mine", response_model=SuccessResponse[List[FeedbackResponse]])
+def get_my_feedback(db: Session = Depends(get_db), current_user: User = Depends(get_current_user_dep)):
+    feedback_items = db.query(Feedback).filter(Feedback.user_id == current_user.id).order_by(Feedback.created_at.desc()).all()
+    return SuccessResponse(message="Feedback retrieved.", data=feedback_items)
+
 @router.get("/admin", response_model=SuccessResponse[List[FeedbackResponse]])
 def get_all_feedback(db: Session = Depends(get_db), current_admin: User = Depends(get_current_admin_dep)):
     feedback_items = db.query(Feedback).order_by(Feedback.created_at.desc()).all()
@@ -47,6 +52,8 @@ def update_feedback_status(feedback_id: uuid.UUID, req: FeedbackUpdateStatus, re
         
     old_status = item.status
     item.status = req.status
+    if req.admin_reply is not None:
+        item.admin_reply = req.admin_reply
     db.commit()
     db.refresh(item)
     
