@@ -26,9 +26,9 @@ services:
     volumes:
       - .:/app
     environment:
-      - APP_ENV=development
-      - DATABASE_URL=postgresql+psycopg://hamara_user:hamara_password@db:5432/hamara_db
-      - DEBUG=True
+      - APP_ENV=production
+      - DEBUG=False
+
     depends_on:
       db:
         condition: service_healthy
