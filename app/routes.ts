@@ -18,8 +18,6 @@ const ROUTES = [
 ];
 
 export default [
-  index("routes/_marketing._index.tsx"),
-  
   ...ROUTES.map(r => route(r, "routes/_marketing.$lang.tsx", { id: r })),
 
   // catch-all fallback for existing SPA routes (login, app, admin)
