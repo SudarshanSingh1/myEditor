@@ -34,47 +34,80 @@ const generateGraphData = () => {
   return data;
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#0f0f13] border border-white/10 rounded-xl p-4 shadow-2xl">
+        <p className="text-gray-400 text-xs mb-3 font-medium tracking-wide uppercase">{label}</p>
+        <div className="space-y-2">
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                <span className="text-gray-300 text-sm font-medium">{entry.name}</span>
+              </div>
+              <span className="text-white font-bold">{entry.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function ActivityShowcase() {
   const graphData = useMemo(() => generateGraphData(), []);
   
-  // Heatmap configuration to look very active
-  const cols = 20;
-  const rows = 7;
-  const heatmapData = Array.from({ length: cols }).map((_, cIdx) => 
-    Array.from({ length: rows }).map((_, rIdx): number => {
-      // Light up exactly the last 15 days
-      const dayIndex = cIdx * rows + rIdx;
-      const totalDays = cols * rows;
-      const daysFromEnd = totalDays - dayIndex;
-      
-      if (daysFromEnd <= 15) {
-        return Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
-      }
-      return 0;
-    })
-  );
+  const showcaseMonths = useMemo(() => {
+    const months: any[] = [];
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 140); // 20 weeks ago
+    startDate.setHours(0, 0, 0, 0);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-[#0f0f13] border border-white/10 rounded-xl p-4 shadow-2xl">
-          <p className="text-gray-400 text-xs mb-3 font-medium tracking-wide uppercase">{label}</p>
-          <div className="space-y-2">
-            {payload.map((entry: any, index: number) => (
-              <div key={index} className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                  <span className="text-gray-300 text-sm font-medium">{entry.name}</span>
-                </div>
-                <span className="text-white font-bold">{entry.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
+    const endOfToday = new Date(today);
+    endOfToday.setHours(23, 59, 59, 999);
+    
+    const currentDate = new Date(startDate);
+    
+    // calculate total days to track when we are in the last 15 days
+    const totalDaysCount = Math.floor((endOfToday.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    let daysPassed = 0;
+
+    while (currentDate <= endOfToday) {
+      const mName = currentDate.toLocaleString('default', { month: 'short' });
+      const y = currentDate.getFullYear();
+      const mIdx = currentDate.getMonth();
+
+      let lastMonth = months[months.length - 1];
+      if (!lastMonth || lastMonth.monthIndex !== mIdx || lastMonth.year !== y) {
+        months.push({ monthName: mName, year: y, monthIndex: mIdx, weeks: [] });
+        lastMonth = months[months.length - 1];
+      }
+
+      let lastWeek = lastMonth.weeks[lastMonth.weeks.length - 1];
+      if (!lastWeek || lastWeek.days.length + lastWeek.emptyStart === 7) {
+        lastMonth.weeks.push({
+          emptyStart: currentDate.getDay(),
+          days: []
+        });
+        lastWeek = lastMonth.weeks[lastMonth.weeks.length - 1];
+      }
+
+      let level = 0;
+      const daysFromEnd = totalDaysCount - daysPassed;
+      // Light up exactly the last 15 days
+      if (daysFromEnd <= 15) {
+        level = Math.floor(Math.random() * 3) + 1;
+      }
+      
+      lastWeek.days.push({ date: new Date(currentDate), level });
+      currentDate.setDate(currentDate.getDate() + 1);
+      daysPassed++;
     }
-    return null;
-  };
+    return months;
+  }, []);
 
   return (
     <section id="about" className="pt-12 pb-24 lg:pt-16 overflow-hidden relative bg-zinc-50 dark:bg-[#050508] border-t border-zinc-200 dark:border-white/5 font-sans">
@@ -253,20 +286,37 @@ export function ActivityShowcase() {
               </div>
               
               {/* Heatmap Grid */}
-              <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
-                {heatmapData.map((col, cIdx) => (
-                  <div key={cIdx} className="flex flex-col gap-2">
-                    {col.map((level, rIdx) => (
-                      <div
-                        key={rIdx}
-                        className={`h-[14px] w-[14px] rounded-[3px] transition-all duration-300 hover:ring-2 hover:ring-green-500/50 cursor-pointer ${
-                          level === 0 ? "bg-white/5" :
-                          level === 1 ? "bg-green-500/40" :
-                          level === 2 ? "bg-[#16a34a]" :
-                          "bg-green-500"
-                        }`}
-                      />
-                    ))}
+              <div className="flex overflow-x-auto pb-4 scrollbar-hide gap-4">
+                {showcaseMonths.map((monthBlock, mIdx) => (
+                  <div key={mIdx} className="flex flex-col gap-3">
+                    {/* Grid for this month */}
+                    <div className="flex gap-2">
+                      {monthBlock.weeks.map((week: any, wIdx: number) => (
+                        <div key={wIdx} className="flex flex-col gap-2">
+                          {/* padding for empty days at the start of the week */}
+                          {Array.from({ length: week.emptyStart }).map((_, i) => (
+                            <div key={`empty-${i}`} className="h-[14px] w-[14px] bg-transparent" />
+                          ))}
+                          
+                          {week.days.map((day: any, dIdx: number) => (
+                            <div
+                              key={dIdx}
+                              className={`h-[14px] w-[14px] rounded-[3px] transition-all duration-300 hover:ring-2 hover:ring-green-500/50 cursor-pointer ${
+                                day.level === 0 ? "bg-white/5" :
+                                day.level === 1 ? "bg-green-500/40" :
+                                day.level === 2 ? "bg-[#16a34a]" :
+                                "bg-green-500"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Month label centered under the block */}
+                    <div className="text-[11px] text-zinc-500 font-bold tracking-widest text-center">
+                      {monthBlock.monthName}
+                    </div>
                   </div>
                 ))}
               </div>

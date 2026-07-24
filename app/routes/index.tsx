@@ -3,9 +3,11 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "../components/ThemeProvider";
 
 // Eager loaded
-import { LandingPage } from "../pages/LandingPage";
 import { AuthGuard } from "../components/auth/AuthGuard";
 import { AdminAuthGuard } from "../components/auth/AdminAuthGuard";
+
+// Landing Page (Lazy)
+const LandingPage = lazy(() => import("../pages/LandingPage").then(module => ({ default: module.LandingPage })));
 
 // Layouts
 const AuthLayout = lazy(() => import("../layouts/AuthLayout").then(module => ({ default: module.AuthLayout })));
