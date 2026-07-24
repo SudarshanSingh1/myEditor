@@ -22,7 +22,7 @@ from app.models.audit_log import AuditLog
 from app.models.workspace import File
 from app.models.execution_log import ExecutionLog
 from app.models.system_settings import SystemSettings
-from app.models.email_log import EmailLog
+from app.models.email_log import EmailLog, EmailStatus
 from app.models.user_activity import UserActivity
 from app.schemas.responses import SuccessResponse
 from app.services.audit_service import AuditService
@@ -903,7 +903,7 @@ def retry_email_log(
         
     # In a real system, we'd trigger a background Celery task here to resend the email
     # For now, we mock the success response to fulfill the frontend endpoint
-    log.status = EmailStatusEnum.PENDING
+    log.status = EmailStatus.PENDING
     log.retries = (log.retries or 0) + 1
     log.error_message = None
     db.commit()

@@ -1,0 +1,1 @@
+import{a as e}from"./js/rolldown-runtime-CNC7AqOf.js";import{b as t}from"./js/vendor-charts-BUAxvZl3.js";import{S as n,n as r}from"./js/vendor-react-HSOuEMB5.js";import{i}from"./js/vendor-motion-De-T42Tp.js";var a=e(t(),1),o=n(),s=i();(0,a.startTransition)(()=>{(0,o.hydrateRoot)(document,(0,s.jsx)(a.StrictMode,{children:(0,s.jsx)(r,{})}))});

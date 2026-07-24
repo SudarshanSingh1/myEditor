@@ -11,6 +11,9 @@ from app.models.email_log import EmailLog, EmailStatus
 from app.models.oauth_account import OAuthAccount
 from app.models.user_session import UserSession
 from app.models.user_activity import UserActivity
+from app.models.guest_session import GuestSession
+from app.models.language_content import LanguageContent
+from app.models.blog import BlogPost
 
 __all__ = [
     "Base",

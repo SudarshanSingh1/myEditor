@@ -18,4 +18,4 @@ class PythonRunner(BaseRunner):
         return True, "", 0.0
 
     def get_run_command(self, source_file: str) -> str:
-        return f"python3 {source_file}"
+        return f"python3 -u {source_file}"

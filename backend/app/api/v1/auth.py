@@ -170,6 +170,7 @@ def request_password_reset(req: PasswordResetRequest, request: Request, db: Sess
     return SuccessResponse(message="If the email is registered, a password reset link has been sent.", data=PasswordResetResponse(reset_token=token))
 
 @router.post("/reset-password", response_model=SuccessResponse)
+@limiter.limit("5/minute")
 def reset_password(req: ResetPasswordConfirmRequest, request: Request, db: Session = Depends(get_db)):
     ip_address = request.client.host if request.client else None
     AuthService.reset_password_confirm(db, req, ip_address)

@@ -6,7 +6,7 @@ from app.schemas.responses import SuccessResponse
 import docker
 import os
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import HTTPException
 
 router = APIRouter()
 

@@ -51,7 +51,11 @@ frontend_host = urlparse(settings.FRONTEND_URL).hostname or "localhost"
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"]
+    allowed_hosts=[
+        urlparse(settings.FRONTEND_URL).hostname or "localhost",
+        "localhost",
+        "127.0.0.1",
+    ]
 )
 app.add_middleware(
     CORSMiddleware,

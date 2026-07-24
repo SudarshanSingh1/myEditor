@@ -97,13 +97,16 @@ class DockerManager:
                     logger.error(f"Failed to remove container {container.id}: {remove_err}")
 
     @classmethod
-    async def run_container_interactive(cls, image: str, command: str, working_dir: str, binds: Dict[str, Dict[str, str]], websocket: WebSocket, timeout: int = MAX_EXECUTION_TIME, mem_limit: str = None) -> int:
+    async def run_container_interactive(cls, image: str, command: str, working_dir: str, binds: Dict[str, Dict[str, str]], websocket: WebSocket, timeout: int = MAX_EXECUTION_TIME, mem_limit: str = None, user: str = None) -> int:
         client = cls.get_client()
         cls.pull_image_if_not_exists(image)
         
         config = get_secure_container_config(image, command, working_dir, binds, mem_limit)
         config["tty"] = True
         config["stdin_open"] = True
+        # Allow caller to override the container user (e.g. "nobody" for shell sessions)
+        if user is not None:
+            config["user"] = user
         
         container = None
         try:
@@ -150,9 +153,8 @@ class DockerManager:
             task_read = asyncio.create_task(read_from_docker())
             task_write = asyncio.create_task(write_to_docker())
             
-            # Use a much longer timeout for interactive sessions (e.g. 1 hour)
-            # since humans take time to type multiple inputs.
-            interactive_timeout = 3600
+            # Limit interactive sessions to 30 minutes max to prevent resource exhaustion
+            interactive_timeout = 1800
             
             wait_task = asyncio.create_task(asyncio.to_thread(container.wait, timeout=interactive_timeout))
             

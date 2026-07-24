@@ -16,6 +16,9 @@ from app.execution.languages.javascript_runner import JsRunner
 from app.execution.languages.typescript_runner import TsRunner
 from app.execution.languages.go_runner import GoRunner
 from app.execution.languages.rust_runner import RustRunner
+from app.execution.languages.php_runner import PhpRunner
+from app.execution.languages.kotlin_runner import KotlinRunner
+from app.execution.languages.swift_runner import SwiftRunner
 from app.repositories.workspace_repository import WorkspaceRepository
 from app.repositories.project_repository import ProjectRepository
 from app.models.system_settings import SystemSettings
@@ -39,6 +42,9 @@ class ExecutionService:
             "typescript": TsRunner,
             "go": GoRunner,
             "rust": RustRunner,
+            "php": PhpRunner,
+            "kotlin": KotlinRunner,
+            "swift": SwiftRunner,
             "html/css": JsRunner  # Can't truly 'run' HTML/CSS securely in backend out-of-box without a server, but this avoids crashes
         }
 
@@ -79,7 +85,7 @@ class ExecutionService:
             return ExecutionResponse(**result)
         except Exception as e:
             logger.error(f"Execution service failed: {e}")
-            raise RuntimeError(f"Execution failed: {str(e)}")
+            raise RuntimeError("Execution failed. Please check your code and try again.")
 
     def stop_execution(self, container_id: str, user_id: UUID):
         # We don't have a reliable way to map internal container_id back to user via the stateless API in this simple implementation
@@ -166,11 +172,11 @@ class ExecutionService:
                 # DEBUG LOGS
                 import stat
                 st = os.stat(temp_dir)
-                logger.info(f"DEBUG: temp_dir path: {temp_dir}")
-                logger.info(f"DEBUG: temp_dir permissions: {stat.filemode(st.st_mode)} (uid={st.st_uid}, gid={st.st_gid})")
+                logger.debug(f"DEBUG: temp_dir path: {temp_dir}")
+                logger.debug(f"DEBUG: temp_dir permissions: {stat.filemode(st.st_mode)} (uid={st.st_uid}, gid={st.st_gid})")
                 
                 st_file = os.stat(source_path)
-                logger.info(f"DEBUG: file permissions: {stat.filemode(st_file.st_mode)} (uid={st_file.st_uid}, gid={st_file.st_gid})")
+                logger.debug(f"DEBUG: file permissions: {stat.filemode(st_file.st_mode)} (uid={st_file.st_uid}, gid={st_file.st_gid})")
 
                 logger.info(f"Created temporary file: {source_path}")
 
@@ -219,7 +225,8 @@ class ExecutionService:
         except Exception as e:
             logger.exception(f"Interactive execution failed: {e}")
             try:
-                await websocket.send_text(f"\r\n\x1b[38;5;1m[System] Error: {e}\x1b[0m\r\n")
+                # Do not leak internal exception details to the client
+                await websocket.send_text("\r\n\x1b[38;5;1m[System] Execution error. Please try again.\x1b[0m\r\n")
             except Exception as ws_e:
                 logger.debug(f"Failed to send error to websocket: {ws_e}")
 
@@ -269,7 +276,9 @@ class ExecutionService:
                     command="bash --rcfile /workspace/.bashrc",
                     working_dir="/workspace",
                     binds=binds,
-                    websocket=websocket
+                    websocket=websocket,
+                    # Security: run shell as nobody, not root
+                    user="nobody",
                 )
 
         except Exception as e:
@@ -278,3 +287,67 @@ class ExecutionService:
                 await websocket.send_text(f"\r\n\x1b[38;5;1m[System] Shell Error: {e}\x1b[0m\r\n")
             except Exception:
                 pass
+
+    async def run_guest_code_interactive(self, websocket: WebSocket, content: str, language: str) -> None:
+        """
+        Interactive execution for guest sessions without DB files.
+        """
+        try:
+            runner_class = self.runners.get(language.lower())
+            if not runner_class:
+                await websocket.send_json({"type": "error", "message": f"Language '{language}' is not supported"})
+                return
+            
+            runner = runner_class()
+            
+            # Determine file extension
+            # For simplicity, we just use the language name as extension or map it
+            ext_map = {
+                "python": ".py",
+                "cpp": ".cpp",
+                "c++": ".cpp",
+                "java": ".java",
+                "c": ".c",
+                "javascript": ".js",
+                "typescript": ".ts",
+                "go": ".go",
+                "rust": ".rs"
+            }
+            ext = ext_map.get(language.lower(), ".txt")
+            source_file = f"main{ext}"
+            
+            if language.lower() == "java":
+                source_file = "Main.java"
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                os.chmod(temp_dir, 0o777)
+                
+                source_path = os.path.join(temp_dir, source_file)
+                with open(source_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                os.chmod(source_path, 0o666)
+
+                binds = {temp_dir: {"bind": "/execution", "mode": "rw"}}
+                raw_cmd = runner.get_interactive_command(source_file)
+                
+                from app.execution.docker.container_manager import DockerManager
+                exit_code = await DockerManager.run_container_interactive(
+                    image=runner.image_name,
+                    command=f"sh -c '{raw_cmd}'",
+                    working_dir="/execution",
+                    binds=binds,
+                    websocket=websocket
+                )
+
+                if exit_code == 0:
+                    await websocket.send_text("\r\n\x1b[38;5;2m✓ Program finished (0)\x1b[0m\r\n")
+                else:
+                    await websocket.send_text(f"\r\n\x1b[38;5;1m[Runtime Error] Exited with code {exit_code}\x1b[0m\r\n")
+
+        except Exception as e:
+            logger.exception(f"Guest interactive execution failed: {e}")
+            try:
+                await websocket.send_text("\r\n\x1b[38;5;1m[System] Execution error. Please try again.\x1b[0m\r\n")
+            except Exception:
+                pass
+

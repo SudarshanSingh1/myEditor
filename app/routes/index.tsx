@@ -1,0 +1,201 @@
+import { lazy, Suspense, useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "../components/ThemeProvider";
+
+// Eager loaded
+import { LandingPage } from "../pages/LandingPage";
+import { AuthGuard } from "../components/auth/AuthGuard";
+import { AdminAuthGuard } from "../components/auth/AdminAuthGuard";
+
+// Layouts
+const AuthLayout = lazy(() => import("../layouts/AuthLayout").then(module => ({ default: module.AuthLayout })));
+const AppLayout = lazy(() => import("../layouts/AppLayout").then(module => ({ default: module.AppLayout })));
+const AdminLayout = lazy(() => import("../layouts/AdminLayout").then(module => ({ default: module.AdminLayout })));
+
+// Legal Pages
+const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("../pages/TermsOfService"));
+const CookiePolicy = lazy(() => import("../pages/CookiePolicy"));
+
+// Auth Pages (Lazy)
+const Login = lazy(() => import("../pages/auth/Login"));
+const Signup = lazy(() => import("../pages/auth/Signup"));
+const ForgotPassword = lazy(() => import("../pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("../pages/auth/ResetPassword"));
+const VerifyEmail = lazy(() => import("../pages/auth/VerifyEmail"));
+const ForceChangePassword = lazy(() => import("../pages/auth/ForceChangePassword"));
+const OAuthCallback = lazy(() => import("../pages/auth/OAuthCallback"));
+
+// App Pages (Lazy)
+const Dashboard = lazy(() => import("../pages/app/Dashboard"));
+const Projects = lazy(() => import("../pages/app/Projects"));
+const ProjectOverview = lazy(() => import("../pages/app/ProjectOverview"));
+const ProjectWorkspace = lazy(() => import("../pages/app/ProjectWorkspace"));
+const Trash = lazy(() => import("../pages/app/Trash"));
+const Profile = lazy(() => import("../pages/app/Profile"));
+const Settings = lazy(() => import("../pages/app/Settings"));
+const Help = lazy(() => import("../pages/app/Help"));
+const About = lazy(() => import("../pages/app/About"));
+
+// Admin Pages (Lazy)
+const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
+const AdminAnalyticsPage = lazy(() => import("../pages/admin/AdminAnalyticsPage"));
+const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
+const AdminProjectsPage = lazy(() => import("../pages/admin/AdminProjectsPage"));
+const AdminExecutionsPage = lazy(() => import("../pages/admin/AdminExecutionsPage"));
+const AdminFeedbackPage = lazy(() => import("../pages/admin/AdminFeedbackPage"));
+const AdminErrorsPage = lazy(() => import("../pages/admin/AdminErrorsPage"));
+const AdminAuditPage = lazy(() => import("../pages/admin/AdminAuditPage"));
+const AdminSettingsPage = lazy(() => import("../pages/admin/AdminSettingsPage"));
+const PlatformSecurity = lazy(() => import("../pages/admin/settings/PlatformSecurity"));
+const ResourceQuotas = lazy(() => import("../pages/admin/settings/ResourceQuotas"));
+const EmailSmtp = lazy(() => import("../pages/admin/settings/EmailSmtp"));
+const SystemMaintenance = lazy(() => import("../pages/admin/settings/SystemMaintenance"));
+const AdminServerPage = lazy(() => import("../pages/admin/AdminServerPage"));
+const AdminDatabasePage = lazy(() => import("../pages/admin/AdminDatabasePage"));
+const AdminEmailsPage = lazy(() => import("../pages/admin/AdminEmailsPage"));
+
+// Error Pages (Lazy)
+const NotFound = lazy(() => import("../pages/error/NotFound"));
+const Forbidden = lazy(() => import("../pages/error/Forbidden"));
+
+// Maintenance Page
+import { MaintenancePage } from "../pages/MaintenancePage";
+import { MaintenanceGuard } from "../components/auth/MaintenanceGuard";
+
+// Fallback loader
+const PageLoader = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+  </div>
+);
+
+const AdminLoader = () => (
+  <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f]">
+    <div className="flex flex-col items-center gap-4">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
+      <p className="text-sm text-gray-400">Loading...</p>
+    </div>
+  </div>
+);
+
+import { useUserStore } from "../stores/useUserStore";
+
+export default function AppRouter() {
+  const checkAuth = useUserStore((state) => state.checkAuth);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  return (
+    <ThemeProvider>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public Landing */}
+          <Route path="/" element={<MaintenanceGuard><LandingPage /></MaintenanceGuard>} />
+
+          {/* Maintenance Route */}
+          <Route path="/maintenance" element={<MaintenancePage />} />
+
+          {/* Auth Routes */}
+          <Route element={<MaintenanceGuard><AuthLayout /></MaintenanceGuard>}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/force-password-change" element={<AuthGuard><ForceChangePassword /></AuthGuard>} />
+            <Route path="/oauth/callback/:provider" element={<OAuthCallback />} />
+          </Route>
+
+          {/* App Routes */}
+          <Route
+            path="/app"
+            element={
+              <MaintenanceGuard>
+                <AuthGuard>
+                  <AppLayout />
+                </AuthGuard>
+              </MaintenanceGuard>
+            }
+          >
+            <Route index element={<Navigate to="/app/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="projects" element={<Projects />} />
+            <Route path="projects/:id" element={<ProjectOverview />} />
+            <Route path="projects/:id/editor" element={<ProjectWorkspace />} />
+            <Route path="trash" element={<Trash />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="help" element={<Help />} />
+            <Route path="about" element={<About />} />
+          </Route>
+
+          {/* Admin Portal — specifically for Admins (Super Admins can also access) */}
+          {/* Super Admin and Admins bypass maintenance mode inside the layout */}
+          <Route
+            path="/app/admin"
+            element={
+              <AuthGuard>
+                <AdminAuthGuard>
+                  <Suspense fallback={<AdminLoader />}>
+                    <AdminLayout />
+                  </Suspense>
+                </AdminAuthGuard>
+              </AuthGuard>
+            }
+          >
+            <Route index element={<Suspense fallback={<AdminLoader />}><AdminDashboardPage /></Suspense>} />
+            <Route path="analytics" element={<Suspense fallback={<AdminLoader />}><AdminAnalyticsPage /></Suspense>} />
+            <Route path="users" element={<Suspense fallback={<AdminLoader />}><AdminUsersPage /></Suspense>} />
+            <Route path="projects" element={<Suspense fallback={<AdminLoader />}><AdminProjectsPage /></Suspense>} />
+            <Route path="executions" element={<Suspense fallback={<AdminLoader />}><AdminExecutionsPage /></Suspense>} />
+            <Route path="feedback" element={<Suspense fallback={<AdminLoader />}><AdminFeedbackPage /></Suspense>} />
+            <Route path="errors" element={<Suspense fallback={<AdminLoader />}><AdminErrorsPage /></Suspense>} />
+          </Route>
+
+          {/* Super Admin Direct Bypass Route */}
+          <Route
+            path="/super-admin"
+            element={
+              <MaintenanceGuard>
+                <AuthGuard>
+                  <AdminAuthGuard requireSuperAdmin={true}>
+                    <Suspense fallback={<AdminLoader />}>
+                      <AdminLayout isSuperAdminLayout={true} />
+                    </Suspense>
+                  </AdminAuthGuard>
+                </AuthGuard>
+              </MaintenanceGuard>
+            }
+          >
+            <Route index element={<Navigate to="/super-admin/server" replace />} />
+            <Route path="audit" element={<Suspense fallback={<AdminLoader />}><AdminAuditPage /></Suspense>} />
+            <Route path="settings" element={<Suspense fallback={<AdminLoader />}><AdminSettingsPage /></Suspense>}>
+              <Route index element={<Navigate to="security" replace />} />
+              <Route path="security" element={<Suspense fallback={<AdminLoader />}><PlatformSecurity /></Suspense>} />
+              <Route path="resources" element={<Suspense fallback={<AdminLoader />}><ResourceQuotas /></Suspense>} />
+              <Route path="email" element={<Suspense fallback={<AdminLoader />}><EmailSmtp /></Suspense>} />
+              <Route path="maintenance" element={<Suspense fallback={<AdminLoader />}><SystemMaintenance /></Suspense>} />
+            </Route>
+            <Route path="server" element={<Suspense fallback={<AdminLoader />}><AdminServerPage /></Suspense>} />
+            <Route path="database" element={<Suspense fallback={<AdminLoader />}><AdminDatabasePage /></Suspense>} />
+            <Route path="emails" element={<Suspense fallback={<AdminLoader />}><AdminEmailsPage /></Suspense>} />
+          </Route>
+
+          {/* Error Routes */}
+          <Route path="/403" element={<Forbidden />} />
+
+          {/* Legal Pages */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/cookies" element={<CookiePolicy />} />
+
+          {/* 404 Catch All */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    </ThemeProvider>
+  );
+}

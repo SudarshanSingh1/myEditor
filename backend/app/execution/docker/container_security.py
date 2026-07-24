@@ -1,9 +1,9 @@
 from typing import Dict, Any
 
 # Security limits for container execution
-MAX_MEMORY_MB = 128
+MAX_MEMORY_MB = 256
 MAX_CPU_QUOTA = 50000  # 0.5 CPU out of 100000
-MAX_PIDS = 50
+MAX_PIDS = 512
 MAX_EXECUTION_TIME = 5  # seconds
 MAX_OUTPUT_SIZE = 1 * 1024 * 1024  # 1 MB
 

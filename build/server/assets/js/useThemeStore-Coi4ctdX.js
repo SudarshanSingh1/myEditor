@@ -1,0 +1,1 @@
+import{create as e}from"zustand";import{persist as t}from"zustand/middleware";var n=e()(t(e=>({theme:`system`,setTheme:t=>e({theme:t})}),{name:`hamara-theme-storage`}));export{n as t};

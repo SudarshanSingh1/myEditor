@@ -12,6 +12,14 @@ services:
       - .env.production
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    # Security: limit what the API container itself can do on the host
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID   # needed for gosu to drop to appuser
+      - SETGID
     logging:
       driver: "json-file"
       options:
@@ -20,6 +28,9 @@ services:
     environment:
       - ENVIRONMENT=production
       - HOST=0.0.0.0
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
     build:
@@ -30,6 +41,10 @@ services:
       - "127.0.0.1:8080:8080"
     depends_on:
       - api
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     logging:
       driver: "json-file"
       options:
@@ -40,11 +55,20 @@ services:
     image: postgres:15-alpine
     restart: always
     environment:
-      POSTGRES_USER: hamara_user
-      POSTGRES_PASSWORD: hamara_password
-      POSTGRES_DB: hamara_db
+      # Credentials must be set via .env.production — no hardcoded defaults
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    ports: []  # Never expose DB port to the internet
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:

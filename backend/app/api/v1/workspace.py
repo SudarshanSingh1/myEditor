@@ -105,3 +105,41 @@ def restore_file_version(file_id: UUID, version_number: int, db: Session = Depen
 def delete_file_version(file_id: UUID, version_number: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     WorkspaceService.delete_version(db, file_id, version_number, current_user)
     return SuccessResponse(message="File version deleted.")
+
+# -------------------------------------------------------------------
+# GUEST MIGRATION
+# -------------------------------------------------------------------
+from app.schemas.workspace import GuestMigrationRequest
+from app.models.project import Project
+from app.models.workspace import File as WorkspaceFile
+
+@router.post("/migrate-guest", response_model=SuccessResponse)
+def migrate_guest_workspace(req: GuestMigrationRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Create new project for the migrated files
+    new_project = Project(
+        name=req.project_name,
+        owner_id=current_user.id,
+        is_public=False
+    )
+    db.add(new_project)
+    db.flush() # get new_project.id
+    
+    # Create the files
+    for g_file in req.files:
+        db_file = WorkspaceFile(
+            project_id=new_project.id,
+            name=g_file.name,
+            content=g_file.content,
+            size=len(g_file.content) if g_file.content else 0,
+            language=g_file.language,
+            extension=g_file.extension,
+            version=1
+        )
+        db.add(db_file)
+        
+    # We could also mark the guest session as `is_converted = True` here if we pass the guest_id
+        
+    db.commit()
+    
+    return SuccessResponse(message="Guest workspace migrated successfully.", data={"project_id": str(new_project.id)})
+

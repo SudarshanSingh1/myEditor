@@ -399,7 +399,9 @@ class AuthService:
             fake_token = jwt.encode({"sub": "fake", "type": "reset", "otp_hash": "fake"}, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
             return fake_token
 
-        import random, string, hashlib
+        import random
+        import string
+        import hashlib
         # Generate 6-digit OTP
         otp = "".join(random.choices(string.digits, k=6))
         otp_hash = hashlib.sha256(otp.encode()).hexdigest()

@@ -111,3 +111,14 @@ class WorkspaceTreeResponse(BaseModel):
     name: str
     folders: List[TreeFolder] = []
     files: List[TreeFile] = []
+
+class GuestFileItem(BaseModel):
+    name: str = Field(..., max_length=255)
+    content: str
+    language: Optional[str] = None
+    extension: Optional[str] = None
+
+class GuestMigrationRequest(BaseModel):
+    project_name: str = Field(..., max_length=100)
+    files: List[GuestFileItem]
+
