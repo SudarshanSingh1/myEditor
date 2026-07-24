@@ -25,6 +25,7 @@ interface GuestQuota {
 
 interface UserState {
   user: User | null;
+  permissions: string[];
   isAuthenticated: boolean;
   isLoading: boolean;
   checkAuth: () => Promise<void>;
@@ -33,7 +34,7 @@ interface UserState {
   guestQuota: GuestQuota | null;
   showGuestConversionModal: boolean;
   setShowGuestConversionModal: (show: boolean) => void;
-  login: (user: User) => void;
+  login: (user: User) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => void;
 }
@@ -42,6 +43,7 @@ export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       user: null,
+      permissions: [],
       isAuthenticated: false,
       isLoading: true,
       
@@ -50,14 +52,24 @@ export const useUserStore = create<UserState>()(
         try {
           const response = await fetchApi('/auth/me');
           if (response.success && response.data) {
-            set({ user: response.data, isAuthenticated: true });
+            // Also fetch permissions
+            let perms: string[] = [];
+            try {
+              const permResp = await fetchApi('/rbac/my-permissions');
+              if (permResp.permissions) {
+                perms = permResp.permissions;
+              }
+            } catch (e) {
+              console.error("Failed to fetch permissions", e);
+            }
+            set({ user: response.data, permissions: perms, isAuthenticated: true });
           } else {
-            set({ user: null, isAuthenticated: false });
+            set({ user: null, permissions: [], isAuthenticated: false });
             // If not auth, we initialize guest
             await get().initGuest();
           }
         } catch {
-          set({ user: null, isAuthenticated: false });
+          set({ user: null, permissions: [], isAuthenticated: false });
           await get().initGuest();
         } finally {
           set({ isLoading: false });
@@ -104,7 +116,18 @@ export const useUserStore = create<UserState>()(
         set({ showGuestConversionModal: show });
       },
       
-      login: (user) => set({ user, isAuthenticated: true, guestQuota: null }),
+      login: async (user) => {
+        let perms: string[] = [];
+        try {
+          const permResp = await fetchApi('/rbac/my-permissions');
+          if (permResp.permissions) {
+            perms = permResp.permissions;
+          }
+        } catch (e) {
+          console.error("Failed to fetch permissions on login", e);
+        }
+        set({ user, permissions: perms, isAuthenticated: true, guestQuota: null });
+      },
       
       logout: async () => {
         try {
@@ -112,7 +135,7 @@ export const useUserStore = create<UserState>()(
         } catch (error) {
           console.error("Logout failed:", error);
         } finally {
-          set({ user: null, isAuthenticated: false });
+          set({ user: null, permissions: [], isAuthenticated: false });
         }
       },
       

@@ -27,6 +27,8 @@ class SystemSettings(Base):
     announcement_color = Column(String, nullable=True)
     
     # General Options
+    app_name = Column(String, nullable=False, default="Hamara Editor", server_default="'Hamara Editor'")
+    default_timezone = Column(String, nullable=False, default="UTC", server_default="'UTC'")
     default_theme = Column(String, default="system")
     supported_languages = Column(JSON, default=lambda: ["en"])
     
@@ -45,6 +47,10 @@ class SystemSettings(Base):
     max_file_size_mb = Column(Integer, nullable=False, default=20, server_default="20")
     max_projects_per_user = Column(Integer, nullable=False, default=10, server_default="10")
     rate_limit_per_minute = Column(Integer, nullable=False, default=100, server_default="100")
+    
+    queue_limits = Column(Integer, nullable=False, default=1000, server_default="1000")
+    worker_limits = Column(Integer, nullable=False, default=10, server_default="10")
+    retention_days = Column(Integer, nullable=False, default=30, server_default="30")
 
     # SMTP Settings
     smtp_host = Column(String, nullable=True)
@@ -55,6 +61,14 @@ class SystemSettings(Base):
     smtp_from_email = Column(String, nullable=True)
     smtp_tls = Column(Boolean, nullable=False, default=True, server_default="true")
     smtp_ssl = Column(Boolean, nullable=False, default=False, server_default="false")
+    
+    # OAuth Settings
+    oauth_google_enabled = Column(Boolean, nullable=False, default=False, server_default="false")
+    oauth_google_client_id = Column(String, nullable=True)
+    oauth_google_client_secret = Column(String, nullable=True) # Encrypted
+    oauth_github_enabled = Column(Boolean, nullable=False, default=False, server_default="false")
+    oauth_github_client_id = Column(String, nullable=True)
+    oauth_github_client_secret = Column(String, nullable=True) # Encrypted
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

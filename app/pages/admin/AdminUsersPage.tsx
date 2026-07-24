@@ -3,8 +3,12 @@ import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
 import { useAdminContext } from "../../components/auth/AdminAuthGuard";
 import { Dropdown, DropdownItem, DropdownSeparator } from "../../components/ui/Dropdown";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Users, Search, RefreshCw } from "lucide-react";
 import { useConfirm } from "../../components/ui/ConfirmProvider";
+import { UserDetailsDrawer } from "./UserDetailsDrawer";
+import { IdentitySessionsTab } from "./IdentitySessionsTab";
+import { PageHeader } from "../../components/enterprise/PageHeader";
+
 
 interface UserItem {
   id: string;
@@ -18,12 +22,12 @@ interface UserItem {
   is_deleted: boolean;
 }
 
-const ROLES = ["USER", "MODERATOR", "ADMIN", "SUPER_ADMIN"];
+const ROLES = ["USER", "MODERATOR", "ADMIN", "OWNER"];
 const STATUSES = ["ACTIVE", "INACTIVE", "SUSPENDED", "BANNED"];
 
 const roleBadge = (role: string) => {
   const map: Record<string, string> = {
-    SUPER_ADMIN: "bg-violet-500/20 text-violet-300 border-violet-500/30",
+    OWNER: "bg-violet-500/20 text-violet-300 border-violet-500/30",
     ADMIN: "bg-blue-500/20 text-blue-300 border-blue-500/30",
     MODERATOR: "bg-amber-500/20 text-amber-300 border-amber-500/30",
     USER: "bg-gray-500/20 text-gray-400 border-gray-500/30",
@@ -75,12 +79,12 @@ function CreateAdminModal({ onClose, onSuccess }: { onClose: () => void; onSucce
     }
   };
 
-  const availableRoles = isSuperAdmin ? ["USER", "MODERATOR", "ADMIN", "SUPER_ADMIN"] : ["USER", "MODERATOR", "ADMIN"];
+  const availableRoles = isSuperAdmin ? ["USER", "MODERATOR", "ADMIN", "OWNER"] : ["USER", "MODERATOR", "ADMIN"];
   const permissionPreviews: Record<string, string[]> = {
     USER: ["Basic system access", "Personal projects", "Standard features"],
     MODERATOR: ["View users", "View projects", "Manage feedback", "View errors"],
     ADMIN: ["All moderator perms", "Edit users", "Delete projects", "System settings", "View analytics"],
-    SUPER_ADMIN: ["Full system access", "Role management", "Audit logs", "Delete admins"],
+    OWNER: ["Full system access", "Role management", "Audit logs", "Delete admins"],
   };
 
   return (
@@ -244,6 +248,9 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [emailTarget, setEmailTarget] = useState<UserItem | null>(null);
+  const [detailsTarget, setDetailsTarget] = useState<string | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"users" | "identity">("users");
   const limit = 20;
 
   const fetchUsers = useCallback(async () => {
@@ -283,6 +290,43 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleAction = async (userId: string, action: string) => {
+    try {
+      await fetchApi(`/admin/users/${userId}/actions`, {
+        method: "POST",
+        body: JSON.stringify({ action })
+      });
+      toast.success(`Action '${action}' successful`);
+      fetchUsers();
+    } catch (e: any) {
+      toast.error(e.message || `Failed to perform ${action}`);
+    }
+  };
+
+  const handleBulkAction = async (action: string) => {
+    const confirmed = await confirm({
+      title: "Bulk Action",
+      description: `Perform '${action}' on ${selectedUsers.length} selected users?`,
+      confirmText: "Proceed",
+      variant: action === "restore" || action === "unsuspend" ? "default" : "destructive"
+    });
+    if (!confirmed) return;
+    try {
+      const resp = await fetchApi("/admin/users/bulk-actions", {
+        method: "POST",
+        body: JSON.stringify({ user_ids: selectedUsers, action })
+      });
+      if (resp?.success) {
+        toast.success(`Bulk action '${action}' completed.`);
+        setSelectedUsers([]);
+        fetchUsers();
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Bulk action failed");
+    }
+  };
+
+
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       await fetchApi(`/admin/users/${userId}/role`, { method: "PATCH", body: JSON.stringify({ role: newRole }) });
@@ -315,108 +359,186 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div style={{ background: "var(--e-bg-base)", minHeight: "100%" }}>
       {showCreate && <CreateAdminModal onClose={() => setShowCreate(false)} onSuccess={fetchUsers} />}
       {emailTarget && <SendEmailModal user={emailTarget} onClose={() => setEmailTarget(null)} />}
+      <UserDetailsDrawer userId={detailsTarget} onClose={() => setDetailsTarget(null)} onUpdate={fetchUsers} />
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Users</h1>
-          <p className="text-sm text-gray-500 mt-1">{total.toLocaleString()} total users</p>
-        </div>
-        {!isModerator && (
+      <PageHeader
+        title="Identity & Users"
+        subtitle={`${total.toLocaleString()} total accounts`}
+        icon={Users}
+        actions={
+          !isModerator && activeTab === "users" ? (
+            <button onClick={() => setShowCreate(true)} className="e-btn e-btn-primary">
+              + Create Admin
+            </button>
+          ) : undefined
+        }
+      />
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--e-border)", background: "var(--e-bg-surface)", padding: "0 24px" }}>
+        {[{ key: "users", label: "User Management" }, { key: "identity", label: "Identity & Sessions" }].map(t => (
           <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors"
+            key={t.key}
+            onClick={() => setActiveTab(t.key as any)}
+            style={{
+              padding: "12px 16px",
+              fontSize: 13, fontWeight: 600,
+              color: activeTab === t.key ? "var(--e-text-primary)" : "var(--e-text-muted)",
+              background: "none", border: "none", cursor: "pointer",
+              borderBottom: activeTab === t.key ? "2px solid var(--e-accent)" : "2px solid transparent",
+              transition: "all 150ms",
+              marginBottom: -1,
+            }}
           >
-            + Create Admin
+            {t.label}
           </button>
-        )}
+        ))}
       </div>
 
+      <div style={{ padding: "20px 24px" }}>
+      {activeTab === "identity" ? (
+        <IdentitySessionsTab />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="text"
-          placeholder="Search by username or email..."
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(0); }}
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-violet-500/50"
-        />
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className="e-search" style={{ flex: 1, minWidth: 220 }}>
+          <Search size={13} color="var(--e-text-faint)" />
+          <input
+            type="text"
+            placeholder="Search username or email..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(0); }}
+          />
+        </div>
         <select
           value={roleFilter}
           onChange={e => { setRoleFilter(e.target.value); setPage(0); }}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-400 focus:outline-none focus:border-violet-500/50 min-w-[140px]"
+          style={{
+            background: "var(--e-bg-elevated)", border: "1px solid var(--e-border)",
+            borderRadius: "var(--e-radius-md)", padding: "7px 12px",
+            fontSize: 13, color: "var(--e-text-secondary)", outline: "none",
+            minWidth: 130, cursor: "pointer",
+          }}
         >
-          <option value="" className="bg-[#111118]">All Roles</option>
-          {ROLES.map(r => <option key={r} value={r} className="bg-[#111118]">{r.replace("_", " ")}</option>)}
+          <option value="" style={{ background: "#0d0e1a" }}>All Roles</option>
+          {ROLES.map(r => <option key={r} value={r} style={{ background: "#0d0e1a" }}>{r.replace("_", " ")}</option>)}
         </select>
-        <button
-          onClick={fetchUsers}
-          className="px-4 py-2 bg-white/8 hover:bg-white/12 text-sm text-gray-300 rounded-lg transition-colors border border-white/10"
-        >
+        <button onClick={fetchUsers} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
+          <RefreshCw size={12} />
           Refresh
         </button>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedUsers.length > 0 && !isModerator && (
+        <div style={{
+          background: "var(--e-bg-active)", border: "1px solid var(--e-border-accent)",
+          borderRadius: "var(--e-radius-md)", padding: "10px 14px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--e-accent-light)" }}>
+            {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''} selected
+          </span>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={() => handleBulkAction("suspend")}      className="e-btn e-btn-sm" style={{ background: "var(--e-amber-bg)", color: "var(--e-amber)", border: "1px solid var(--e-amber-border)" }}>Suspend</button>
+            <button onClick={() => handleBulkAction("unsuspend")}    className="e-btn e-btn-sm" style={{ background: "var(--e-green-bg)",  color: "var(--e-green)",  border: "1px solid var(--e-green-border)" }}>Unsuspend</button>
+            <button onClick={() => handleBulkAction("force_logout")} className="e-btn e-btn-secondary e-btn-sm">Force Logout</button>
+            <button onClick={() => handleBulkAction("reset_mfa")}    className="e-btn e-btn-secondary e-btn-sm">Reset MFA</button>
+            <button onClick={() => setSelectedUsers([])}             className="e-btn e-btn-ghost e-btn-sm">Cancel</button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
-      <div className="rounded-xl border border-white/8 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[700px]">
+      <div className="e-table-wrapper">
+        <div style={{ overflowX: "auto" }}>
+          <table className="e-table" style={{ minWidth: 700 }}>
             <thead>
-              <tr className="bg-white/3 border-b border-white/8">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Projects</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Joined</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+              <tr>
+                <th style={{ width: 40 }}>
+                  <input
+                    type="checkbox"
+                    style={{ width: 14, height: 14, accentColor: "var(--e-accent)", cursor: "pointer" }}
+                    checked={users.length > 0 && selectedUsers.length === users.length}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedUsers(users.map(u => u.id));
+                      else setSelectedUsers([]);
+                    }}
+                  />
+                </th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Projects</th>
+                <th>Joined</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody>
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="px-4 py-3"><div className="h-4 w-32 bg-white/8 rounded" /></td>
-                    <td className="px-4 py-3"><div className="h-5 w-20 bg-white/8 rounded-full" /></td>
-                    <td className="px-4 py-3"><div className="h-5 w-16 bg-white/8 rounded-full" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-8 bg-white/8 rounded" /></td>
-                    <td className="px-4 py-3"><div className="h-4 w-20 bg-white/8 rounded" /></td>
-                    <td className="px-4 py-3"><div className="h-6 w-24 bg-white/8 rounded ml-auto" /></td>
+                  <tr key={i}>
+                    <td><div className="e-skeleton" style={{ height: 14, width: 14 }} /></td>
+                    <td><div className="e-skeleton" style={{ height: 14, width: 130 }} /></td>
+                    <td><div className="e-skeleton" style={{ height: 20, width: 70, borderRadius: 100 }} /></td>
+                    <td><div className="e-skeleton" style={{ height: 20, width: 60, borderRadius: 100 }} /></td>
+                    <td><div className="e-skeleton" style={{ height: 14, width: 30 }} /></td>
+                    <td><div className="e-skeleton" style={{ height: 14, width: 80 }} /></td>
+                    <td><div className="e-skeleton" style={{ height: 24, width: 90, marginLeft: "auto" }} /></td>
                   </tr>
                 ))
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-600">No users found.</td>
+                  <td colSpan={7} className="px-4 py-12 text-center text-gray-600">No users found.</td>
                 </tr>
               ) : users.map(user => (
-                <tr key={user.id} className="hover:bg-white/3 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                <tr key={user.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      style={{ width: 14, height: 14, accentColor: "var(--e-accent)", cursor: "pointer" }}
+                      checked={selectedUsers.includes(user.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedUsers(prev => [...prev, user.id]);
+                        else setSelectedUsers(prev => prev.filter(id => id !== user.id));
+                      }}
+                    />
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: "50%",
+                        background: "linear-gradient(135deg, #6366f1, #a855f7)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#fff", fontSize: 10, fontWeight: 700, flexShrink: 0,
+                      }}>
                         {user.username.slice(0, 2).toUpperCase()}
                       </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-white truncate">{user.username}</p>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <p style={{ fontWeight: 600, color: "var(--e-text-primary)", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.username}</p>
                           {user.is_deleted && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/20 text-red-400 border border-red-500/20">
-                              Deleted
-                            </span>
+                            <span className="e-chip error" style={{ fontSize: 9 }}>Deleted</span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                        <p style={{ fontSize: 11, color: "var(--e-text-faint)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    {isSuperAdmin && user.role !== "SUPER_ADMIN" ? (
+                    {isSuperAdmin && user.role !== "OWNER" ? (
                       <select
                         value={user.role}
                         onChange={e => handleRoleChange(user.id, e.target.value)}
                         className={`text-xs px-2 py-1 rounded-full border font-medium ${roleBadge(user.role)} bg-transparent focus:outline-none cursor-pointer`}
                       >
-                        {ROLES.filter(r => r !== "SUPER_ADMIN").map(r => (
+                        {ROLES.filter(r => r !== "OWNER").map(r => (
                           <option key={r} value={r} className="bg-[#111118] text-white">{r.replace("_", " ")}</option>
                         ))}
                       </select>
@@ -443,24 +565,50 @@ export default function AdminUsersPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-gray-400">{user.projects_count}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{new Date(user.created_at).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td style={{ color: "var(--e-text-secondary)", fontVariantNumeric: "tabular-nums", fontSize: 13 }}>{user.projects_count}</td>
+                  <td style={{ color: "var(--e-text-faint)", fontSize: 11, fontVariantNumeric: "tabular-nums" }}>{new Date(user.created_at).toLocaleDateString()}</td>
+                  <td style={{ textAlign: "right" }}>
                     {!isModerator && (
-                      <div className="flex items-center justify-end">
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
+                        <button
+                          onClick={() => setDetailsTarget(user.id)}
+                          className="e-btn e-btn-ghost e-btn-sm"
+                          style={{ color: "var(--e-accent-light)" }}
+                        >
+                          Details
+                        </button>
                         <Dropdown
                           align="right"
                           trigger={<button className="p-1.5 text-gray-500 hover:text-white rounded hover:bg-white/10 transition-colors"><MoreHorizontal className="w-4 h-4" /></button>}
                         >
+                          <DropdownItem onClick={() => setDetailsTarget(user.id)}>
+                            View User Details
+                          </DropdownItem>
+                          <DropdownSeparator />
                           <DropdownItem onClick={() => setEmailTarget(user)}>
                             Send Custom Email
                           </DropdownItem>
                           <DropdownItem onClick={() => handleResendCredentials(user.id, user.username)}>
-                            Send Credentials
+                            Reset Password & Email
                           </DropdownItem>
-                          {(user.role !== "SUPER_ADMIN" || isSuperAdmin) && (
+                          <DropdownItem onClick={() => handleAction(user.id, "force_logout")}>
+                            Force Logout
+                          </DropdownItem>
+                          <DropdownItem onClick={() => handleAction(user.id, "reset_mfa")}>
+                            Reset MFA
+                          </DropdownItem>
+                          {(user.role !== "OWNER" || isSuperAdmin) && (
                             <>
                               <DropdownSeparator />
+                              {user.status !== "BANNED" ? (
+                                <DropdownItem onClick={() => handleAction(user.id, "ban")} className="text-red-400 hover:text-red-400">
+                                  Ban User
+                                </DropdownItem>
+                              ) : (
+                                <DropdownItem onClick={() => handleAction(user.id, "unban")} className="text-emerald-400 hover:text-emerald-400">
+                                  Unban User
+                                </DropdownItem>
+                              )}
                               <DropdownItem onClick={() => handleDelete(user.id, user.username)} className="text-red-400 hover:text-red-400">
                                 Delete User
                               </DropdownItem>
@@ -472,34 +620,38 @@ export default function AdminUsersPage() {
                   </td>
                 </tr>
               ))}
+
             </tbody>
           </table>
         </div>
 
         {/* Pagination */}
         {total > limit && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-white/8">
-            <p className="text-xs text-gray-500">
-              Showing {page * limit + 1}–{Math.min((page + 1) * limit, total)} of {total}
-            </p>
-            <div className="flex gap-2">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderTop: "1px solid var(--e-border)", fontSize: 12, color: "var(--e-text-muted)" }}>
+            <span>Showing {page * limit + 1}–{Math.min((page + 1) * limit, total)} of {total.toLocaleString()}</span>
+            <div style={{ display: "flex", gap: 6 }}>
               <button
                 disabled={page === 0}
                 onClick={() => setPage(p => p - 1)}
-                className="px-3 py-1 text-xs rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="e-btn e-btn-secondary e-btn-sm"
+                style={{ opacity: page === 0 ? 0.4 : 1 }}
               >
-                Previous
+                ← Prev
               </button>
               <button
                 disabled={(page + 1) * limit >= total}
                 onClick={() => setPage(p => p + 1)}
-                className="px-3 py-1 text-xs rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="e-btn e-btn-secondary e-btn-sm"
+                style={{ opacity: (page + 1) * limit >= total ? 0.4 : 1 }}
               >
-                Next
+                Next →
               </button>
             </div>
           </div>
         )}
+      </div>
+      </div>
+      )}
       </div>
     </div>
   );

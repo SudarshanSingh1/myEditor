@@ -88,7 +88,7 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
                                 except ValueError:
                                     user = None
                                 if user:
-                                    if user.role == RoleEnum.SUPER_ADMIN:
+                                    if user.role == RoleEnum.OWNER:
                                         is_admin_allowed = True
                                     elif config["allow_admin"] and user.role in [RoleEnum.ADMIN, RoleEnum.MODERATOR]:
                                         is_admin_allowed = True

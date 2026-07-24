@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
+import { Bug, RefreshCw } from "lucide-react";
+import { PageHeader } from "../../components/enterprise/PageHeader";
 
 export default function AdminErrorsPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -22,14 +24,19 @@ export default function AdminErrorsPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">System Errors</h1>
-          <p className="text-sm text-gray-500 mt-1">{total} errors logged</p>
-        </div>
-        <button onClick={fetchData} className="px-4 py-2 bg-white/8 hover:bg-white/12 text-sm text-gray-300 rounded-lg border border-white/10">Refresh</button>
-      </div>
+    <div style={{ background: "var(--e-bg-base)", minHeight: "100%" }}>
+      <PageHeader
+        title="System Errors"
+        subtitle={`${total.toLocaleString()} errors logged`}
+        icon={Bug}
+        iconColor="var(--e-red)"
+        actions={
+          <button onClick={fetchData} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
+            <RefreshCw size={12} /> Refresh
+          </button>
+        }
+      />
+      <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
 
       {loading ? (
         <div className="space-y-3">
@@ -77,14 +84,15 @@ export default function AdminErrorsPage() {
       )}
 
       {total > limit && (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-500">Showing {page * limit + 1}–{Math.min((page + 1) * limit, total)} of {total}</p>
-          <div className="flex gap-2">
-            <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 text-xs rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-40">Previous</button>
-            <button disabled={(page + 1) * limit >= total} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 text-xs rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-40">Next</button>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: "var(--e-text-muted)" }}>
+          <span>Showing {page * limit + 1}–{Math.min((page + 1) * limit, total)} of {total.toLocaleString()}</span>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="e-btn e-btn-secondary e-btn-sm" style={{ opacity: page === 0 ? 0.4 : 1 }}>← Prev</button>
+            <button disabled={(page + 1) * limit >= total} onClick={() => setPage(p => p + 1)} className="e-btn e-btn-secondary e-btn-sm" style={{ opacity: (page + 1) * limit >= total ? 0.4 : 1 }}>Next →</button>
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

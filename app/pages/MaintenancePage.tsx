@@ -291,7 +291,7 @@ export function MaintenancePage() {
 
   // Only redirect AFTER we've confirmed maintenance is genuinely off
   if (!isMaintenanceMode) return <Navigate to={location.state?.from || "/app"} replace />;
-  if (user?.role === "SUPER_ADMIN" || user?.role === "ADMIN") return <Navigate to={location.state?.from || "/app"} replace />;
+  if (user?.role === "OWNER" || user?.role === "ADMIN") return <Navigate to={location.state?.from || "/app"} replace />;
 
   const progressPercent = timeLeft !== null ? Math.max(0, Math.min(100, 100 - (timeLeft / totalDuration) * 100)) : 100;
 

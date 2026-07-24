@@ -207,6 +207,15 @@ class AuthService:
         # Reset failed attempts on success
         user.failed_login_attempts = 0
         user.account_locked_until = None
+        
+        # Cache effective permissions
+        from app.models.role_permission import RolePermission
+        from app.models.permission import Permission
+        
+        if user.role != RoleEnum.OWNER:
+            perms = db.query(Permission.node).join(RolePermission).filter(RolePermission.role == user.role).all()
+            user.effective_permissions = [p[0] for p in perms]
+            
         db.commit()
 
         # Session Management
@@ -384,7 +393,7 @@ class AuthService:
                 # Determine if user is allowed
                 is_allowed = False
                 if user:
-                    if user.role == RoleEnum.SUPER_ADMIN:
+                    if user.role == RoleEnum.OWNER:
                         is_allowed = True
                     elif getattr(sys_settings, "maintenance_allow_admin_access", True) and user.role in [RoleEnum.ADMIN, RoleEnum.MODERATOR]:
                         is_allowed = True
@@ -470,7 +479,7 @@ class AuthService:
             if is_in_maintenance:
                 # Determine if user is allowed
                 is_allowed = False
-                if user.role == RoleEnum.SUPER_ADMIN:
+                if user.role == RoleEnum.OWNER:
                     is_allowed = True
                 elif getattr(sys_settings, "maintenance_allow_admin_access", True) and user.role in [RoleEnum.ADMIN, RoleEnum.MODERATOR]:
                     is_allowed = True

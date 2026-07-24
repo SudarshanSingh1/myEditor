@@ -1,4 +1,6 @@
 export interface Settings {
+  app_name: string;
+  default_timezone: string;
   maintenance_mode: boolean;
   maintenance_message: string;
   maintenance_end_time: string | null;
@@ -20,9 +22,21 @@ export interface Settings {
   smtp_from_email: string;
   smtp_tls: boolean;
   smtp_ssl: boolean;
+  queue_limits: number;
+  worker_limits: number;
+  retention_days: number;
+  feature_flags: Record<string, any>;
+  oauth_google_enabled: boolean;
+  oauth_google_client_id: string;
+  oauth_google_client_secret: string;
+  oauth_github_enabled: boolean;
+  oauth_github_client_id: string;
+  oauth_github_client_secret: string;
 }
 
 export const defaultSettings: Settings = {
+  app_name: "Hamara Editor",
+  default_timezone: "UTC",
   maintenance_mode: false,
   maintenance_message: "System is under maintenance.",
   maintenance_end_time: null,
@@ -44,4 +58,14 @@ export const defaultSettings: Settings = {
   smtp_from_email: "noreply@example.com",
   smtp_tls: true,
   smtp_ssl: false,
+  queue_limits: 1000,
+  worker_limits: 10,
+  retention_days: 30,
+  feature_flags: {},
+  oauth_google_enabled: false,
+  oauth_google_client_id: "",
+  oauth_google_client_secret: "",
+  oauth_github_enabled: false,
+  oauth_github_client_id: "",
+  oauth_github_client_secret: "",
 };

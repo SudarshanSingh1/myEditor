@@ -1,0 +1,1 @@
+import{a as e}from"./vendor-query-Dmncty05.js";var t=new e({defaultOptions:{queries:{refetchOnWindowFocus:!1,staleTime:300*1e3,gcTime:600*1e3,retry:1,retryDelay:1e3}}});export{t};

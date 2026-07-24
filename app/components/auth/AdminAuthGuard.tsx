@@ -2,7 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
 import { createContext, useContext, type ReactNode } from "react";
 
-export type AdminRole = "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
+export type AdminRole = "MODERATOR" | "ADMIN" | "OWNER";
 
 interface AdminContextValue {
   isSuperAdmin: boolean;
@@ -22,11 +22,11 @@ export const useAdminContext = () => useContext(AdminContext);
 
 interface AdminAuthGuardProps {
   children: ReactNode;
-  requireSuperAdmin?: boolean;
+  requiredPermission?: string;
 }
 
-export function AdminAuthGuard({ children, requireSuperAdmin = false }: AdminAuthGuardProps) {
-  const { user, isAuthenticated, isLoading } = useUserStore();
+export function AdminAuthGuard({ children, requiredPermission }: AdminAuthGuardProps) {
+  const { user, permissions, isAuthenticated, isLoading } = useUserStore();
 
   if (isLoading) {
     return (
@@ -44,16 +44,16 @@ export function AdminAuthGuard({ children, requireSuperAdmin = false }: AdminAut
   }
 
   const role = user.role?.toUpperCase() as AdminRole;
-  const isSuperAdmin = role === "SUPER_ADMIN";
+  const isSuperAdmin = role === "OWNER";
   const isAdmin = role === "ADMIN" || isSuperAdmin;
   const isModerator = role === "MODERATOR";
-  const hasAccess = isAdmin || isModerator;
+  const hasAccess = isAdmin || isModerator || permissions.includes('*') || permissions.includes('users.read.basic');
 
   if (!hasAccess) {
     return <Navigate to="/403" replace />;
   }
 
-  if (requireSuperAdmin && !isSuperAdmin) {
+  if (requiredPermission && !isSuperAdmin && !permissions.includes(requiredPermission) && !permissions.includes('*')) {
     return <Navigate to="/403" replace />;
   }
 

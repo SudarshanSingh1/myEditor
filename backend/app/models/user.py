@@ -9,7 +9,7 @@ class RoleEnum(str, enum.Enum):
     USER = "USER"
     MODERATOR = "MODERATOR"
     ADMIN = "ADMIN"
-    SUPER_ADMIN = "SUPER_ADMIN"
+    OWNER = "OWNER"
 
 class StatusEnum(str, enum.Enum):
     ACTIVE = "ACTIVE"
@@ -41,6 +41,10 @@ class User(Base):
     is_deleted = Column(Boolean, nullable=False, default=False, server_default="false")
     must_change_password = Column(Boolean, nullable=False, default=False, server_default="false")
     temp_password_expires_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # RBAC effective permissions cache (list of permission nodes)
+    from sqlalchemy import JSON, text
+    effective_permissions = Column(JSON, nullable=True, default=list, server_default=text("'[]'::json"))
     
     # 2FA and Security
     totp_secret = Column(String(255), nullable=True)

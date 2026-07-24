@@ -46,7 +46,7 @@ export default function AdminDatabasePage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto font-sans">
+    <div style={{ background: "var(--e-bg-base)", minHeight: "100%" }}>
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/5 pb-6">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
@@ -123,16 +123,36 @@ export default function AdminDatabasePage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-[#18181b] shadow-xl p-5 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              Driver: <span className="text-gray-300 font-medium">PostgreSQL (Neon)</span>
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Active Connection</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+            <div className="rounded-xl border border-white/10 bg-[#18181b] shadow-xl p-5">
+              <p className="text-sm text-gray-500 mb-1">PostgreSQL Version</p>
+              <p className="text-lg font-medium text-white truncate" title={data.db_version}>{data.db_version?.split(" ")[1] || "Unknown"}</p>
+            </div>
+            
+            <div className="rounded-xl border border-white/10 bg-[#18181b] shadow-xl p-5 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Active Connections</p>
+                <p className="text-2xl font-bold text-white">{data.active_connections}</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10">
+                <Zap className="h-5 w-5 text-blue-400" />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-[#18181b] shadow-xl p-5">
+              <p className="text-sm text-gray-500 mb-1">Pool Status</p>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <p className="text-white font-medium">{data.pool_status}</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-[#18181b] shadow-xl p-5">
+              <p className="text-sm text-gray-500 mb-1">Migration Status</p>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                <p className="text-white font-medium">{data.migration_status}</p>
+              </div>
             </div>
           </div>
         </>

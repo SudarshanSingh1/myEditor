@@ -16,7 +16,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("general");
 
-  const isAdmin = user?.role?.toUpperCase() === "ADMIN" || user?.role?.toUpperCase() === "SUPER_ADMIN";
+  const isAdmin = user?.role?.toUpperCase() === "ADMIN" || user?.role?.toUpperCase() === "OWNER";
 
   return (
     <div className="p-6 md:p-8 lg:p-10 max-w-3xl mx-auto space-y-8">

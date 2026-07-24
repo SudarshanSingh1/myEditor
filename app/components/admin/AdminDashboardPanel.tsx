@@ -1,20 +1,24 @@
-import { useState } from "react";
-import { AdminSettingsPanel } from "./AdminSettingsPanel";
-import { AdminFeedbackPanel } from "./AdminFeedbackPanel";
-import { AdminErrorsPanel } from "./AdminErrorsPanel";
-import { AdminUsersPanel } from "./AdminUsersPanel";
-import { AdminProjectsPanel } from "./AdminProjectsPanel";
-import { AdminAuditPanel } from "./AdminAuditPanel";
-import { AdminStatsPanel } from "./AdminStatsPanel";
+import { useState, Suspense, lazy } from "react";
 import { Card, CardHeader, CardTitle } from "../ui/Card";
 import { useUserStore } from "../../stores/useUserStore";
 
+const AdminSettingsPanel = lazy(() => import("./AdminSettingsPanel").then(m => ({ default: m.AdminSettingsPanel })));
+const AdminFeedbackPanel = lazy(() => import("./AdminFeedbackPanel").then(m => ({ default: m.AdminFeedbackPanel })));
+const AdminErrorsPanel = lazy(() => import("./AdminErrorsPanel").then(m => ({ default: m.AdminErrorsPanel })));
+const AdminUsersPanel = lazy(() => import("./AdminUsersPanel").then(m => ({ default: m.AdminUsersPanel })));
+const AdminProjectsPanel = lazy(() => import("./AdminProjectsPanel").then(m => ({ default: m.AdminProjectsPanel })));
+const AdminAuditPanel = lazy(() => import("./AdminAuditPanel").then(m => ({ default: m.AdminAuditPanel })));
+
+const OwnerDashboard = lazy(() => import("../dashboard/OwnerDashboard").then(m => ({ default: m.OwnerDashboard })));
+const AdminDashboard = lazy(() => import("../dashboard/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
+const ModeratorDashboard = lazy(() => import("../dashboard/ModeratorDashboard").then(m => ({ default: m.ModeratorDashboard })));
+
 export function AdminDashboardPanel() {
   const { user } = useUserStore();
-  const isAdmin = user?.role?.toUpperCase() === "ADMIN" || user?.role?.toUpperCase() === "SUPER_ADMIN";
+  const isAdmin = user?.role?.toUpperCase() === "ADMIN" || user?.role?.toUpperCase() === "OWNER";
   const [activeTab, setActiveTab] = useState("stats");
 
-  if (!isAdmin) {
+  if (!user || !['OWNER', 'ADMIN', 'MODERATOR'].includes(user.role?.toUpperCase())) {
     return (
       <div className="p-8 text-center bg-red-50 text-red-600 rounded-lg">
         <h2 className="text-xl font-bold mb-2">Access Denied</h2>
@@ -23,12 +27,25 @@ export function AdminDashboardPanel() {
     );
   }
 
+  const renderDashboard = () => {
+    switch (user.role?.toUpperCase()) {
+      case 'OWNER':
+        return <OwnerDashboard />;
+      case 'ADMIN':
+        return <AdminDashboard />;
+      case 'MODERATOR':
+        return <ModeratorDashboard />;
+      default:
+        return <ModeratorDashboard />;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="pb-4">
           <CardTitle>Admin Dashboard</CardTitle>
-          <div className="flex gap-4 border-b pb-2 pt-2">
+          <div className="flex gap-4 border-b pb-2 pt-2 overflow-x-auto whitespace-nowrap">
             <button
               onClick={() => setActiveTab("stats")}
               className={`text-sm font-medium pb-2 -mb-2 border-b-2 transition-colors ${activeTab === "stats" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
@@ -75,13 +92,15 @@ export function AdminDashboardPanel() {
         </CardHeader>
       </Card>
 
-      {activeTab === "stats" && <AdminStatsPanel />}
-      {activeTab === "users" && <AdminUsersPanel />}
-      {activeTab === "projects" && <AdminProjectsPanel />}
-      {activeTab === "settings" && <AdminSettingsPanel />}
-      {activeTab === "feedback" && <AdminFeedbackPanel />}
-      {activeTab === "errors" && <AdminErrorsPanel />}
-      {activeTab === "audit" && <AdminAuditPanel />}
+      <Suspense fallback={<div className="p-8 text-center text-muted-foreground animate-pulse">Loading panel...</div>}>
+        {activeTab === "stats" && renderDashboard()}
+        {activeTab === "users" && <AdminUsersPanel />}
+        {activeTab === "projects" && <AdminProjectsPanel />}
+        {activeTab === "settings" && <AdminSettingsPanel />}
+        {activeTab === "feedback" && <AdminFeedbackPanel />}
+        {activeTab === "errors" && <AdminErrorsPanel />}
+        {activeTab === "audit" && <AdminAuditPanel />}
+      </Suspense>
     </div>
   );
 }

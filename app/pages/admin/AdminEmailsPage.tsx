@@ -3,6 +3,8 @@ import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
 import { Mail, RefreshCw, Search, Filter, AlertCircle, CheckCircle2, Clock, Send, ShieldAlert, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { PageHeader } from "../../components/enterprise/PageHeader";
+import { StatusChip } from "../../components/enterprise/MiniSparkline";
 
 interface EmailLog {
   id: string;
@@ -78,28 +80,19 @@ export default function AdminEmailsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-8 font-sans max-w-7xl mx-auto">
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/5 pb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-violet-500/10 text-violet-400">
-            <Mail className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Email History</h1>
-            <p className="text-sm text-gray-400 mt-1">View outgoing platform emails and delivery statuses.</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadEmails}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+    <div style={{ background: "var(--e-bg-base)", minHeight: "100%" }}>
+      <PageHeader
+        title="Email Logs"
+        subtitle="Outgoing platform emails, delivery status, and transactional history"
+        icon={Mail}
+        iconColor="var(--e-cyan)"
+        actions={
+          <button onClick={loadEmails} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} /> Refresh
           </button>
-        </div>
-      </div>
+        }
+      />
+      <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -230,6 +223,7 @@ export default function AdminEmailsPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

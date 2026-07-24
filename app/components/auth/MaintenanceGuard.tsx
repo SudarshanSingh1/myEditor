@@ -37,7 +37,7 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
 
   const isPreview = sessionStorage.getItem("maintenance_preview") === "true";
   
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isSuperAdmin = user?.role === "OWNER";
   const isNormalAdminOrMod = user?.role === "ADMIN" || user?.role === "MODERATOR";
   const isAllowedToBypass = isSuperAdmin || (isNormalAdminOrMod && allowAdmin);
 

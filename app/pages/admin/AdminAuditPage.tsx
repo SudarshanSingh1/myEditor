@@ -3,6 +3,11 @@ import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import { useAdminContext } from "../../components/auth/AdminAuthGuard";
+import { SecurityDashboardTab } from "./SecurityDashboardTab";
+import { BlockedIPsTab } from "./BlockedIPsTab";
+import { ClipboardList, RefreshCw, Shield } from "lucide-react";
+import { PageHeader } from "../../components/enterprise/PageHeader";
+import { EBadge } from "../../components/enterprise/PageHeader";
 
 export default function AdminAuditPage() {
   const { isSuperAdmin } = useAdminContext();
@@ -10,6 +15,7 @@ export default function AdminAuditPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "events" | "blocked" | "permissions">("dashboard");
   const limit = 30;
 
   if (!isSuperAdmin) return <Navigate to="/403" replace />;
@@ -25,70 +31,107 @@ export default function AdminAuditPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const actionColor = (action: string) => {
-    if (action.includes("DELETE")) return "text-red-400 bg-red-500/10 border-red-500/20";
-    if (action.includes("CREATE")) return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
-    if (action.includes("UPDATE") || action.includes("CHANGE")) return "text-amber-400 bg-amber-500/10 border-amber-500/20";
-    return "text-gray-400 bg-gray-500/10 border-gray-500/20";
+  const actionColor = (action: string): string => {
+    if (action.includes("DELETE")) return "error";
+    if (action.includes("CREATE")) return "online";
+    if (action.includes("UPDATE") || action.includes("CHANGE")) return "warning";
+    return "info";
   };
 
+  const TABS = [
+    { id: "dashboard", label: "Security Dashboard" },
+    { id: "events",    label: "Audit Events" },
+    { id: "blocked",   label: "Blocked IPs" },
+  ];
+
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">Audit Logs</h1>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">SUPER ADMIN</span>
-          </div>
-          <p className="text-sm text-gray-500 mt-1">{total} audit events recorded</p>
-        </div>
-        <button onClick={fetchData} className="px-4 py-2 bg-white/8 hover:bg-white/12 text-sm text-gray-300 rounded-lg border border-white/10">Refresh</button>
+    <div style={{ background: "var(--e-bg-base)", minHeight: "100%" }}>
+      <PageHeader
+        title="Audit Logs"
+        subtitle={`${total.toLocaleString()} events recorded`}
+        icon={ClipboardList}
+        badge={<EBadge color="indigo">OWNER ONLY</EBadge>}
+        actions={
+          <button onClick={fetchData} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
+            <RefreshCw size={12} />
+            Refresh
+          </button>
+        }
+      />
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--e-border)", background: "var(--e-bg-surface)", padding: "0 24px" }}>
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            style={{
+              padding: "12px 16px", fontSize: 13, fontWeight: 600,
+              color: activeTab === tab.id ? "var(--e-text-primary)" : "var(--e-text-muted)",
+              background: "none", border: "none", cursor: "pointer",
+              borderBottom: activeTab === tab.id ? "2px solid var(--e-accent)" : "2px solid transparent",
+              transition: "all 150ms", marginBottom: -1,
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div className="rounded-xl border border-white/8 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[700px]">
-            <thead>
-              <tr className="bg-white/3 border-b border-white/8">
-                {["Timestamp", "Action", "User", "IP Address", "Details"].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {loading ? (
-                Array.from({ length: 10 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    {Array.from({ length: 5 }).map((_, j) => <td key={j} className="px-4 py-3"><div className="h-4 w-full bg-white/8 rounded" /></td>)}
-                  </tr>
-                ))
-              ) : logs.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-600">No audit events found.</td></tr>
-              ) : logs.map(log => (
-                <tr key={log.id} className="hover:bg-white/3 transition-colors">
-                  <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full border font-mono font-medium ${actionColor(log.action)}`}>
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-300">{log.username}</td>
-                  <td className="px-4 py-3 text-gray-500 font-mono text-xs">{log.ip_address || "—"}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs max-w-xs truncate">
-                    {log.details ? (typeof log.details === "string" ? log.details : JSON.stringify(log.details)) : "—"}
-                  </td>
+      <div style={{ padding: "20px 24px" }}>
+        {activeTab === "dashboard" && <SecurityDashboardTab />}
+        {activeTab === "blocked" && <BlockedIPsTab />}
+
+        {activeTab === "events" && (
+          <div className="e-table-wrapper">
+            <table className="e-table" style={{ minWidth: 700 }}>
+              <thead>
+                <tr>
+                  {["Timestamp", "Action", "User", "IP Address", "Details"].map(h => (
+                    <th key={h}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {total > limit && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-white/8">
-            <p className="text-xs text-gray-500">Showing {page * limit + 1}–{Math.min((page + 1) * limit, total)} of {total}</p>
-            <div className="flex gap-2">
-              <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="px-3 py-1 text-xs rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-40">Previous</button>
-              <button disabled={(page + 1) * limit >= total} onClick={() => setPage(p => p + 1)} className="px-3 py-1 text-xs rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-40">Next</button>
-            </div>
+              </thead>
+              <tbody>
+                {loading ? (
+                  Array.from({ length: 10 }).map((_, i) => (
+                    <tr key={i}>
+                      {Array.from({ length: 5 }).map((_, j) => (
+                        <td key={j}><div className="e-skeleton" style={{ height: 14, width: "80%" }} /></td>
+                      ))}
+                    </tr>
+                  ))
+                ) : logs.length === 0 ? (
+                  <tr><td colSpan={5} style={{ textAlign: "center", padding: "40px 0", color: "var(--e-text-faint)", fontSize: 13 }}>No audit events found.</td></tr>
+                ) : logs.map(log => (
+                  <tr key={log.id}>
+                    <td style={{ fontSize: 11, color: "var(--e-text-faint)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                      {new Date(log.created_at).toLocaleString()}
+                    </td>
+                    <td>
+                      <span className={`e-chip ${actionColor(log.action)}`} style={{ fontFamily: "monospace", fontSize: 10 }}>
+                        {log.action}
+                      </span>
+                    </td>
+                    <td style={{ color: "var(--e-text-secondary)", fontSize: 13 }}>{log.username}</td>
+                    <td style={{ fontFamily: "monospace", fontSize: 11, color: "var(--e-text-faint)" }}>{log.ip_address || "—"}</td>
+                    <td style={{ fontSize: 11, color: "var(--e-text-muted)", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {log.details ? (typeof log.details === "string" ? log.details : JSON.stringify(log.details)) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {total > limit && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderTop: "1px solid var(--e-border)", fontSize: 12, color: "var(--e-text-muted)" }}>
+                <span>Showing {page * limit + 1}–{Math.min((page + 1) * limit, total)} of {total.toLocaleString()}</span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="e-btn e-btn-secondary e-btn-sm" style={{ opacity: page === 0 ? 0.4 : 1 }}>← Prev</button>
+                  <button disabled={(page + 1) * limit >= total} onClick={() => setPage(p => p + 1)} className="e-btn e-btn-secondary e-btn-sm" style={{ opacity: (page + 1) * limit >= total ? 0.4 : 1 }}>Next →</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

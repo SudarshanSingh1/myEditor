@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "../components/ThemeProvider";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 // Eager loaded
 import { AuthGuard } from "../components/auth/AuthGuard";
@@ -12,7 +13,7 @@ const LandingPage = lazy(() => import("../pages/LandingPage").then(module => ({ 
 // Layouts
 const AuthLayout = lazy(() => import("../layouts/AuthLayout").then(module => ({ default: module.AuthLayout })));
 const AppLayout = lazy(() => import("../layouts/AppLayout").then(module => ({ default: module.AppLayout })));
-const AdminLayout = lazy(() => import("../layouts/AdminLayout").then(module => ({ default: module.AdminLayout })));
+const AdminLayout = lazy(() => import("../layouts/EnterpriseLayout").then(module => ({ default: module.EnterpriseLayout })));
 
 // Legal Pages
 const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
@@ -53,9 +54,21 @@ const PlatformSecurity = lazy(() => import("../pages/admin/settings/PlatformSecu
 const ResourceQuotas = lazy(() => import("../pages/admin/settings/ResourceQuotas"));
 const EmailSmtp = lazy(() => import("../pages/admin/settings/EmailSmtp"));
 const SystemMaintenance = lazy(() => import("../pages/admin/settings/SystemMaintenance"));
+const GeneralSettings = lazy(() => import("../pages/admin/settings/GeneralSettings"));
+const OAuthSettings = lazy(() => import("../pages/admin/settings/OAuthSettings"));
+const FeatureFlagsTab = lazy(() => import("../pages/admin/settings/FeatureFlagsTab"));
+const ApiKeysTab = lazy(() => import("../pages/admin/settings/ApiKeysTab"));
+const SecretsTab = lazy(() => import("../pages/admin/settings/SecretsTab"));
 const AdminServerPage = lazy(() => import("../pages/admin/AdminServerPage"));
 const AdminDatabasePage = lazy(() => import("../pages/admin/AdminDatabasePage"));
 const AdminEmailsPage = lazy(() => import("../pages/admin/AdminEmailsPage"));
+const AdminGithubPage = lazy(() => import("../pages/admin/AdminGithubPage"));
+const AdminBackupsPage = lazy(() => import("../pages/admin/AdminBackupsPage"));
+const AdminDeploymentsPage = lazy(() => import("../pages/admin/AdminDeploymentsPage"));
+const AdminFactoryResetPage = lazy(() => import("../pages/admin/AdminFactoryResetPage"));
+const AdminReportsPage = lazy(() => import("../pages/admin/AdminReportsPage"));
+const AdminDockerPage = lazy(() => import("../pages/admin/AdminDockerPage"));
+const AdminNotificationsPage = lazy(() => import("../pages/admin/AdminNotificationsPage"));
 
 // Error Pages (Lazy)
 const NotFound = lazy(() => import("../pages/error/NotFound"));
@@ -91,8 +104,9 @@ export default function AppRouter() {
   }, [checkAuth]);
 
   return (
-    <ThemeProvider>
-      <Suspense fallback={<PageLoader />}>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Landing */}
           <Route path="/" element={<MaintenanceGuard><LandingPage /></MaintenanceGuard>} />
@@ -155,6 +169,8 @@ export default function AppRouter() {
             <Route path="executions" element={<Suspense fallback={<AdminLoader />}><AdminExecutionsPage /></Suspense>} />
             <Route path="feedback" element={<Suspense fallback={<AdminLoader />}><AdminFeedbackPage /></Suspense>} />
             <Route path="errors" element={<Suspense fallback={<AdminLoader />}><AdminErrorsPage /></Suspense>} />
+            <Route path="reports" element={<Suspense fallback={<AdminLoader />}><AdminReportsPage /></Suspense>} />
+            <Route path="notifications" element={<Suspense fallback={<AdminLoader />}><AdminNotificationsPage /></Suspense>} />
           </Route>
 
           {/* Super Admin Direct Bypass Route */}
@@ -163,7 +179,7 @@ export default function AppRouter() {
             element={
               <MaintenanceGuard>
                 <AuthGuard>
-                  <AdminAuthGuard requireSuperAdmin={true}>
+                  <AdminAuthGuard requiredPermission="system.maintenance.toggle">
                     <Suspense fallback={<AdminLoader />}>
                       <AdminLayout isSuperAdminLayout={true} />
                     </Suspense>
@@ -175,15 +191,25 @@ export default function AppRouter() {
             <Route index element={<Navigate to="/super-admin/server" replace />} />
             <Route path="audit" element={<Suspense fallback={<AdminLoader />}><AdminAuditPage /></Suspense>} />
             <Route path="settings" element={<Suspense fallback={<AdminLoader />}><AdminSettingsPage /></Suspense>}>
-              <Route index element={<Navigate to="security" replace />} />
+              <Route index element={<Navigate to="general" replace />} />
+              <Route path="general" element={<Suspense fallback={<AdminLoader />}><GeneralSettings /></Suspense>} />
+              <Route path="oauth" element={<Suspense fallback={<AdminLoader />}><OAuthSettings /></Suspense>} />
+              <Route path="feature-flags" element={<Suspense fallback={<AdminLoader />}><FeatureFlagsTab /></Suspense>} />
+              <Route path="api-keys" element={<Suspense fallback={<AdminLoader />}><ApiKeysTab /></Suspense>} />
+              <Route path="secrets" element={<Suspense fallback={<AdminLoader />}><SecretsTab /></Suspense>} />
               <Route path="security" element={<Suspense fallback={<AdminLoader />}><PlatformSecurity /></Suspense>} />
               <Route path="resources" element={<Suspense fallback={<AdminLoader />}><ResourceQuotas /></Suspense>} />
               <Route path="email" element={<Suspense fallback={<AdminLoader />}><EmailSmtp /></Suspense>} />
               <Route path="maintenance" element={<Suspense fallback={<AdminLoader />}><SystemMaintenance /></Suspense>} />
             </Route>
             <Route path="server" element={<Suspense fallback={<AdminLoader />}><AdminServerPage /></Suspense>} />
+            <Route path="docker" element={<Suspense fallback={<AdminLoader />}><AdminDockerPage /></Suspense>} />
             <Route path="database" element={<Suspense fallback={<AdminLoader />}><AdminDatabasePage /></Suspense>} />
+            <Route path="backups" element={<Suspense fallback={<AdminLoader />}><AdminBackupsPage /></Suspense>} />
+            <Route path="deployments" element={<Suspense fallback={<AdminLoader />}><AdminDeploymentsPage /></Suspense>} />
             <Route path="emails" element={<Suspense fallback={<AdminLoader />}><AdminEmailsPage /></Suspense>} />
+            <Route path="github" element={<Suspense fallback={<AdminLoader />}><AdminGithubPage /></Suspense>} />
+            <Route path="factory-reset" element={<Suspense fallback={<AdminLoader />}><AdminFactoryResetPage /></Suspense>} />
           </Route>
 
           {/* Error Routes */}
@@ -198,6 +224,7 @@ export default function AppRouter() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
-    </ThemeProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

@@ -59,7 +59,7 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
                     is_maint = False
                     
                 if is_maint:
-                    is_admin = user.role in [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN]
+                    is_admin = user.role in [RoleEnum.OWNER, RoleEnum.ADMIN]
                     if not (sys_settings.maintenance_allow_admin_access and is_admin):
                         maint_msg = sys_settings.maintenance_message or "System is under maintenance."
                         await websocket.send_json({"type": "error", "message": f"MAINTENANCE: {maint_msg}"})

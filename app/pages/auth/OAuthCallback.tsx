@@ -50,7 +50,7 @@ export default function OAuthCallback() {
 
           if (isMaintenanceMode) {
             const role = (userData.role as string) || "USER";
-            const isSuperAdmin = role === "SUPER_ADMIN";
+            const isSuperAdmin = role === "OWNER";
             const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
             const canBypass = isSuperAdmin || (isAdminOrMod && allowAdmin);
 

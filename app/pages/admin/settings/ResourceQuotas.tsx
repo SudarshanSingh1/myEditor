@@ -1,5 +1,5 @@
 import { useOutletContext } from "react-router-dom";
-import { Zap, Monitor, FileKey, Shield } from "lucide-react";
+import { Zap, Monitor, FileKey, Shield, List, Server, Clock } from "lucide-react";
 import { NumberInput } from "./SettingsFormControls";
 import type { Settings } from "./adminSettingsTypes";
 
@@ -23,6 +23,9 @@ export default function ResourceQuotas() {
         <NumberInput value={settings.max_file_size_mb} onChange={set("max_file_size_mb")} label="Max File Size" description="Maximum file size users can upload or create." min={1} max={100} unit="MB" icon={FileKey} />
         <NumberInput value={settings.max_projects_per_user} onChange={set("max_projects_per_user")} label="Max Projects Per User" description="Maximum number of projects a user can create." min={1} max={500} icon={Monitor} />
         <NumberInput value={settings.rate_limit_per_minute} onChange={set("rate_limit_per_minute")} label="Global API Rate Limit" description="Maximum API requests per minute per user." min={10} max={1000} unit="/min" icon={Shield} />
+        <NumberInput value={settings.queue_limits} onChange={set("queue_limits")} label="Execution Queue Limit" description="Maximum number of queued executions allowed globally." min={10} max={10000} icon={List} />
+        <NumberInput value={settings.worker_limits} onChange={set("worker_limits")} label="Worker Node Limit" description="Maximum active execution worker nodes." min={1} max={100} icon={Server} />
+        <NumberInput value={settings.retention_days} onChange={set("retention_days")} label="Audit Log Retention" description="Days to retain audit logs." min={7} max={365} unit="days" icon={Clock} />
       </div>
     </div>
   );

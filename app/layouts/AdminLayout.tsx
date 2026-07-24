@@ -6,7 +6,8 @@ import { fetchApi } from "../lib/api";
 import { 
   LayoutDashboard, BarChart3, Users, FolderOpen, PlaySquare, 
   MessageSquare, Bug, Server, Database, Settings, ShieldCheck, 
-  ClipboardList, Mail, LogOut
+  ClipboardList, Mail, LogOut, GitBranch, Flag, Bell, TerminalSquare,
+  HardDriveUpload, Rocket, AlertOctagon
 } from "lucide-react";
 
 const adminNavItems = [
@@ -15,16 +16,23 @@ const adminNavItems = [
   { icon: Users, label: "Users", to: "/app/admin/users" },
   { icon: FolderOpen, label: "Projects", to: "/app/admin/projects" },
   { icon: PlaySquare, label: "Executions", to: "/app/admin/executions" },
+  { icon: Flag, label: "Reports", to: "/app/admin/reports" },
   { icon: MessageSquare, label: "Feedback", to: "/app/admin/feedback" },
   { icon: Bug, label: "Errors", to: "/app/admin/errors" },
+  { icon: Bell, label: "Notifications", to: "/app/admin/notifications" },
 ];
 
 const superAdminNavItems = [
   { icon: Server, label: "Server", to: "/super-admin/server", exact: true },
+  { icon: TerminalSquare, label: "Docker", to: "/super-admin/docker" },
   { icon: Database, label: "Database", to: "/super-admin/database" },
+  { icon: HardDriveUpload, label: "Backups", to: "/super-admin/backups" },
+  { icon: Rocket, label: "Deployments", to: "/super-admin/deployments" },
+  { icon: GitBranch, label: "GitHub", to: "/super-admin/github" },
   { icon: ClipboardList, label: "Audit Logs", to: "/super-admin/audit" },
   { icon: Mail, label: "Emails", to: "/super-admin/emails" },
   { icon: Settings, label: "Settings", to: "/super-admin/settings" },
+  { icon: AlertOctagon, label: "Factory Reset", to: "/super-admin/factory-reset" },
 ];
 
 function ServerStatusDot() {
@@ -58,7 +66,7 @@ function ServerStatusDot() {
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: colors[status] }} />
         <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: colors[status] }} />
       </span>
-      <span className="text-gray-400">{labels[status]}{cpu !== null ? ` · ${cpu.toFixed(0)}%` : ""}</span>
+      <span className="text-gray-400">{labels[status]}{typeof cpu === 'number' ? ` · ${cpu.toFixed(0)}%` : ""}</span>
     </div>
   );
 }

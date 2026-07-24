@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
 import { fetchApi } from "../../lib/api";
-import { toast } from "sonner";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Server, Cpu, MemoryStick, HardDrive, Network, Container, RefreshCw, Activity } from "lucide-react";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, LineChart, Line
+} from "recharts";
+import { Server, Cpu, MemoryStick, HardDrive, Network, Container, RefreshCw, Activity, Wifi } from "lucide-react";
+import { GaugeCard } from "../../components/enterprise/GaugeCard";
+import { WidgetShell } from "../../components/enterprise/WidgetShell";
+import { MetricCard } from "../../components/enterprise/MetricCard";
+import { StatusChip, LiveDot } from "../../components/enterprise/MiniSparkline";
+import { PageHeader } from "../../components/enterprise/PageHeader";
+import { EnterpriseTable } from "../../components/enterprise/EnterpriseTable";
 
 interface ServerData {
   cpu_percent: number;
@@ -15,66 +23,37 @@ interface ServerData {
   api_status: string;
   docker_status: string;
   docker_containers: number;
+  network_sent_mb: number;
+  network_recv_mb: number;
+  uptime_seconds: number;
+  process_count: number;
+  service_health: string;
+  worker_health: string;
 }
 
-function GaugeBar({ value, label, icon: Icon, colorClass }: { value: number; label: string; icon: any; colorClass: string }) {
-  const clampedVal = Math.min(100, Math.max(0, value));
-  
-  // Dynamic color based on usage
-  let activeColor = colorClass;
-  if (clampedVal > 85) activeColor = "from-red-500 to-rose-600 shadow-[0_0_15px_rgba(225,29,72,0.5)]";
-  else if (clampedVal > 65) activeColor = "from-amber-500 to-orange-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]";
-  else activeColor = `${colorClass} shadow-[0_0_15px_rgba(139,92,246,0.2)]`;
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#18181b] p-6 backdrop-blur-sm shadow-xl group">
-      <div className="flex items-center gap-3 mb-6 relative z-10">
-        <div className="p-2.5 rounded-xl bg-white/5 text-gray-400 group-hover:text-white transition-colors">
-          <Icon className="w-5 h-5" strokeWidth={2} />
-        </div>
-        <p className="text-sm font-semibold text-gray-300 tracking-wide">{label}</p>
-      </div>
-      
-      <div className="flex items-end justify-between mb-3 relative z-10">
-        <span className="text-3xl font-bold text-white tabular-nums tracking-tight">{clampedVal.toFixed(1)}<span className="text-xl text-gray-500">%</span></span>
-      </div>
-      
-      <div className="w-full h-2 rounded-full bg-white/5 overflow-hidden relative z-10">
-        <div
-          className={`h-full rounded-full bg-gradient-to-r ${activeColor} transition-all duration-1000 ease-out`}
-          style={{ width: `${clampedVal}%` }}
-        >
-          <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]" style={{ backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)' }} />
-        </div>
-      </div>
-    </div>
-  );
+interface WorkerData {
+  id: string;
+  hostname: string;
+  status: string;
+  cpu_percent: number;
+  memory_percent: number;
+  active_executions: number;
+  last_heartbeat: string;
 }
 
-function StatusBadge({ status, label, icon: Icon }: { status: string; label: string; icon: any }) {
-  const isOnline = status.toLowerCase() === "online" || status.toLowerCase() === "running" || status.toLowerCase() === "healthy";
-  return (
-    <div className="rounded-2xl border border-white/10 bg-[#18181b] p-6 flex items-center justify-between backdrop-blur-sm shadow-xl group hover:bg-white/5 transition-colors">
-      <div className="flex items-center gap-3">
-        <div className={`p-2.5 rounded-xl ${isOnline ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-          <Icon className="w-5 h-5" strokeWidth={2} />
-        </div>
-        <p className="text-sm font-semibold text-gray-300 tracking-wide">{label}</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className={`relative flex h-2.5 w-2.5`}>
-          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isOnline ? "bg-emerald-400" : "bg-red-400"} opacity-75`}></span>
-          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? "bg-emerald-500" : "bg-red-500"}`}></span>
-        </span>
-        <span className={`text-sm font-bold uppercase tracking-wider ${isOnline ? "text-emerald-400" : "text-red-400"}`}>{status}</span>
-      </div>
-    </div>
-  );
+function fmtUptime(sec: number) {
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 export default function AdminServerPage() {
   const [data, setData] = useState<ServerData | null>(null);
-  const [history, setHistory] = useState<{ t: string; cpu: number; ram: number }[]>([]);
+  const [workers, setWorkers] = useState<WorkerData[]>([]);
+  const [history, setHistory] = useState<{ t: string; cpu: number; ram: number; disk: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
@@ -86,15 +65,19 @@ export default function AdminServerPage() {
         setData(d);
         setLastUpdate(new Date());
         setHistory(prev => {
-          const next = [...prev, { t: new Date().toLocaleTimeString(), cpu: d.cpu_percent, ram: d.ram_percent }];
-          return next.slice(-20); // keep last 20 points
+          const next = [...prev, {
+            t: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+            cpu: d.cpu_percent,
+            ram: d.ram_percent,
+            disk: d.disk_percent,
+          }];
+          return next.slice(-24);
         });
       }
-    } catch (e: any) {
-      // Silent fail on poll
-    } finally {
-      setLoading(false);
-    }
+      const wResp = await fetchApi("/admin/server/workers");
+      if (wResp?.success) setWorkers(wResp.data.items || []);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
@@ -103,100 +86,140 @@ export default function AdminServerPage() {
     return () => clearInterval(id);
   }, []);
 
-  return (
-    <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto font-sans">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/5 pb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
-            <Server className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Server Infrastructure</h1>
-            <p className="text-sm text-gray-400 mt-1 flex items-center gap-2">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Auto-refreshes every 5s {lastUpdate && `(Last: ${lastUpdate.toLocaleTimeString()})`}
-            </p>
-          </div>
-        </div>
+  const workerColumns = [
+    { key: "hostname", label: "Worker Node", render: (r: WorkerData) => (
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <LiveDot status={r.status === "online" ? "online" : "offline"} />
+        <span style={{ fontWeight: 600, color: "var(--e-text-primary)", fontFamily: "monospace", fontSize: 12 }}>{r.hostname}</span>
       </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border border-white/5 bg-white/5 p-6 animate-pulse">
-              <div className="h-4 w-24 bg-white/10 rounded mb-6" />
-              <div className="h-8 w-16 bg-white/10 rounded mb-3" />
-              <div className="h-2 w-full bg-white/8 rounded-full" />
-            </div>
-          ))}
+    )},
+    { key: "status", label: "Status", render: (r: WorkerData) => <StatusChip status={r.status} /> },
+    { key: "cpu_percent", label: "CPU", render: (r: WorkerData) => (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 80 }}>
+        <div className="e-progress" style={{ flex: 1 }}>
+          <div className={`e-progress-bar ${r.cpu_percent > 80 ? "red" : r.cpu_percent > 60 ? "amber" : "green"}`} style={{ width: `${r.cpu_percent}%` }} />
         </div>
-      ) : !data ? (
-        <div className="rounded-2xl border border-white/5 bg-white/5 p-12 text-center text-gray-400">
-          Failed to retrieve server metrics.{" "}
-          <button onClick={poll} className="text-blue-400 hover:underline">Retry Connection</button>
+        <span style={{ fontSize: 11, fontVariantNumeric: "tabular-nums", minWidth: 32, color: "var(--e-text-muted)" }}>{r.cpu_percent?.toFixed(0)}%</span>
+      </div>
+    )},
+    { key: "memory_percent", label: "Memory", render: (r: WorkerData) => (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 80 }}>
+        <div className="e-progress" style={{ flex: 1 }}>
+          <div className={`e-progress-bar ${r.memory_percent > 80 ? "red" : "blue"}`} style={{ width: `${r.memory_percent}%` }} />
         </div>
-      ) : (
-        <>
-          {/* Gauges */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <GaugeBar value={data.cpu_percent} label="CPU Utilization" icon={Cpu} colorClass="from-violet-500 to-fuchsia-600" />
-            <GaugeBar value={data.ram_percent} label={`Memory (${data.ram_used_gb}/${data.ram_total_gb} GB)`} icon={MemoryStick} colorClass="from-blue-500 to-cyan-500" />
-            <GaugeBar value={data.disk_percent} label={`Storage (${data.disk_used_gb}/${data.disk_total_gb} GB)`} icon={HardDrive} colorClass="from-emerald-500 to-teal-500" />
-          </div>
+        <span style={{ fontSize: 11, fontVariantNumeric: "tabular-nums", minWidth: 32, color: "var(--e-text-muted)" }}>{r.memory_percent?.toFixed(0)}%</span>
+      </div>
+    )},
+    { key: "active_executions", label: "Active Tasks", render: (r: WorkerData) => (
+      <span style={{ fontWeight: 700, color: r.active_executions > 0 ? "var(--e-blue)" : "var(--e-text-muted)", fontVariantNumeric: "tabular-nums" }}>
+        {r.active_executions}
+      </span>
+    )},
+    { key: "last_heartbeat", label: "Last Heartbeat", render: (r: WorkerData) => (
+      <span style={{ fontSize: 11, color: "var(--e-text-faint)", fontVariantNumeric: "tabular-nums" }}>
+        {new Date(r.last_heartbeat).toLocaleTimeString()}
+      </span>
+    )},
+  ];
 
-          {/* Status Badges */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <StatusBadge status={data.api_status} label="Main API Gateway" icon={Network} />
-            <StatusBadge status={data.docker_status} label="Docker Engine" icon={Container} />
-            <div className="rounded-2xl border border-white/10 bg-[#18181b] p-6 flex items-center justify-between backdrop-blur-sm shadow-xl group hover:bg-white/5 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-orange-500/10 text-orange-400">
-                  <Container className="w-5 h-5" strokeWidth={2} />
-                </div>
-                <p className="text-sm font-semibold text-gray-300 tracking-wide">Active Containers</p>
-              </div>
-              <span className="text-2xl font-bold text-white tabular-nums tracking-tight">{data.docker_containers}</span>
-            </div>
-          </div>
+  return (
+    <div style={{ background: "var(--e-bg-base)", minHeight: "100%" }}>
+      <PageHeader
+        title="Server Infrastructure"
+        subtitle="Real-time system metrics and worker telemetry"
+        icon={Server}
+        liveIndicator
+        lastUpdate={lastUpdate}
+        actions={
+          <button onClick={poll} className="e-btn e-btn-secondary e-btn-sm" style={{ gap: 6 }}>
+            <RefreshCw size={12} />
+            Refresh
+          </button>
+        }
+      />
 
-          {/* Live Chart */}
-          <div className="rounded-2xl border border-white/10 bg-[#18181b] p-6 backdrop-blur-sm shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 blur-[100px] rounded-full pointer-events-none" />
-            <div className="flex items-center gap-2 mb-6">
-              <Activity className="w-5 h-5 text-gray-400" />
-              <h3 className="text-lg font-semibold text-white tracking-wide">Live Telemetry Stream</h3>
-            </div>
-            
-            {history.length < 2 ? (
-              <div className="h-64 flex items-center justify-center text-gray-500 text-sm font-medium">Establishing telemetry connection...</div>
-            ) : (
-              <div className="h-64 relative z-10">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={history} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="gradCpuLive" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.6} />
-                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="gradRamLive" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.6} />
-                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
-                    <XAxis dataKey="t" tick={{ fill: "#6b7280", fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip
-                      contentStyle={{ background: "#0a0a0f", border: "1px solid #ffffff15", borderRadius: 12, color: "#fff", boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)" }}
-                      itemStyle={{ fontWeight: 600 }}
-                    />
-                    <Area type="monotone" dataKey="cpu" stroke="#8b5cf6" fill="url(#gradCpuLive)" strokeWidth={3} dot={false} name="CPU %" activeDot={{ r: 6, fill: "#fff", stroke: "#8b5cf6", strokeWidth: 2 }} />
-                    <Area type="monotone" dataKey="ram" stroke="#0ea5e9" fill="url(#gradRamLive)" strokeWidth={3} dot={false} name="RAM %" activeDot={{ r: 6, fill: "#fff", stroke: "#0ea5e9", strokeWidth: 2 }} />
-                  </AreaChart>
-                </ResponsiveContainer>
+      <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+        {/* Gauge Row */}
+        <div className="e-grid-4" style={{ gap: 12 }}>
+          <GaugeCard value={data?.cpu_percent ?? 0}  label="CPU Utilization"  sublabel={`${data?.cpu_percent?.toFixed(1) ?? 0}% used`}  theme="auto" showBar />
+          <GaugeCard value={data?.ram_percent ?? 0}  label="Memory Usage"     sublabel={`${data?.ram_used_gb?.toFixed(1) ?? 0} / ${data?.ram_total_gb?.toFixed(1) ?? 0} GB`} theme="auto" showBar />
+          <GaugeCard value={data?.disk_percent ?? 0} label="Disk Usage"       sublabel={`${data?.disk_used_gb?.toFixed(0) ?? 0} / ${data?.disk_total_gb?.toFixed(0) ?? 0} GB`} theme="auto" showBar />
+          <div className="e-widget" style={{ padding: "16px 12px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
+            <p className="e-widget-title" style={{ padding: 0, borderBottom: "none" }}>Service Status</p>
+            {[
+              { label: "API Gateway",    status: data?.api_status    ?? "unknown" },
+              { label: "Docker Engine",  status: data?.docker_status ?? "unknown" },
+              { label: "Worker Health",  status: data?.worker_health ?? "unknown" },
+              { label: "Service Health", status: data?.service_health ?? "unknown" },
+            ].map(s => (
+              <div key={s.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 8px", background: "var(--e-bg-elevated)", borderRadius: "var(--e-radius-sm)", border: "1px solid var(--e-border)" }}>
+                <span style={{ fontSize: 11, color: "var(--e-text-secondary)" }}>{s.label}</span>
+                <StatusChip status={s.status.toLowerCase()} />
               </div>
-            )}
+            ))}
           </div>
-        </>
-      )}
+        </div>
+
+        {/* Metrics Row */}
+        <div className="e-grid-4" style={{ gap: 12 }}>
+          <MetricCard label="Network Sent"      value={`${data?.network_sent_mb?.toFixed(1) ?? 0} MB`} icon={Wifi}      iconColor="var(--e-blue)"   iconBg="var(--e-blue-bg)"  subtext="total sent" />
+          <MetricCard label="Network Recv"      value={`${data?.network_recv_mb?.toFixed(1) ?? 0} MB`} icon={Network}   iconColor="var(--e-cyan)"   iconBg="var(--e-cyan-bg)"  subtext="total recv" />
+          <MetricCard label="Active Containers" value={data?.docker_containers ?? 0}                    icon={Container} iconColor="var(--e-purple)" iconBg="var(--e-purple-bg)" subtext="docker" />
+          <MetricCard label="Process Count"     value={data?.process_count ?? 0}                        icon={Activity}  iconColor="var(--e-amber)"  iconBg="var(--e-amber-bg)" subtext={`Uptime: ${data?.uptime_seconds ? fmtUptime(data.uptime_seconds) : "—"}`} />
+        </div>
+
+        {/* Live Telemetry Chart */}
+        <WidgetShell title="Live Telemetry" subtitle="CPU · Memory · Disk — updating every 5s" isLoading={loading}>
+          {history.length < 2 ? (
+            <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--e-text-faint)", fontSize: 13 }}>
+              <RefreshCw size={14} className="animate-spin" style={{ marginRight: 8 }} />
+              Establishing connection...
+            </div>
+          ) : (
+            <div style={{ height: 200 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={history} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <XAxis dataKey="t" tick={{ fill: "#475569", fontSize: 9 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                  <YAxis domain={[0, 100]} tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: "#0d0e1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }}
+                    formatter={(v: number) => [`${v.toFixed(1)}%`]}
+                  />
+                  <Line type="monotone" dataKey="cpu"  stroke="#6366f1" strokeWidth={2} dot={false} name="CPU %"  activeDot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="ram"  stroke="#06b6d4" strokeWidth={2} dot={false} name="RAM %"  activeDot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="disk" stroke="#10b981" strokeWidth={2} dot={false} name="Disk %" activeDot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
+            {[{ c: "#6366f1", l: "CPU" }, { c: "#06b6d4", l: "RAM" }, { c: "#10b981", l: "Disk" }].map(i => (
+              <div key={i.l} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--e-text-muted)" }}>
+                <span style={{ width: 20, height: 2, background: i.c, borderRadius: 1, display: "inline-block" }} />
+                {i.l}
+              </div>
+            ))}
+          </div>
+        </WidgetShell>
+
+        {/* Worker Nodes Table */}
+        <WidgetShell
+          title="Worker Nodes"
+          subtitle={`${workers.length} active nodes`}
+          noPadding
+        >
+          <EnterpriseTable
+            columns={workerColumns as any}
+            data={workers.map(w => ({ ...w, id: w.id || w.hostname }))}
+            isLoading={loading}
+            emptyText="No active worker nodes found."
+            compact
+          />
+        </WidgetShell>
+
+      </div>
     </div>
   );
 }

@@ -41,7 +41,7 @@ export function AdminSettingsPanel() {
     setIsSaving(true);
     setMessage({ text: "", type: "" });
     try {
-      const response = await fetchApi("/system-settings", {
+      const response = await fetchApi("/admin/system-settings", {
         method: "PUT",
         body: JSON.stringify({
           maintenance_mode: settings.maintenance_mode,
