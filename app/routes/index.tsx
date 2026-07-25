@@ -107,15 +107,16 @@ export default function AppRouter() {
     <ErrorBoundary>
       <ThemeProvider>
         <Suspense fallback={<PageLoader />}>
+        <MaintenanceGuard>
         <Routes>
           {/* Public Landing */}
-          <Route path="/" element={<MaintenanceGuard><LandingPage /></MaintenanceGuard>} />
+          <Route path="/" element={<LandingPage />} />
 
           {/* Maintenance Route */}
           <Route path="/maintenance" element={<MaintenancePage />} />
 
           {/* Auth Routes */}
-          <Route element={<MaintenanceGuard><AuthLayout /></MaintenanceGuard>}>
+          <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -129,11 +130,9 @@ export default function AppRouter() {
           <Route
             path="/app"
             element={
-              <MaintenanceGuard>
-                <AuthGuard>
-                  <AppLayout />
-                </AuthGuard>
-              </MaintenanceGuard>
+              <AuthGuard>
+                <AppLayout />
+              </AuthGuard>
             }
           >
             <Route index element={<Navigate to="/app/dashboard" replace />} />
@@ -177,15 +176,13 @@ export default function AppRouter() {
           <Route
             path="/super-admin"
             element={
-              <MaintenanceGuard>
-                <AuthGuard>
-                  <AdminAuthGuard requiredPermission="system.maintenance.toggle">
-                    <Suspense fallback={<AdminLoader />}>
-                      <AdminLayout isSuperAdminLayout={true} />
-                    </Suspense>
-                  </AdminAuthGuard>
-                </AuthGuard>
-              </MaintenanceGuard>
+              <AuthGuard>
+                <AdminAuthGuard requiredPermission="system.maintenance.toggle">
+                  <Suspense fallback={<AdminLoader />}>
+                    <AdminLayout isSuperAdminLayout={true} />
+                  </Suspense>
+                </AdminAuthGuard>
+              </AuthGuard>
             }
           >
             <Route index element={<Navigate to="/super-admin/server" replace />} />
@@ -223,7 +220,8 @@ export default function AppRouter() {
           {/* 404 Catch All */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Suspense>
+        </MaintenanceGuard>
+        </Suspense>
       </ThemeProvider>
     </ErrorBoundary>
   );

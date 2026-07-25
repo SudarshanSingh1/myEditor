@@ -201,7 +201,7 @@ const STAGES = [
 ];
 
 export function MaintenancePage() {
-  const { isMaintenanceMode, maintenanceMessage, maintenanceEndTime, checkStatus, isChecking, hasChecked } = useSystemStore();
+  const { isMaintenanceMode, maintenanceMessage, maintenanceEndTime, checkStatus, isChecking, hasChecked, allowAdmin } = useSystemStore();
   const { user } = useUserStore();
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
@@ -291,7 +291,7 @@ export function MaintenancePage() {
 
   // Only redirect AFTER we've confirmed maintenance is genuinely off
   if (!isMaintenanceMode) return <Navigate to={location.state?.from || "/app"} replace />;
-  if (user?.role === "OWNER" || user?.role === "ADMIN") return <Navigate to={location.state?.from || "/app"} replace />;
+  if (user?.role === "OWNER" || user?.role === "ADMIN" || (user?.role === "MODERATOR" && allowAdmin)) return <Navigate to={location.state?.from || "/app"} replace />;
 
   const progressPercent = timeLeft !== null ? Math.max(0, Math.min(100, 100 - (timeLeft / totalDuration) * 100)) : 100;
 
@@ -411,7 +411,7 @@ export function MaintenancePage() {
         {/* Footer */}
         <div className="mt-12 text-center">
           <p className="text-gray-500 text-[10px] font-mono uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-            <ShieldAlert className="w-3 h-3 text-red-500/70" /> Need urgent access? Contact admin.
+            <ShieldAlert className="w-3 h-3 text-red-500/70" /> Need urgent access? Contact admin or <a href="/login" className="underline hover:text-gray-300 transition-colors">Admin Login</a>.
           </p>
         </div>
       </div>

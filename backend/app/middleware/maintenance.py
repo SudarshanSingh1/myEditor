@@ -52,9 +52,6 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
             "/openapi.json",
             "/api/v1/auth/login",
             "/api/v1/auth/logout",
-            "/api/v1/auth/register",
-            "/api/v1/auth/request-password-reset",
-            "/api/v1/auth/reset-password",
             "/api/v1/auth/verify-email",
             "/api/v1/system/status",
             # OAuth – authorize redirects and code-exchange callbacks must always work

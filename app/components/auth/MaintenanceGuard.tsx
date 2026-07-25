@@ -41,17 +41,17 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
   const isNormalAdminOrMod = user?.role === "ADMIN" || user?.role === "MODERATOR";
   const isAllowedToBypass = isSuperAdmin || (isNormalAdminOrMod && allowAdmin);
 
-  const isAuthRoute = [
+  const isExemptRoute = [
+    "/maintenance",
     "/login",
-    "/signup",
-    "/forgot-password",
-    "/reset-password",
     "/force-password-change",
     "/verify-email",
     "/oauth/callback",
+    "/super-admin",
+    "/app/admin",
   ].some(route => location.pathname.startsWith(route));
   
-  if (isMaintenanceMode && !isAllowedToBypass && !isAuthRoute && !isPreview) {
+  if (isMaintenanceMode && !isAllowedToBypass && !isExemptRoute && !isPreview) {
     return <Navigate to="/maintenance" replace state={{ from: location.pathname }} />;
   }
 
