@@ -157,6 +157,43 @@ export function Hero() {
                   </Button>
                 </a>
               </div>
+
+              {/* GitHub Colored Sandbox Languages */}
+              <div className="mt-10 pt-6 border-t border-zinc-200 dark:border-white/10 w-full relative z-50">
+                <div className="flex items-center gap-2 mb-3.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Supported Sandbox Languages
+                  </span>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {[
+                    { name: "Python", color: "#3572A5", ver: "3.13" },
+                    { name: "TypeScript", color: "#3178C6", ver: "5.0" },
+                    { name: "JavaScript", color: "#f1e05a", ver: "Node 20" },
+                    { name: "C++", color: "#f34b7d", ver: "GCC 12" },
+                    { name: "C", color: "#555555", ver: "GCC 12" },
+                    { name: "Rust", color: "#dea584", ver: "1.75" },
+                    { name: "Go", color: "#00ADD8", ver: "1.21" },
+                    { name: "Java", color: "#b07219", ver: "JDK 17" },
+                  ].map((lang) => (
+                    <div 
+                      key={lang.name} 
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-800 dark:text-zinc-200 shadow-sm hover:border-zinc-300 dark:hover:border-white/20 hover:scale-105 transition-all duration-200 cursor-default"
+                    >
+                      <span 
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-[0_0_8px_currentColor]" 
+                        style={{ backgroundColor: lang.color, color: lang.color }}
+                      />
+                      <span className="font-semibold">{lang.name}</span>
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono bg-zinc-200 dark:bg-white/10 px-1.5 py-0.5 rounded">{lang.ver}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
           </motion.div>
 
           {/* Interactive Editor / Terminal Mockup */}

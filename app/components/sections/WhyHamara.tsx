@@ -16,10 +16,13 @@ const usageData = [
 ];
 
 const languageData = [
-  { name: "TypeScript", value: 400, color: "#3178c6" },
-  { name: "JavaScript", value: 300, color: "#f7df1e" },
-  { name: "Python", value: 300, color: "#3776ab" },
-  { name: "HTML/CSS", value: 200, color: "#e34f26" },
+  { name: "TypeScript", value: 350, color: "#3178C6" },
+  { name: "Python", value: 320, color: "#3572A5" },
+  { name: "JavaScript", value: 250, color: "#f1e05a" },
+  { name: "C++", value: 180, color: "#f34b7d" },
+  { name: "Rust", value: 150, color: "#dea584" },
+  { name: "Go", value: 130, color: "#00ADD8" },
+  { name: "Java", value: 120, color: "#b07219" },
 ];
 
 const featureData = [
