@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     question: "Which programming languages are supported?",
-    answer: "Currently we support JavaScript, TypeScript, HTML, CSS, Python, and Go. We are constantly working on adding more languages based on community feedback."
+    answer: "Hamara Editor supports all programming languages! Whether you're coding in JavaScript, Python, C++, Rust, Go, or any other language, our platform provides a robust environment to write, execute, and share your code instantly."
   },
   {
     question: "Do I need to install anything locally?",
@@ -24,7 +24,7 @@ const faqs = [
   },
   {
     question: "How is it different from VS Code?",
-    answer: "While VS Code is a powerful local IDE, Hamara Editor is designed to be a frictionless, zero-setup cloud editor. It's perfect for quick prototyping, learning, and interviewing without managing local environments."
+    answer: "While VS Code is a powerful tool for complex software architecture, Hamara Editor is a frictionless cloud playground. It's perfect for quick prototyping, practicing algorithms, and learning without the headache of managing local environments."
   }
 ];
 
@@ -32,7 +32,7 @@ export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="contact" className="py-20 bg-secondary/30">
+    <section id="faq" className="py-20 bg-secondary/30">
       <Container className="max-w-3xl">
         <SectionTitle 
           title="Frequently Asked Questions"

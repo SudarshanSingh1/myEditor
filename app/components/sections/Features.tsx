@@ -2,29 +2,26 @@ import { motion } from "framer-motion";
 import { Save, Zap } from "lucide-react";
 import { Container } from "../layout/Container";
 import { SectionTitle } from "../ui/SectionTitle";
+import { WindowControls } from "../ui/WindowControls";
 
 const features = [
   {
-    title: "Zero Config",
-    description: "It just works. No Webpack config to cry over.",
+    title: "Instant Execution",
+    description: "Focus on logic, not environment configuration. Just type and run.",
     snapshot: (
       <div className="w-full max-w-[280px] bg-white dark:bg-[#050508] p-4 rounded-xl border border-zinc-200 dark:border-white/10 font-mono text-xs shadow-2xl">
-        <div className="flex gap-1.5 mb-4">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-          <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-          <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-        </div>
+        <WindowControls size="sm" className="mb-4" />
         <div className="flex gap-2 items-center text-zinc-700 dark:text-zinc-300 mb-2">
           <span className="text-green-500 dark:text-green-400">➜</span>
-          <span>npm run start</span>
+          <span>python script.py</span>
         </div>
-        <p className="text-zinc-400 dark:text-zinc-500 pl-5">Ready in 12ms. You're welcome.</p>
+        <p className="text-zinc-400 dark:text-zinc-500 pl-5">Executed in 12ms. You're welcome.</p>
       </div>
     )
   },
   {
-    title: "Auto Save",
-    description: "Saves faster than you can compulsively hit Ctrl+S.",
+    title: "Never Lose Code",
+    description: "Every keystroke is saved automatically to the cloud. Code with peace of mind.",
     snapshot: (
       <div className="relative flex items-center justify-center w-full h-full">
         <div className="absolute inset-0 bg-cyan-500/5 blur-3xl rounded-full" />
@@ -41,8 +38,8 @@ const features = [
     )
   },
   {
-    title: "Time Machine",
-    description: "Undo that terrible variable name you just wrote.",
+    title: "Experiment Fearlessly",
+    description: "Undo that terrible logic you just wrote and revert to a working version instantly.",
     snapshot: (
       <div className="w-full max-w-[280px] bg-white dark:bg-[#050508] p-4 rounded-xl border border-zinc-200 dark:border-white/10 font-mono text-[11px] shadow-2xl space-y-3">
         <div className="flex items-start gap-3 text-zinc-500 dark:text-zinc-400 bg-red-50 dark:bg-red-500/5 p-2 rounded border border-red-100 dark:border-red-500/10">
@@ -57,18 +54,18 @@ const features = [
     )
   },
   {
-    title: "Blazing Fast",
-    description: "Because nobody has time to watch a spinner.",
+    title: "Lightning Fast Feedback",
+    description: "Because when you're in the zone, every millisecond counts.",
     snapshot: (
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.15)_0,transparent_70%)]" />
         <Zap className="w-32 h-32 text-purple-500/10 absolute group-hover:rotate-12 group-hover:scale-125 transition-all duration-700" />
         <div className="bg-white/80 dark:bg-[#050508]/80 backdrop-blur-md px-6 py-4 rounded-2xl border border-zinc-200 dark:border-white/10 shadow-2xl relative z-10 group-hover:scale-105 transition-transform duration-500">
           <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-cyan-500 dark:from-purple-400 dark:to-cyan-400 tracking-tighter">
-            99.9<span className="text-xl text-zinc-400 dark:text-zinc-500">%</span>
+            12<span className="text-xl text-zinc-400 dark:text-zinc-500">ms</span>
           </div>
           <div className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1 text-center">
-            Uptime
+            Execution Time
           </div>
         </div>
       </div>

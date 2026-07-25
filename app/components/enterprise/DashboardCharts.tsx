@@ -219,20 +219,22 @@ export function MetricLineChart({ title, data, color = "#4f46e5", formatter, yDo
       </div>
       <div style={{ flex: 1, minHeight: 110 }}>
         <ResponsiveContainer width="100%" height={110}>
-          <LineChart data={data} margin={{ top: 4, right: 8, left: -12, bottom: 0 }}>
+          <LineChart data={data} margin={{ top: 4, right: 8, left: 4, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
             <XAxis
               dataKey="t"
               tick={{ fill: "#94a3b8", fontSize: 9 }}
               axisLine={false} tickLine={false}
-              minTickGap={30}
+              minTickGap={40}
+              interval="preserveStartEnd"
             />
             <YAxis
               tick={{ fill: "#94a3b8", fontSize: 9 }}
               axisLine={false} tickLine={false}
               domain={yDomain ?? ["auto", "auto"]}
               tickFormatter={formatter}
-              width={38}
+              width={46}
+              tickCount={4}
             />
             <Tooltip
               {...LIGHT_TOOLTIP}
@@ -253,3 +255,4 @@ export function MetricLineChart({ title, data, color = "#4f46e5", formatter, yDo
     </div>
   );
 }
+

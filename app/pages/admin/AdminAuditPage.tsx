@@ -5,13 +5,15 @@ import { Navigate } from "react-router-dom";
 import { useAdminContext } from "../../components/auth/AdminAuthGuard";
 import { SecurityDashboardTab } from "./SecurityDashboardTab";
 import { BlockedIPsTab } from "./BlockedIPsTab";
-import { ClipboardList, RefreshCw, Shield } from "lucide-react";
+import { ClipboardList, RefreshCw, Shield, Maximize2 } from "lucide-react";
 import { PageHeader } from "../../components/enterprise/PageHeader";
 import { EBadge } from "../../components/enterprise/PageHeader";
+import { Modal } from "../../components/ui/Modal";
 
 export default function AdminAuditPage() {
   const { isSuperAdmin } = useAdminContext();
   const [logs, setLogs] = useState<any[]>([]);
+  const [selectedDetails, setSelectedDetails] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -116,12 +118,41 @@ export default function AdminAuditPage() {
                     <td style={{ color: "var(--e-text-secondary)", fontSize: 13 }}>{log.username}</td>
                     <td style={{ fontFamily: "monospace", fontSize: 11, color: "var(--e-text-faint)" }}>{log.ip_address || "—"}</td>
                     <td style={{ fontSize: 11, color: "var(--e-text-muted)", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {log.details ? (typeof log.details === "string" ? log.details : JSON.stringify(log.details)) : "—"}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {log.details ? (typeof log.details === "string" ? log.details : JSON.stringify(log.details)) : "—"}
+                        </span>
+                        {log.details && (
+                          <button 
+                            onClick={() => setSelectedDetails(typeof log.details === "string" ? log.details : JSON.stringify(log.details, null, 2))}
+                            className="e-btn" 
+                            style={{ padding: 4, minWidth: 'auto', flexShrink: 0 }}
+                          >
+                            <Maximize2 size={12} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            <Modal isOpen={!!selectedDetails} onClose={() => setSelectedDetails(null)} title="Audit Details">
+              <div style={{ padding: 16 }}>
+                <pre style={{ 
+                  background: "var(--e-bg-base)", padding: 16, borderRadius: 8, 
+                  fontSize: 12, overflowX: "auto", color: "var(--e-text-primary)",
+                  border: "1px solid var(--e-border)",
+                  whiteSpace: "pre-wrap", wordBreak: "break-all"
+                }}>
+                  {selectedDetails}
+                </pre>
+                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+                  <button onClick={() => setSelectedDetails(null)} className="e-btn e-btn-primary">Close</button>
+                </div>
+              </div>
+            </Modal>
 
             {total > limit && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderTop: "1px solid var(--e-border)", fontSize: 12, color: "var(--e-text-muted)" }}>

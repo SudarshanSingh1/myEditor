@@ -78,11 +78,10 @@ export default function AdminSettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8 space-y-8 max-w-4xl mx-auto">
-        <div className="h-8 w-48 bg-white/5 rounded animate-pulse" />
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-white/5 bg-white/5 p-8 h-64 animate-pulse" />
-          <div className="rounded-2xl border border-white/5 bg-white/5 p-8 h-64 animate-pulse" />
+      <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ height: 32, width: 192, background: "var(--e-border)", borderRadius: 8, animation: "e-shimmer 1.5s infinite" }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {[264, 264].map((h, i) => <div key={i} style={{ borderRadius: 16, border: "1px solid var(--e-border)", background: "var(--e-bg-elevated)", height: h }} />)}
         </div>
       </div>
     );
@@ -112,97 +111,34 @@ export default function AdminSettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Navigation Sidebar */}
-        <div className="lg:col-span-3 space-y-2 hidden lg:block">
-          <NavLink
-            to="/super-admin/settings/general"
-            className={({ isActive }) =>
-              `p-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`
-            }
-          >
-            <Globe className="w-4 h-4 text-emerald-400" /> General
-          </NavLink>
-          <NavLink
-            to="/super-admin/settings/maintenance"
-            className={({ isActive }) =>
-              `p-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`
-            }
-          >
-            <Wrench className="w-4 h-4 text-cyan-400" /> System Maintenance
-          </NavLink>
-          <NavLink
-            to="/super-admin/settings/security"
-            className={({ isActive }) =>
-              `p-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`
-            }
-          >
-            <Shield className="w-4 h-4 text-violet-400" /> Platform Security
-          </NavLink>
-          <NavLink
-            to="/super-admin/settings/resources"
-            className={({ isActive }) =>
-              `p-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`
-            }
-          >
-            <Zap className="w-4 h-4 text-blue-400" /> Resource Quotas
-          </NavLink>
-          <NavLink
-            to="/super-admin/settings/email"
-            className={({ isActive }) =>
-              `p-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`
-            }
-          >
-            <Mail className="w-4 h-4 text-pink-400" /> Email & SMTP
-          </NavLink>
-          <NavLink
-            to="/super-admin/settings/oauth"
-            className={({ isActive }) =>
-              `p-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`
-            }
-          >
-            <Shield className="w-4 h-4 text-blue-500" /> OAuth Configurations
-          </NavLink>
-          <NavLink
-            to="/super-admin/settings/feature-flags"
-            className={({ isActive }) =>
-              `p-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`
-            }
-          >
-            <ToggleLeft className="w-4 h-4 text-amber-400" /> Feature Flags
-          </NavLink>
-          <NavLink
-            to="/super-admin/settings/api-keys"
-            className={({ isActive }) =>
-              `p-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`
-            }
-          >
-            <Key className="w-4 h-4 text-cyan-400" /> API Keys
-          </NavLink>
-          <NavLink
-            to="/super-admin/settings/secrets"
-            className={({ isActive }) =>
-              `p-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`
-            }
-          >
-            <Lock className="w-4 h-4 text-rose-400" /> Secrets Management
-          </NavLink>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }} className="hidden lg:flex lg:col-span-3">
+          {[
+            { to: "/super-admin/settings/general",      icon: Globe,       label: "General",             color: "#16a34a" },
+            { to: "/super-admin/settings/maintenance",  icon: Wrench,      label: "System Maintenance",   color: "#0891b2" },
+            { to: "/super-admin/settings/security",     icon: Shield,      label: "Platform Security",    color: "#7c3aed" },
+            { to: "/super-admin/settings/resources",    icon: Zap,         label: "Resource Quotas",      color: "#2563eb" },
+            { to: "/super-admin/settings/email",        icon: Mail,        label: "Email & SMTP",          color: "#db2777" },
+            { to: "/super-admin/settings/oauth",        icon: Shield,      label: "OAuth Configurations",  color: "#2563eb" },
+            { to: "/super-admin/settings/feature-flags",icon: ToggleLeft,  label: "Feature Flags",         color: "#d97706" },
+            { to: "/super-admin/settings/api-keys",     icon: Key,         label: "API Keys",              color: "#0891b2" },
+            { to: "/super-admin/settings/secrets",      icon: Lock,        label: "Secrets Management",    color: "#dc2626" },
+          ].map(({ to, icon: Icon, label, color }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => isActive ? "_nav-active" : "_nav-idle"}
+              style={({ isActive }) => ({
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                borderRadius: 10, fontSize: 13, fontWeight: 500, textDecoration: "none",
+                transition: "all 150ms",
+                background: isActive ? "rgba(99,102,241,0.08)" : "transparent",
+                color: isActive ? "#4f46e5" : "var(--e-text-secondary)",
+                border: isActive ? "1px solid rgba(99,102,241,0.2)" : "1px solid transparent",
+              })}
+            >
+              <Icon size={15} style={{ color: color, flexShrink: 0 }} /> {label}
+            </NavLink>
+          ))}
         </div>
 
         <div className="lg:col-span-9 space-y-8">

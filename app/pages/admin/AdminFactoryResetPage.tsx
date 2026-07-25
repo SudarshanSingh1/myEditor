@@ -60,12 +60,13 @@ export default function AdminFactoryResetPage() {
       />
       <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
 
-      <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-4">
-        <ShieldAlert className="w-8 h-8 text-red-500 flex-shrink-0" />
-        <div className="space-y-2 text-red-200 text-sm">
-          <p className="font-semibold text-lg text-red-400">Read Before Proceeding</p>
-          <p>This module allows you to permanently delete data across the platform. There is no undo functionality.</p>
-          <ul className="list-disc pl-5 space-y-1">
+      {/* Warning banner */}
+      <div style={{ padding: "16px 20px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 14, display: "flex", gap: 14 }}>
+        <ShieldAlert size={22} style={{ color: "#dc2626", flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <p style={{ fontWeight: 700, fontSize: 15, color: "#dc2626", marginBottom: 6 }}>Read Before Proceeding</p>
+          <p style={{ fontSize: 13, color: "#b91c1c", marginBottom: 6 }}>This module allows you to permanently delete data across the platform. There is no undo functionality.</p>
+          <ul style={{ fontSize: 13, color: "#b91c1c", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 3 }}>
             <li>Your Owner account will <strong>never</strong> be deleted by this process.</li>
             <li>System Settings and Audit Logs are preserved.</li>
             <li>If you wipe Users, all users EXCEPT your account will be removed.</li>
@@ -73,62 +74,65 @@ export default function AdminFactoryResetPage() {
         </div>
       </div>
 
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Select Scope</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div 
-            onClick={() => toggleScope("executions")}
-            className={`p-4 rounded-xl border cursor-pointer transition-colors ${scopes.executions ? 'bg-red-500/20 border-red-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold text-white">Executions</span>
-              {scopes.executions && <CheckSquare className="w-5 h-5 text-red-400" />}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--e-text-primary)" }}>Select Scope</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          {[
+            { key: "executions", label: "Executions", desc: "Deletes all execution logs and code runs." },
+            { key: "projects",   label: "Projects",   desc: "Deletes all projects, files, and workspaces." },
+            { key: "users",      label: "Users",      desc: "Deletes all users except your Owner account." },
+          ].map(item => (
+            <div
+              key={item.key}
+              onClick={() => toggleScope(item.key)}
+              style={{
+                padding: "14px 16px", borderRadius: 12, cursor: "pointer", transition: "all 150ms",
+                background: scopes[item.key] ? "#fef2f2" : "var(--e-bg-surface)",
+                border: scopes[item.key] ? "2px solid #dc2626" : "1px solid var(--e-border)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <span style={{ fontWeight: 700, fontSize: 14, color: scopes[item.key] ? "#dc2626" : "var(--e-text-primary)" }}>{item.label}</span>
+                {scopes[item.key] && <CheckSquare size={17} style={{ color: "#dc2626" }} />}
+              </div>
+              <p style={{ fontSize: 12, color: "var(--e-text-muted)" }}>{item.desc}</p>
             </div>
-            <p className="text-xs text-gray-400">Deletes all execution logs and code runs.</p>
-          </div>
-
-          <div 
-            onClick={() => toggleScope("projects")}
-            className={`p-4 rounded-xl border cursor-pointer transition-colors ${scopes.projects ? 'bg-red-500/20 border-red-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold text-white">Projects</span>
-              {scopes.projects && <CheckSquare className="w-5 h-5 text-red-400" />}
-            </div>
-            <p className="text-xs text-gray-400">Deletes all projects, files, and workspaces.</p>
-          </div>
-
-          <div 
-            onClick={() => toggleScope("users")}
-            className={`p-4 rounded-xl border cursor-pointer transition-colors ${scopes.users ? 'bg-red-500/20 border-red-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold text-white">Users</span>
-              {scopes.users && <CheckSquare className="w-5 h-5 text-red-400" />}
-            </div>
-            <p className="text-xs text-gray-400">Deletes all users except your Owner account.</p>
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="space-y-4 pt-6 border-t border-white/5">
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 16, borderTop: "1px solid var(--e-border)" }}>
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
-            To proceed, type exactly: <span className="text-white font-mono select-all bg-white/10 px-2 py-1 rounded">I_UNDERSTAND_THIS_IS_IRREVERSIBLE</span>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--e-text-secondary)", marginBottom: 8 }}>
+            To proceed, type exactly:{" "}
+            <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#dc2626", background: "#fef2f2", padding: "2px 8px", borderRadius: 5, userSelect: "all" }}>
+              I_UNDERSTAND_THIS_IS_IRREVERSIBLE
+            </span>
           </label>
           <input
             value={confirmText}
             onChange={e => setConfirmText(e.target.value)}
-            className="w-full p-4 rounded-xl border border-red-500/30 bg-[#18181b] text-red-400 font-mono text-center focus:outline-none focus:border-red-500 transition-colors"
+            style={{
+              width: "100%", padding: "14px 16px", borderRadius: 12,
+              border: "1px solid #fca5a5", background: "#fff",
+              color: "#dc2626", fontFamily: "monospace", fontSize: 14, textAlign: "center",
+              outline: "none", boxSizing: "border-box",
+            }}
             placeholder="Awaiting confirmation string..."
           />
         </div>
         <button
           onClick={executeReset}
           disabled={loading || confirmText !== "I_UNDERSTAND_THIS_IS_IRREVERSIBLE" || !Object.values(scopes).some(Boolean)}
-          className="w-full py-4 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:hover:bg-red-600 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all flex items-center justify-center gap-2"
+          style={{
+            width: "100%", padding: "14px 16px", borderRadius: 12, border: "none", cursor: "pointer",
+            background: "#dc2626", color: "#fff", fontWeight: 700, fontSize: 14,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            opacity: (loading || confirmText !== "I_UNDERSTAND_THIS_IS_IRREVERSIBLE" || !Object.values(scopes).some(Boolean)) ? 0.45 : 1,
+            transition: "opacity 150ms, background 150ms",
+          }}
         >
-          {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <AlertOctagon className="w-5 h-5" />}
+          {loading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <AlertOctagon size={18} />}
           Execute Factory Reset
         </button>
       </div>
@@ -136,3 +140,4 @@ export default function AdminFactoryResetPage() {
     </div>
   );
 }
+

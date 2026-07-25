@@ -12,6 +12,8 @@ export function Logo({ className, imgClassName, textClassName, ...props }: LogoP
       <img 
         src="/logo.svg" 
         alt="Hamara Editor Logo" 
+        fetchPriority="high"
+        decoding="async"
         className={cn("h-8 w-8 object-contain dark:invert", imgClassName)} 
       />
       <span className={cn("font-cursive text-2xl font-bold tracking-tight", textClassName)}>

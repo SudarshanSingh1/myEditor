@@ -296,11 +296,11 @@ export default function AdminAnalyticsPage() {
               <ChartCard title="Language Distribution" subtitle="Top languages by execution count" height={220}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={languages.slice(0, 8)} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} style={{ background: "transparent" }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                    <XAxis dataKey="language" tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <Tooltip {...TOOLTIP_STYLE} />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Executions">
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                    <XAxis dataKey="language" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [v.toLocaleString(), "Executions"]} />
+                    <Bar dataKey="count" radius={[5, 5, 0, 0]} name="Executions">
                       {languages.slice(0, 8).map((_: any, i: number) => (
                         <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                       ))}
@@ -311,40 +311,50 @@ export default function AdminAnalyticsPage() {
 
               <ChartCard title="Execution Status Breakdown" subtitle="Success vs failure vs pending" height={220}>
                 <div style={{ display: "flex", height: "100%", alignItems: "center", gap: 16 }}>
-                  <div style={{ flex: "0 0 180px" }}>
-                    <ResponsiveContainer width="100%" height={190}>
+                  <div style={{ flex: "0 0 160px" }}>
+                    <ResponsiveContainer width="100%" height={170}>
                       <PieChart style={{ background: "transparent" }}>
                         <Pie
                           data={statusRatio}
                           cx="50%" cy="50%"
-                          innerRadius={55} outerRadius={80}
+                          innerRadius={45} outerRadius={72}
                           dataKey="count" nameKey="status"
-                          strokeWidth={0}
+                          paddingAngle={2}
+                          stroke="none"
                         >
-                          {statusRatio.map((_: any, i: number) => (
-                            <Cell key={i} fill={
-                              statusRatio[i]?.status === "completed" ? "#10b981" :
-                              statusRatio[i]?.status === "failed"    ? "#ef4444" :
-                              statusRatio[i]?.status === "running"   ? "#06b6d4" : "#6366f1"
-                            } />
-                          ))}
+                          {statusRatio.map((s: any, i: number) => {
+                            const key = (s.status || "").replace("ExecutionStatus.", "").toUpperCase();
+                            const color =
+                              key === "SUCCESS"       ? "#16a34a" :
+                              key === "RUNTIME_ERROR" ? "#ea580c" :
+                              key === "COMPILE_ERROR" ? "#dc2626" :
+                              key === "TIMEOUT"       ? "#d97706" :
+                              key === "RUNNING"       ? "#2563eb" :
+                              key === "QUEUED"        ? "#7c3aed" : PIE_COLORS[i % PIE_COLORS.length];
+                            return <Cell key={i} fill={color} />;
+                          })}
                         </Pie>
                         <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [v.toLocaleString(), "Count"]} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, minWidth: 0 }}>
                     {statusRatio.map((s: any, i: number) => {
                       const total = statusRatio.reduce((a: number, b: any) => a + b.count, 0);
                       const pct   = total > 0 ? Math.round((s.count / total) * 100) : 0;
+                      const key   = (s.status || "").replace("ExecutionStatus.", "").toUpperCase();
+                      const label = key.replace(/_/g, " ");
                       const color =
-                        s.status === "completed" ? "#10b981" :
-                        s.status === "failed"    ? "#ef4444" :
-                        s.status === "running"   ? "#06b6d4" : "#6366f1";
+                        key === "SUCCESS"       ? "#16a34a" :
+                        key === "RUNTIME_ERROR" ? "#ea580c" :
+                        key === "COMPILE_ERROR" ? "#dc2626" :
+                        key === "TIMEOUT"       ? "#d97706" :
+                        key === "RUNNING"       ? "#2563eb" :
+                        key === "QUEUED"        ? "#7c3aed" : PIE_COLORS[i % PIE_COLORS.length];
                       return (
                         <div key={s.status}>
                           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 3 }}>
-                            <span style={{ color: "var(--e-text-secondary)", textTransform: "capitalize" }}>{s.status}</span>
+                            <span style={{ color: "var(--e-text-secondary)", textTransform: "capitalize" }}>{label}</span>
                             <span style={{ color, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
                           </div>
                           <div className="e-progress">
@@ -362,14 +372,14 @@ export default function AdminAnalyticsPage() {
             {feedback.length > 0 && (
               <ChartCard title="Feedback Ratings Distribution" subtitle="User satisfaction scores" height={180}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={feedback} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                    <XAxis dataKey="rating" tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <BarChart data={feedback} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} style={{ background: "transparent" }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                    <XAxis dataKey="rating" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
                     <Tooltip {...TOOLTIP_STYLE} />
-                    <Bar dataKey="count" name="Responses" radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="count" name="Responses" radius={[5, 5, 0, 0]}>
                       {feedback.map((_: any, i: number) => (
-                        <Cell key={i} fill={["#ef4444","#f59e0b","#f59e0b","#10b981","#10b981"][i] || "#6366f1"} />
+                        <Cell key={i} fill={["#dc2626","#ea580c","#d97706","#16a34a","#0891b2"][i] || "#6366f1"} />
                       ))}
                     </Bar>
                   </BarChart>

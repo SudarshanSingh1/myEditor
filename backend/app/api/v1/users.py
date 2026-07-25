@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import select, update, func
+from sqlalchemy import cast, String, select, update, func
 from datetime import date, timedelta
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
@@ -132,12 +132,12 @@ def get_executions_chart(
     result = db.execute(
         select(
             func.date(ExecutionLog.created_at).label("date"),
-            ExecutionLog.status,
+            cast(ExecutionLog.status, String).label('status'),
             func.count(ExecutionLog.id).label("count")
         )
         .where(ExecutionLog.user_id == current_user.id)
         .where(ExecutionLog.created_at >= thirty_days_ago)
-        .group_by(func.date(ExecutionLog.created_at), ExecutionLog.status)
+        .group_by(func.date(ExecutionLog.created_at), cast(ExecutionLog.status, String))
     )
     rows = result.all()
     
@@ -158,7 +158,7 @@ def get_executions_chart(
         if row_date_str in data_by_date:
             count = row.count
             data_by_date[row_date_str]["total"] += count
-            if row.status == ExecutionStatus.SUCCESS:
+            if getattr(row, 'status', '').lower() == 'success':
                 data_by_date[row_date_str]["success"] += count
             else:
                 data_by_date[row_date_str]["error"] += count
@@ -172,12 +172,12 @@ def get_execution_summary(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    query = select(ExecutionLog.status, func.count(ExecutionLog.id)).where(ExecutionLog.user_id == current_user.id)
+    query = select(cast(ExecutionLog.status, String).label('status'), func.count(ExecutionLog.id)).where(ExecutionLog.user_id == current_user.id)
     
     if today:
         query = query.where(func.date(ExecutionLog.created_at) == date.today())
         
-    query = query.group_by(ExecutionLog.status)
+    query = query.group_by(cast(ExecutionLog.status, String))
     
     result = db.execute(query)
     rows = result.all()
@@ -188,7 +188,7 @@ def get_execution_summary(
     
     for row in rows:
         total += row[1]
-        if row[0] == ExecutionStatus.SUCCESS:
+        if str(row[0]).lower() == 'success':
             success += row[1]
         else:
             error += row[1]

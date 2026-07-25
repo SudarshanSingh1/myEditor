@@ -1,0 +1,89 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run Checks (Frontend & Backend)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install Frontend Dependencies
+        run: npm ci
+        
+      - name: Run Frontend Linting
+        run: npm run lint
+        
+      - name: Run Frontend Typecheck
+        run: npm run typecheck
+        
+      - name: Run Frontend Tests
+        run: npm run test -- --run
+        
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: pip install -r requirements.txt
+        
+      - name: Run Backend Linting (Ruff)
+        working-directory: ./backend
+        run: ruff check .
+        
+      - name: Run Backend Tests
+        working-directory: ./backend
+        run: pytest
+        
+  deploy:
+    name: Deploy to VPS
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          # You can define VPS_PROJECT_PATH as a Github Variable (e.g., /root/myeditor)
+          # Fallback defaults to '~/myeditor'
+          script: |
+            PROJECT_PATH="${{ vars.VPS_PROJECT_PATH }}"
+            if [ -z "$PROJECT_PATH" ]; then
+              PROJECT_PATH="/opt/myEditor"
+            fi
+            
+            echo "Deploying to $PROJECT_PATH"
+            cd $PROJECT_PATH
+            
+            echo "Pulling latest code from main branch..."
+            git pull origin main
+            
+            echo "Rebuilding and restarting docker containers..."
+            docker compose up --build -d
+            
+            echo "Pruning old docker images to free up space..."
+            docker image prune -af
+            
+            echo "Deployment successful!"

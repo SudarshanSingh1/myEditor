@@ -238,7 +238,7 @@ function SendEmailModal({ user, onClose }: { user: UserItem; onClose: () => void
 }
 
 export default function AdminUsersPage() {
-  const { isSuperAdmin, isModerator } = useAdminContext();
+  const { isSuperAdmin, isAdmin, isModerator } = useAdminContext();
   const { confirm } = useConfirm();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -532,14 +532,18 @@ export default function AdminUsersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    {isSuperAdmin && user.role !== "OWNER" ? (
+                    {isSuperAdmin || (isAdmin && user.role !== "OWNER" && user.role !== "ADMIN") ? (
                       <select
                         value={user.role}
                         onChange={e => handleRoleChange(user.id, e.target.value)}
                         className={`text-xs px-2 py-1 rounded-full border font-medium ${roleBadge(user.role)} bg-transparent focus:outline-none cursor-pointer`}
                       >
-                        {ROLES.filter(r => r !== "OWNER").map(r => (
-                          <option key={r} value={r} className="bg-[#111118] text-white">{r.replace("_", " ")}</option>
+                        {ROLES.filter(r => {
+                          if (isSuperAdmin) return true;
+                          if (isAdmin) return r === "USER" || r === "MODERATOR";
+                          return false;
+                        }).map(r => (
+                          <option key={r} value={r} style={{ color: "#1e293b", background: "#fff" }}>{r.replace("_", " ")}</option>
                         ))}
                       </select>
                     ) : (
@@ -549,14 +553,14 @@ export default function AdminUsersPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {!isModerator ? (
+                    {isSuperAdmin || (isAdmin && user.role !== "OWNER") ? (
                       <select
                         value={user.status}
                         onChange={e => handleStatusChange(user.id, e.target.value)}
                         className={`text-xs px-2 py-1 rounded-full font-medium ${statusBadge(user.status)} bg-transparent border-0 focus:outline-none cursor-pointer`}
                       >
                         {STATUSES.map(s => (
-                          <option key={s} value={s} className="bg-[#111118] text-white">{s}</option>
+                          <option key={s} value={s} style={{ color: "#1e293b", background: "#fff" }}>{s}</option>
                         ))}
                       </select>
                     ) : (

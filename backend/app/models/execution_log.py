@@ -23,7 +23,7 @@ class ExecutionLog(Base):
     project_id = Column(Uuid(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
     
     language = Column(String(50), nullable=False)
-    status = Column(Enum(ExecutionStatus), nullable=False)
+    status = Column(Enum(ExecutionStatus, values_callable=lambda obj: [e.value for e in obj]), nullable=False)
     execution_time_ms = Column(Integer, nullable=True)  # How long it took in milliseconds
     
     compiler = Column(String(100), nullable=True)

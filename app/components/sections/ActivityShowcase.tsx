@@ -4,6 +4,7 @@ import { Container } from "../layout/Container";
 import { TerminalSquare, Flame, Trophy, FileText, CheckCircle2, XCircle } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "../../lib/utils";
+import { WindowControls } from "../ui/WindowControls";
 
 // Mock graph data to look very active and realistic
 const generateGraphData = () => {
@@ -110,7 +111,7 @@ export function ActivityShowcase() {
   }, []);
 
   return (
-    <section id="about" className="pt-12 pb-24 lg:pt-16 overflow-hidden relative bg-zinc-50 dark:bg-[#050508] border-t border-zinc-200 dark:border-white/5 font-sans">
+    <section id="activity" className="pt-12 pb-24 lg:pt-16 overflow-hidden relative bg-zinc-50 dark:bg-[#050508] border-t border-zinc-200 dark:border-white/5 font-sans">
       <div className="absolute inset-0 bg-gradient-to-b from-green-500/5 to-transparent -z-10" />
       
       <Container>
@@ -146,7 +147,7 @@ export function ActivityShowcase() {
           >
             {/* Welcome Stats Mock */}
             <div className="bg-[#0a0a0f] border border-white/5 rounded-3xl p-8 shadow-2xl relative overflow-hidden group hover:border-white/10 transition-colors">
-              <h3 className="text-3xl font-bold text-white mb-6">Welcome back, Developer!</h3>
+              <h3 className="text-3xl font-bold text-white mb-6">Welcome back, Coder!</h3>
               <p className="text-xs font-semibold text-gray-500 tracking-wider mb-4 uppercase">15-Day Activity</p>
               
               <div className="flex flex-wrap gap-3">
@@ -169,33 +170,28 @@ export function ActivityShowcase() {
             <div className="bg-[#050508] border border-zinc-800 rounded-3xl p-6 shadow-2xl relative flex-1 font-mono text-sm overflow-hidden group hover:border-zinc-700 transition-colors">
               {/* Terminal header */}
               <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-4">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                </div>
+                <WindowControls />
                 <span className="text-zinc-500 text-xs mx-auto pr-8">custom-terminal — zsh</span>
               </div>
               
               {/* Terminal content */}
               <div className="text-zinc-300 space-y-2 pl-1 leading-relaxed">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-green-400 font-bold">user@hamara</span>
+                  <span className="text-green-400 font-bold">coder@hamara</span>
                   <span className="text-zinc-500">in</span>
-                  <span className="text-blue-400 font-bold">~/project</span>
+                  <span className="text-blue-400 font-bold">~/scripts</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-purple-400 font-bold">❯</span>
-                  <span>npm run dev</span>
+                  <span>python algorithm.py</span>
                 </div>
                 <div className="pt-2">
-                  <p className="text-zinc-400">&gt; hamara-app@1.0.0 dev</p>
-                  <p className="text-zinc-400">&gt; vite</p>
+                  <p className="text-zinc-400">&gt; executing script...</p>
                   <br/>
-                  <p className="text-green-400 font-bold tracking-wide">  VITE v5.1.4  <span className="text-green-500 font-normal">ready in 320 ms</span></p>
+                  <p className="text-green-400 font-bold tracking-wide">  PYTHON v3.11  <span className="text-green-500 font-normal">finished in 12 ms</span></p>
                   <br/>
-                  <p>  ➜  <span className="text-white font-bold">Local:</span>   <span className="text-cyan-400 underline cursor-pointer hover:text-cyan-300 transition-colors">http://localhost:5173/</span></p>
-                  <p>  ➜  <span className="text-white font-bold">Network:</span> <span className="text-zinc-500">use --host to expose</span></p>
+                  <p>  ➜  <span className="text-white font-bold">Output:</span> <span className="text-zinc-400">All test cases passed! (50/50)</span></p>
+                  <p>  ➜  <span className="text-white font-bold">Status:</span> <span className="text-green-500">Success (0)</span></p>
                   <div className="mt-4 flex items-center gap-2">
                     <span className="text-purple-400 font-bold animate-pulse">❯</span>
                     <span className="w-2 h-4 bg-white/70 animate-pulse block" />

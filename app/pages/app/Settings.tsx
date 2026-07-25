@@ -17,6 +17,8 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState("general");
 
   const isAdmin = user?.role?.toUpperCase() === "ADMIN" || user?.role?.toUpperCase() === "OWNER";
+  const isModerator = user?.role?.toUpperCase() === "MODERATOR";
+  const hasPortalAccess = isAdmin || isModerator;
 
   return (
     <div className="p-6 md:p-8 lg:p-10 max-w-3xl mx-auto space-y-8">
@@ -26,19 +28,23 @@ export default function Settings() {
         showBack
       />
 
-      {/* Admin Portal Banner */}
-      {isAdmin && (
+      {/* Admin/Moderator Portal Banner */}
+      {hasPortalAccess && (
         <Card className="border-violet-500/30 bg-violet-500/5">
           <CardContent className="flex items-center justify-between py-4">
             <div>
-              <p className="font-semibold text-violet-300">Admin Portal</p>
-              <p className="text-sm text-gray-400 mt-0.5">Manage users, analytics, system settings and more.</p>
+              <p className="font-semibold text-violet-300">
+                {isModerator ? "Moderator Portal" : "Admin Portal"}
+              </p>
+              <p className="text-sm text-gray-400 mt-0.5">
+                {isModerator ? "Review reports, feedback, and moderate content." : "Manage users, analytics, system settings and more."}
+              </p>
             </div>
             <Button
               onClick={() => navigate("/app/admin")}
               className="bg-violet-600 hover:bg-violet-700 text-white gap-2 flex-shrink-0"
             >
-              Open Admin Portal →
+              Open {isModerator ? "Moderator" : "Admin"} Portal →
             </Button>
           </CardContent>
         </Card>

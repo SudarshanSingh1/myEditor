@@ -164,9 +164,11 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
 
 /* ─── Live Server Status ─────────────────────────────────── */
 function useServerStatus() {
+  const { isModerator } = useAdminContext();
   const [data, setData] = useState<{ cpu: number; status: "online" | "warning" | "offline" }>({ cpu: 0, status: "online" });
 
   useEffect(() => {
+    if (isModerator) return;
     const poll = async () => {
       try {
         const resp = await fetchApi("/admin/server");
@@ -174,12 +176,14 @@ function useServerStatus() {
           const cpu = resp.data.cpu_percent ?? 0;
           setData({ cpu, status: cpu > 85 ? "warning" : "online" });
         }
-      } catch { setData(d => ({ ...d, status: "offline" })); }
+      } catch (e: any) {
+        if (e?.status !== 403) setData(d => ({ ...d, status: "offline" })); 
+      }
     };
     poll();
     const id = setInterval(poll, 15000);
     return () => clearInterval(id);
-  }, []);
+  }, [isModerator]);
 
   return data;
 }

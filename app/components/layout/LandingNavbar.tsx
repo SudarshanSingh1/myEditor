@@ -10,8 +10,8 @@ import { cn } from "../../lib/utils";
 const NAV_LINKS = [
   { name: "Home", href: "#home" },
   { name: "Features", href: "#features" },
-  { name: "About", href: "#about" },
-  { name: "Contact", href: "#contact" },
+  { name: "Activity", href: "#activity" },
+  { name: "FAQ", href: "#faq" },
 ];
 
 export function LandingNavbar() {

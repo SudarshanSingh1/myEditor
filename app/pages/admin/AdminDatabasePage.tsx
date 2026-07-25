@@ -1,7 +1,38 @@
 import { useState, useEffect } from "react";
 import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
-import { Database, Users, FolderOpen, FileText, Zap, MessageSquare, Bug, ClipboardList, RefreshCw, HardDrive } from "lucide-react";
+import {
+  Database, Users, FolderOpen, FileText, Zap, MessageSquare,
+  Bug, ClipboardList, RefreshCw, HardDrive,
+} from "lucide-react";
+import {
+  BarChart, Bar, Cell, PieChart, Pie, Tooltip,
+  ResponsiveContainer, XAxis, YAxis, CartesianGrid,
+} from "recharts";
+import { PageHeader } from "../../components/enterprise/PageHeader";
+
+const TABLE_COLORS: Record<string, string> = {
+  users:          "#4f46e5",
+  projects:       "#d97706",
+  execution_logs: "#db2777",
+  system_errors:  "#dc2626",
+  feedback:       "#16a34a",
+  audit_logs:     "#0891b2",
+  files:          "#7c3aed",
+};
+const TABLE_ICONS: Record<string, any> = {
+  users: Users, projects: FolderOpen, files: FileText,
+  execution_logs: Zap, feedback: MessageSquare, system_errors: Bug,
+  audit_logs: ClipboardList,
+};
+
+const TOOLTIP_STYLE = {
+  contentStyle: {
+    background: "#ffffff", border: "1px solid #e2e8f0",
+    borderRadius: 10, fontSize: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", color: "#334155",
+  },
+  labelStyle: { color: "#64748b", fontWeight: 600 },
+};
 
 export default function AdminDatabasePage() {
   const [data, setData] = useState<any>(null);
@@ -19,144 +50,200 @@ export default function AdminDatabasePage() {
     }
   };
 
-  useEffect(() => { 
-    fetchData(); 
-    const id = setInterval(fetchData, 5000);
+  useEffect(() => {
+    fetchData();
+    const id = setInterval(fetchData, 10000);
     return () => clearInterval(id);
   }, []);
 
-  const tableIcons: Record<string, any> = {
-    users: Users,
-    projects: FolderOpen,
-    files: FileText,
-    execution_logs: Zap,
-    feedback: MessageSquare,
-    system_errors: Bug,
-    audit_logs: ClipboardList,
+  const card = {
+    background: "var(--e-bg-surface)",
+    border: "1px solid var(--e-border)",
+    borderRadius: 14,
+    padding: "16px 18px",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
   };
 
-  const getTableColor = (tableName: string) => {
-    switch (tableName) {
-      case "users": return "from-violet-500/20 text-violet-400";
-      case "projects": return "from-amber-500/20 text-amber-400";
-      case "execution_logs": return "from-pink-500/20 text-pink-400";
-      case "system_errors": return "from-red-500/20 text-red-400";
-      default: return "from-blue-500/20 text-blue-400";
-    }
-  };
+  /* Build chart data from table_counts */
+  const chartData = data
+    ? Object.entries(data.table_counts || {}).map(([table, count]) => ({
+        name: table.replace(/_/g, " "),
+        count: count as number,
+        color: TABLE_COLORS[table] || "#6366f1",
+      }))
+    : [];
+
+  const pieData = data
+    ? Object.entries(data.table_counts || {}).map(([table, count]) => ({
+        name: table.replace(/_/g, " "),
+        value: count as number,
+        color: TABLE_COLORS[table] || "#6366f1",
+      }))
+    : [];
 
   return (
     <div style={{ background: "var(--e-bg-base)", minHeight: "100%" }}>
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/5 pb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
-            <Database className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Database Statistics</h1>
-            <p className="text-sm text-gray-400 mt-1">PostgreSQL (Neon) storage and row metrics</p>
-          </div>
-        </div>
-        <button 
-          onClick={fetchData} 
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-sm font-medium text-white rounded-xl border border-white/10 transition-colors"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> 
-          Refresh Metrics
-        </button>
-      </div>
+      <PageHeader
+        title="Database Analytics"
+        subtitle="PostgreSQL storage, table metrics, and row distribution"
+        icon={Database}
+        iconColor="#16a34a"
+        actions={
+          <button onClick={fetchData} style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
+            background: "var(--e-bg-surface)", border: "1px solid var(--e-border)",
+            borderRadius: 10, fontSize: 12, fontWeight: 600,
+            color: "var(--e-text-secondary)", cursor: "pointer",
+          }}>
+            <RefreshCw size={13} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
+            Refresh
+          </button>
+        }
+      />
 
-      {loading && !data ? (
-        <div className="space-y-6">
-          <div className="animate-pulse rounded-2xl border border-white/10 bg-[#18181b] p-8 h-32" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="animate-pulse rounded-2xl border border-white/10 bg-[#18181b] p-6 h-32 shadow-xl" />
+      <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+        {loading && !data ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {[120, 280, 200].map((h, i) => (
+              <div key={i} style={{ ...card, height: h, background: "var(--e-bg-elevated)" }} />
             ))}
           </div>
-        </div>
-      ) : !data ? (
-        <div className="rounded-2xl border border-white/5 bg-white/5 p-16 text-center text-gray-500">
-          Failed to retrieve database info. <button onClick={fetchData} className="text-emerald-400 hover:text-emerald-300 transition-colors ml-2 font-medium">Retry Connection</button>
-        </div>
-      ) : (
-        <>
-          {/* DB Size Banner */}
-          <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 to-transparent p-8 flex items-center justify-between group">
-            <div className="relative z-10">
-              <p className="text-sm font-semibold text-emerald-400 tracking-wide uppercase">Total Allocated Storage</p>
-              <div className="flex items-baseline gap-2 mt-2">
-                <p className="text-5xl font-bold text-white tracking-tight">{data.db_size || "N/A"}</p>
-              </div>
-            </div>
-            <div className="relative z-10 p-4 rounded-full bg-emerald-500/20 text-emerald-400">
-              <HardDrive className="w-10 h-10" strokeWidth={1.5} />
-            </div>
-            <div className="absolute top-1/2 right-10 -translate-y-1/2 w-48 h-48 bg-emerald-500/20 blur-[60px] rounded-full pointer-events-none group-hover:bg-emerald-500/30 transition-colors duration-500" />
+        ) : !data ? (
+          <div style={{ ...card, textAlign: "center", padding: "48px 16px", color: "var(--e-text-faint)" }}>
+            Failed to load database info.{" "}
+            <button onClick={fetchData} style={{ color: "var(--e-accent)", fontWeight: 600, cursor: "pointer", background: "none", border: "none" }}>
+              Retry
+            </button>
           </div>
-
-          {/* Table Counts */}
-          <div>
-            <h2 className="text-lg font-semibold text-white tracking-tight mb-4 flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-gray-400" /> Table Row Distribution
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Object.entries(data.table_counts || {}).map(([table, count]) => {
-                const Icon = tableIcons[table] || Database;
-                const colorTheme = getTableColor(table);
-                
-                return (
-                  <div key={table} className="relative overflow-hidden rounded-xl border border-white/10 bg-[#18181b] shadow-xl p-6 group hover:bg-white/5 transition-all duration-300">
-                    <div className="flex items-center gap-3 mb-4 relative z-10">
-                      <div className={`p-2.5 rounded-lg bg-gradient-to-br ${colorTheme} bg-opacity-20`}>
-                        <Icon className="w-5 h-5" strokeWidth={2} />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-300 capitalize tracking-wide">{table.replace(/_/g, " ")}</span>
-                    </div>
-                    <p className="text-3xl font-bold text-white tabular-nums tracking-tight relative z-10">
-                      {(count as number).toLocaleString()}
-                    </p>
-                    <div className={`absolute -bottom-8 -right-8 w-24 h-24 bg-gradient-to-br ${colorTheme} blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity duration-500`} />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-            <div className="rounded-xl border border-white/10 bg-[#18181b] shadow-xl p-5">
-              <p className="text-sm text-gray-500 mb-1">PostgreSQL Version</p>
-              <p className="text-lg font-medium text-white truncate" title={data.db_version}>{data.db_version?.split(" ")[1] || "Unknown"}</p>
-            </div>
-            
-            <div className="rounded-xl border border-white/10 bg-[#18181b] shadow-xl p-5 flex items-center justify-between">
+        ) : (
+          <>
+            {/* ── Storage Banner ── */}
+            <div style={{
+              ...card,
+              background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)",
+              border: "1px solid #bbf7d0",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "24px 28px",
+            }}>
               <div>
-                <p className="text-sm text-gray-500 mb-1">Active Connections</p>
-                <p className="text-2xl font-bold text-white">{data.active_connections}</p>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#16a34a", marginBottom: 6 }}>
+                  Total Allocated Storage
+                </p>
+                <p style={{ fontSize: 42, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                  {data.db_size || "N/A"}
+                </p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10">
-                <Zap className="h-5 w-5 text-blue-400" />
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-[#18181b] shadow-xl p-5">
-              <p className="text-sm text-gray-500 mb-1">Pool Status</p>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                <p className="text-white font-medium">{data.pool_status}</p>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(22,163,74,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <HardDrive size={26} style={{ color: "#16a34a" }} />
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-[#18181b] shadow-xl p-5">
-              <p className="text-sm text-gray-500 mb-1">Migration Status</p>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-                <p className="text-white font-medium">{data.migration_status}</p>
+            {/* ── Info cards row ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+              {[
+                { label: "PostgreSQL Version", value: data.db_version?.split(" ")[1] || "Unknown", color: "#4f46e5" },
+                { label: "Active Connections", value: data.active_connections, color: "#2563eb" },
+                { label: "Pool Status", value: data.pool_status, color: "#16a34a", dot: true },
+                { label: "Migration Status", value: data.migration_status, color: "#0891b2", dot: true },
+              ].map(item => (
+                <div key={item.label} style={card}>
+                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--e-text-faint)", marginBottom: 8 }}>
+                    {item.label}
+                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    {item.dot && <div style={{ width: 8, height: 8, borderRadius: "50%", background: item.color, flexShrink: 0 }} />}
+                    <p style={{ fontSize: 18, fontWeight: 700, color: item.color, letterSpacing: "-0.01em" }}>{item.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Table Counts Grid ── */}
+            <div>
+              <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--e-text-primary)", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                <ClipboardList size={16} style={{ color: "var(--e-text-muted)" }} />
+                Table Row Distribution
+              </h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                {Object.entries(data.table_counts || {}).map(([table, count]) => {
+                  const Icon = TABLE_ICONS[table] || Database;
+                  const color = TABLE_COLORS[table] || "#6366f1";
+                  return (
+                    <div key={table} style={{
+                      ...card, display: "flex", alignItems: "center", gap: 12,
+                      borderLeft: `3px solid ${color}`,
+                    }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                        background: color + "14",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <Icon size={15} style={{ color }} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--e-text-faint)", marginBottom: 2 }}>
+                          {table.replace(/_/g, " ")}
+                        </p>
+                        <p style={{ fontSize: 20, fontWeight: 700, color: "var(--e-text-primary)", fontVariantNumeric: "tabular-nums" }}>
+                          {(count as number).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        </>
-      )}
+
+            {/* ── Analytics Charts ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 16 }}>
+              {/* Bar chart */}
+              <div style={card}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--e-text-primary)", marginBottom: 4 }}>Row Count by Table</p>
+                <p style={{ fontSize: 11, color: "var(--e-text-muted)", marginBottom: 14 }}>Live row distribution across all tables</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={chartData} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                    <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "#94a3b8", fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [v.toLocaleString(), "Rows"]} />
+                    <Bar dataKey="count" radius={[5, 5, 0, 0]}>
+                      {chartData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Pie chart */}
+              <div style={card}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--e-text-primary)", marginBottom: 4 }}>Storage Share</p>
+                <p style={{ fontSize: 11, color: "var(--e-text-muted)", marginBottom: 10 }}>Proportional row count per table</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <PieChart width={130} height={130} style={{ background: "transparent", flexShrink: 0 }}>
+                    <Pie data={pieData} cx={65} cy={65} innerRadius={38} outerRadius={60} dataKey="value" paddingAngle={2} stroke="none">
+                      {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    </Pie>
+                    <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [v.toLocaleString(), "Rows"]} />
+                  </PieChart>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    {pieData.map(item => (
+                      <div key={item.name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: 2, background: item.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: 10, color: "var(--e-text-secondary)", fontWeight: 500 }}>
+                          {item.name}
+                        </span>
+                        <span style={{ fontSize: 10, color: "var(--e-text-faint)", marginLeft: "auto", fontVariantNumeric: "tabular-nums" }}>
+                          {item.value.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { ArrowRight, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
 import { Container } from "../layout/Container";
+import { WindowControls } from "../ui/WindowControls";
 
 const codeSnippets = [
   {
@@ -131,17 +132,17 @@ export function Hero() {
             className="flex flex-col items-start text-left"
           >
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-[1.1]">
-                Code at the speed of
+                Your personal
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-500 animate-gradient">
-                  thought.
+                  coding playground.
                 </span>
               </h1>
               
               <p className="text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto leading-relaxed mt-6">
-                The ultimate browser-based IDE designed for modern developers. 
-                Experience native performance, seamless collaboration, and a 
-                built-in custom terminal that just works.
+                The perfect cloud environment for coders of all levels. 
+                Write, test, and execute your logic instantly—no local setup 
+                required. Just pure coding.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-start gap-4 pt-8 relative z-50">
@@ -188,11 +189,7 @@ export function Hero() {
             <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-white/10 bg-[#0a0a0f] backdrop-blur-xl h-[380px] flex flex-col">
               {/* Fake Window Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#050508]/50 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                </div>
+                <WindowControls />
                 <div className="text-xs text-zinc-500 font-mono absolute left-1/2 -translate-x-1/2">{current.file}</div>
                 
                 {/* Run Button */}

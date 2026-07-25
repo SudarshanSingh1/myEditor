@@ -37,18 +37,18 @@ export default function SystemMaintenance() {
       )}
 
       {/* Maintenance Mode Toggle Card */}
-      <div className="rounded-2xl border border-white/5 bg-[#0a0a0f]/80 overflow-hidden relative group">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500/0 via-cyan-500 to-cyan-500/0 opacity-50" />
-        <div className="p-6 border-b border-white/5 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
-            <Wrench className="w-5 h-5" />
+      <div style={{ borderRadius: 16, border: "1px solid var(--e-border)", background: "var(--e-bg-surface)", overflow: "hidden", position: "relative" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 3, background: "linear-gradient(90deg, transparent, #0891b2, transparent)", opacity: 0.6 }} />
+        <div style={{ padding: "18px 20px", borderBottom: "1px solid var(--e-border)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ padding: 8, borderRadius: 10, background: "rgba(8,145,178,0.10)", color: "#0891b2" }}>
+            <Wrench size={18} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white tracking-wide">Maintenance Mode</h2>
-            <p className="text-sm text-gray-400 mt-1">Take the platform offline for updates or emergency fixes.</p>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--e-text-primary)" }}>Maintenance Mode</h2>
+            <p style={{ fontSize: 12, color: "var(--e-text-muted)", marginTop: 2 }}>Take the platform offline for updates or emergency fixes.</p>
           </div>
         </div>
-        <div className="p-4 space-y-2 px-8">
+        <div style={{ padding: "4px 20px" }}>
           <Toggle
             label="Enable Maintenance Mode"
             description="Immediately redirects all non-admin users to the maintenance screen."
@@ -77,18 +77,18 @@ export default function SystemMaintenance() {
       </div>
 
       {/* Customization Card */}
-      <div className="rounded-2xl border border-white/5 bg-[#0a0a0f]/80 overflow-hidden relative group">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500/0 via-purple-500 to-purple-500/0 opacity-50" />
-        <div className="p-6 border-b border-white/5 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
-            <SettingsIcon className="w-5 h-5" />
+      <div style={{ borderRadius: 16, border: "1px solid var(--e-border)", background: "var(--e-bg-surface)", overflow: "hidden", position: "relative" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 3, background: "linear-gradient(90deg, transparent, #7c3aed, transparent)", opacity: 0.6 }} />
+        <div style={{ padding: "18px 20px", borderBottom: "1px solid var(--e-border)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ padding: 8, borderRadius: 10, background: "rgba(124,58,237,0.10)", color: "#7c3aed" }}>
+            <SettingsIcon size={18} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white tracking-wide">Customization</h2>
-            <p className="text-sm text-gray-400 mt-1">Configure what users see on the maintenance screen.</p>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--e-text-primary)" }}>Customization</h2>
+            <p style={{ fontSize: 12, color: "var(--e-text-muted)", marginTop: 2 }}>Configure what users see on the maintenance screen.</p>
           </div>
         </div>
-        <div className="p-4 space-y-2 px-8">
+        <div style={{ padding: "4px 20px" }}>
           <TextInput
             label="Maintenance Message"
             description="The public message displayed to users."
@@ -114,13 +114,12 @@ export default function SystemMaintenance() {
             <div className="flex flex-col md:flex-row items-center gap-4 mt-2 ml-2 md:ml-16">
               
               {/* From (Now) */}
-              <div className="flex-1 w-full bg-[#12121a] border border-white/5 rounded-xl p-3 relative group overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/50"></div>
-                <div className="flex items-center gap-3 ml-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+              <div style={{ flex: 1, width: "100%", background: "var(--e-bg-elevated)", border: "1px solid var(--e-border)", borderLeft: "3px solid #16a34a", borderRadius: 10, padding: 12, position: "relative" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#16a34a", boxShadow: "0 0 8px rgba(22,163,74,0.6)", flexShrink: 0 }} />
                   <div>
-                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">Start (Now)</div>
-                    <div className="text-sm font-medium text-white">{currentTime.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "var(--e-text-faint)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Start (Now)</div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: "var(--e-text-primary)" }}>{currentTime.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</div>
                   </div>
                 </div>
               </div>
@@ -136,27 +135,22 @@ export default function SystemMaintenance() {
               </div>
 
               {/* To (Target) */}
-              <div className="flex-1 w-full relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-                <div className="relative bg-[#12121a] border border-white/10 rounded-xl p-3 overflow-hidden flex items-center">
-                  <div className="absolute top-0 right-0 w-1 h-full bg-purple-500/50"></div>
-                  <div className="flex items-center gap-3 ml-1 w-full">
-                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.8)] shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-0.5 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" /> End Time
-                      </div>
-                      <input
-                        type="datetime-local"
-                        value={settings.maintenance_end_time ? new Date(new Date(settings.maintenance_end_time).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          set("maintenance_end_time")(val ? new Date(val).toISOString() : null);
-                        }}
-                        className="w-full bg-transparent text-sm font-medium text-white focus:outline-none appearance-none"
-                        style={{ colorScheme: 'dark' }}
-                      />
+              <div style={{ flex: 1, width: "100%", background: "var(--e-bg-elevated)", border: "1px solid var(--e-border)", borderRight: "3px solid #7c3aed", borderRadius: 10, padding: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#7c3aed", boxShadow: "0 0 8px rgba(124,58,237,0.6)", flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                      <Calendar size={10} /> End Time
                     </div>
+                    <input
+                      type="datetime-local"
+                      value={settings.maintenance_end_time ? new Date(new Date(settings.maintenance_end_time).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        set("maintenance_end_time")(val ? new Date(val).toISOString() : null);
+                      }}
+                      style={{ width: "100%", background: "transparent", fontSize: 13, fontWeight: 500, color: "var(--e-text-primary)", border: "none", outline: "none" }}
+                    />
                   </div>
                 </div>
               </div>
@@ -165,28 +159,35 @@ export default function SystemMaintenance() {
             {/* Quick Actions & Duration Badge */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 ml-2 md:ml-16">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium text-gray-500 mr-1 uppercase tracking-wider hidden sm:inline-block">Add:</span>
+                <span className="text-xs font-medium text-var(--e-text-muted) mr-1 uppercase tracking-wider hidden sm:inline-block">Add:</span>
                 {[
                   { label: "+1H", hours: 1 },
                   { label: "+3H", hours: 3 },
                   { label: "+12H", hours: 12 },
-                  { label: "+24H", hours: 24 }
-                ].map((btn) => (
-                  <button 
+                  { label: "+24H", hours: 24 },
+                ].map(btn => (
+                  <button
                     key={btn.label}
-                    onClick={() => { const d = new Date(); d.setHours(d.getHours() + btn.hours); set("maintenance_end_time")(d.toISOString()); }} 
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#18181b] hover:bg-indigo-500 hover:text-white text-gray-400 border border-white/5 hover:border-indigo-400 transition-all shadow-sm hover:shadow-indigo-500/25"
-                  >
-                    {btn.label}
-                  </button>
+                    onClick={() => { const d = new Date(); d.setHours(d.getHours() + btn.hours); set("maintenance_end_time")(d.toISOString()); }}
+                    style={{
+                      fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 8, cursor: "pointer",
+                      background: "var(--e-bg-elevated)", color: "var(--e-text-secondary)",
+                      border: "1px solid var(--e-border)", transition: "all 150ms",
+                    }}
+                    onMouseEnter={e => { (e.target as HTMLButtonElement).style.background = "rgba(99,102,241,0.1)"; (e.target as HTMLButtonElement).style.color = "#4f46e5"; }}
+                    onMouseLeave={e => { (e.target as HTMLButtonElement).style.background = "var(--e-bg-elevated)"; (e.target as HTMLButtonElement).style.color = "var(--e-text-secondary)"; }}
+                  >{btn.label}</button>
                 ))}
-                <button 
+                <button
                   onClick={() => set("maintenance_end_time")(null)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#18181b] hover:bg-red-500/20 hover:text-red-400 text-gray-400 border border-white/5 transition-all ml-1"
-                  title="Clear end time"
-                >
-                  Clear
-                </button>
+                  style={{
+                    fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 8, cursor: "pointer",
+                    background: "var(--e-bg-elevated)", color: "var(--e-text-secondary)",
+                    border: "1px solid var(--e-border)", transition: "all 150ms", marginLeft: 4,
+                  }}
+                  onMouseEnter={e => { (e.target as HTMLButtonElement).style.background = "#fef2f2"; (e.target as HTMLButtonElement).style.color = "#dc2626"; }}
+                  onMouseLeave={e => { (e.target as HTMLButtonElement).style.background = "var(--e-bg-elevated)"; (e.target as HTMLButtonElement).style.color = "var(--e-text-secondary)"; }}
+                >Clear</button>
               </div>
 
               {/* Duration Badge */}

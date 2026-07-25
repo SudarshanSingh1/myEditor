@@ -45,21 +45,8 @@ interface ServerData {
   uptime_seconds: number;
 }
 
-const CHART_MOCK = Array.from({ length: 14 }, (_, i) => ({
-  day: `D${i + 1}`,
-  users: Math.floor(20 + Math.random() * 60),
-  executions: Math.floor(40 + Math.random() * 120),
-  errors: Math.floor(Math.random() * 15),
-}));
-
-const systemHealth = [
-  { label: "API Gateway",   status: "online"  as const, latency: "12ms"  },
-  { label: "Database",      status: "online"  as const, latency: "4ms"   },
-  { label: "Docker Engine", status: "online"  as const, latency: "--"    },
-  { label: "Queue Worker",  status: "online"  as const, latency: "--"    },
-  { label: "SMTP Relay",    status: "online"  as const, latency: "142ms" },
-  { label: "Auth Service",  status: "online"  as const, latency: "8ms"   },
-];
+const CHART_MOCK: any[] = [];
+const systemHealth: any[] = [];
 
 const adminQuickLinks = [
   { label: "User Management",  to: "/app/admin/users",         icon: Users,        color: "var(--e-accent)",   desc: "Manage accounts, roles" },
@@ -85,21 +72,49 @@ function fmtUptime(sec: number) {
 }
 
 export default function AdminDashboardPage() {
-  const { isModerator } = useAdminContext();
+  const { isModerator, isSuperAdmin } = useAdminContext();
   const [data, setData] = useState<DashData | null>(null);
   const [server, setServer] = useState<ServerData | null>(null);
+  const [timeline, setTimeline] = useState<any[]>([]);
+  const [health, setHealth] = useState<any[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [netHistory, setNetHistory] = useState<{ t: string; read: number; write: number }[]>([]);
   const [cpuHistory, setCpuHistory] = useState<{ t: string; v: number }[]>([]);
   const [ramHistory, setRamHistory] = useState<{ t: string; v: number }[]>([]);
   const [diskHistory, setDiskHistory] = useState<{ t: string; v: number }[]>([]);
 
-  // Load platform dashboard data
   useEffect(() => {
     fetchApi("/admin/dashboard")
       .then(r => { if (r?.success) setData(r.data); })
       .catch(e => toast.error(e.message || "Failed to load dashboard"))
       .finally(() => setIsLoading(false));
+      
+    fetchApi("/admin/analytics/master-timeline")
+      .then(r => { 
+        if (r?.success) {
+          // Format timeline for chart
+          const formatted = (r.data.items || []).map((item: any) => {
+            const date = new Date(item.date);
+            return {
+              day: `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })}`,
+              users: item.users || 0,
+              executions: item.executions || 0,
+              errors: item.errors || 0
+            };
+          });
+          setTimeline(formatted);
+        }
+      })
+      .catch(() => {});
+      
+    fetchApi("/admin/server/health")
+      .then(r => {
+        if (r?.success && r.data?.items) {
+          setHealth(r.data.items);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Poll server metrics
@@ -258,7 +273,7 @@ export default function AdminDashboardPage() {
           <WidgetShell title="Platform Activity" subtitle="Users & executions over 14 days">
             <div style={{ height: 200 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={CHART_MOCK} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                <AreaChart data={timeline} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="dg-users" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.4} />
@@ -293,7 +308,7 @@ export default function AdminDashboardPage() {
 
           <WidgetShell title="System Health" subtitle="Service status overview">
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {systemHealth.map(s => (
+              {health.map(s => (
                 <div key={s.label} style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "7px 10px", borderRadius: "var(--e-radius-md)",
@@ -316,7 +331,7 @@ export default function AdminDashboardPage() {
         <WidgetShell title="Error Rate" subtitle="System errors per day">
           <div style={{ height: 100 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={CHART_MOCK} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} style={{ background: "transparent" }}>
+              <BarChart data={timeline} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} style={{ background: "transparent" }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
                 <XAxis dataKey="day" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />

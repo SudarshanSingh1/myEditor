@@ -13,7 +13,7 @@ router.include_router(execution.router, prefix="/execution", tags=["Execution"])
 router.include_router(execution_ws.router, prefix="/execution", tags=["Execution WebSockets"])
 router.include_router(feedback.router, prefix="/feedback", tags=["Feedback"])
 router.include_router(system_errors.router, prefix="/system-errors", tags=["System Errors"])
-router.include_router(admin.router, prefix="/admin", tags=["Admin Dashboard"])
+router.include_router(admin.admin_router, prefix="/admin", tags=["Admin Dashboard"])
 router.include_router(system_status.router, prefix="/system", tags=["System"])
 router.include_router(guest.router, prefix="/guest", tags=["Guest"])
 

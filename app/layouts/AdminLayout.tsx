@@ -36,10 +36,14 @@ const superAdminNavItems = [
 ];
 
 function ServerStatusDot() {
+  const { isModerator } = useAdminContext();
   const [status, setStatus] = useState<"online" | "warning" | "offline">("online");
   const [cpu, setCpu] = useState<number | null>(null);
 
   useEffect(() => {
+    // Moderators do not have permission to hit /admin/server, so don't poll
+    if (isModerator) return;
+    
     const poll = async () => {
       try {
         const resp = await fetchApi("/admin/server");
@@ -48,14 +52,16 @@ function ServerStatusDot() {
           setCpu(c);
           setStatus(c > 85 ? "warning" : "online");
         }
-      } catch {
-        setStatus("offline");
+      } catch (e: any) {
+        if (e?.status !== 403) {
+          setStatus("offline");
+        }
       }
     };
     poll();
     const id = setInterval(poll, 10000);
     return () => clearInterval(id);
-  }, []);
+  }, [isModerator]);
 
   const colors = { online: "#22c55e", warning: "#f59e0b", offline: "#ef4444" };
   const labels = { online: "Online", warning: "High Load", offline: "Offline" };
