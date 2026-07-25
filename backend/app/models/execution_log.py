@@ -6,14 +6,14 @@ from sqlalchemy.orm import relationship, backref
 from app.database.base import Base
 
 class ExecutionStatus(str, enum.Enum):
-    QUEUED = "Queued"
-    RUNNING = "Running"
-    SUCCESS = "Success"
-    COMPILE_ERROR = "Compile Error"
-    RUNTIME_ERROR = "Runtime Error"
-    TIMEOUT = "Timeout"
-    SYSTEM_ERROR = "System Error"
-    CANCELLED = "Cancelled"
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    SUCCESS = "SUCCESS"
+    COMPILE_ERROR = "COMPILE_ERROR"
+    RUNTIME_ERROR = "RUNTIME_ERROR"
+    TIMEOUT = "TIMEOUT"
+    SYSTEM_ERROR = "SYSTEM_ERROR"
+    CANCELLED = "CANCELLED"
 
 class ExecutionLog(Base):
     __tablename__ = "execution_logs"
@@ -23,7 +23,7 @@ class ExecutionLog(Base):
     project_id = Column(Uuid(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
     
     language = Column(String(50), nullable=False)
-    status = Column(Enum(ExecutionStatus, values_callable=lambda obj: [e.value for e in obj]), nullable=False)
+    status = Column(Enum(ExecutionStatus), nullable=False)
     execution_time_ms = Column(Integer, nullable=True)  # How long it took in milliseconds
     
     compiler = Column(String(100), nullable=True)

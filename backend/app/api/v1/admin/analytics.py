@@ -115,7 +115,15 @@ def get_master_timeline(db: Session = Depends(get_db), admin: User = Depends(req
         timeline_dict[d]["errors"] = r.count
         
     sorted_items = sorted(list(timeline_dict.values()), key=lambda x: x["date"])
-    return SuccessResponse(message="Master timeline retrieved", data={"items": sorted_items})
+    total_users = db.query(User).filter(User.is_deleted == False).count()
+    total_execs = db.query(ExecutionLog).count()
+    total_errors = db.query(SystemError).count()
+    return SuccessResponse(message="Master timeline retrieved", data={
+        "items": sorted_items,
+        "total_users": total_users,
+        "total_executions": total_execs,
+        "total_errors": total_errors
+    })
 
 @router.get("/analytics/languages", response_model=SuccessResponse)
 def get_language_distribution(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
@@ -138,7 +146,7 @@ def get_execution_status(db: Session = Depends(get_db), admin: User = Depends(re
         func.count(ExecutionLog.id).label("count")
     ).group_by(ExecutionLog.status).all()
     
-    data = [{"status": str(r.status), "count": r.count} for r in rows]
+    data = [{"status": r.status.value if hasattr(r.status, "value") else str(r.status).split(".")[-1], "count": r.count} for r in rows]
     return SuccessResponse(message="Execution status retrieved", data={"items": data})
 
 @router.get("/analytics/feedback-ratings", response_model=SuccessResponse)

@@ -79,6 +79,8 @@ export default function AdminAnalyticsPage() {
   const [storageCharts, setStorageCharts]   = useState<any>(null);
   const [largestProjects, setLargestProjects] = useState<any[]>([]);
   const [largestUsers, setLargestUsers]     = useState<any[]>([]);
+  const [totalUsers, setTotalUsers]         = useState<number>(0);
+  const [totalExecutions, setTotalExecutions] = useState<number>(0);
 
   /* -- fetch functions -- */
   const fetchGeneral = async () => {
@@ -89,7 +91,11 @@ export default function AdminAnalyticsPage() {
         fetchApi("/admin/analytics/execution-status"),
         fetchApi("/admin/analytics/feedback-ratings"),
       ]);
-      if (t?.success) setTimeline(t.data.items || []);
+      if (t?.success) {
+        setTimeline(t.data.items || []);
+        setTotalUsers(t.data.total_users ?? (t.data.items || []).reduce((a: number, d: any) => a + (d.users ?? 0), 0));
+        setTotalExecutions(t.data.total_executions ?? (t.data.items || []).reduce((a: number, d: any) => a + (d.executions ?? 0), 0));
+      }
       if (l?.success) setLanguages(l.data.items || []);
       if (s?.success) setStatusRatio(s.data.items || []);
       if (f?.success) setFeedback(f.data.items || []);
@@ -222,19 +228,19 @@ export default function AdminAnalyticsPage() {
             <div className="e-grid-4" style={{ gap: 12 }}>
               <MetricCard
                 label="Total Users"
-                value={timeline.length ? timeline[timeline.length - 1]?.users ?? 0 : 0}
+                value={totalUsers}
                 icon={Users} iconColor="var(--e-accent-light)" iconBg="var(--e-bg-active)"
                 trend="up" trendValue="+12%"
               />
               <MetricCard
                 label="Total Executions"
-                value={timeline.reduce((a: number, d: any) => a + (d.executions ?? 0), 0)}
+                value={totalExecutions}
                 icon={Zap} iconColor="var(--e-cyan)" iconBg="var(--e-cyan-bg)"
                 trend="up" trendValue="+23%"
               />
               <MetricCard
                 label="Completion Rate"
-                value={`${statusRatio.length ? Math.round((statusRatio.find((s: any) => s.status === "completed")?.count / statusRatio.reduce((a: any, b: any) => a + b.count, 0)) * 100) || 0 : 0}%`}
+                value={`${statusRatio.length ? Math.round(((statusRatio.find((s: any) => { const k = (s.status || "").replace("ExecutionStatus.", "").toUpperCase(); return k === "SUCCESS" || k === "COMPLETED"; })?.count || 0) / (statusRatio.reduce((a: any, b: any) => a + b.count, 0) || 1)) * 100) : 0}%`}
                 icon={CheckCircle2} iconColor="var(--e-green)" iconBg="var(--e-green-bg)"
                 trend="up" trendValue="+5%"
               />
