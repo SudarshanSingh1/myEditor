@@ -9,6 +9,7 @@ import "./index.css";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { ConfirmProvider } from './components/ui/ConfirmProvider';
+import { Toaster } from 'sonner';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -27,6 +28,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <ConfirmProvider>
             {children}
+            <Toaster position="top-right" theme="dark" richColors closeButton />
           </ConfirmProvider>
         </QueryClientProvider>
         <ScrollRestoration />
