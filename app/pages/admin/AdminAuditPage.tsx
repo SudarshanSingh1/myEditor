@@ -20,8 +20,6 @@ export default function AdminAuditPage() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "events" | "blocked" | "permissions">("dashboard");
   const limit = 30;
 
-  if (!isSuperAdmin) return <Navigate to="/403" replace />;
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -32,6 +30,8 @@ export default function AdminAuditPage() {
   }, [page]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  if (!isSuperAdmin) return <Navigate to="/403" replace />;
 
   const actionColor = (action: string): string => {
     if (action.includes("DELETE")) return "error";

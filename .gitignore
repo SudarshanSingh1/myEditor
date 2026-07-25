@@ -39,3 +39,7 @@ backend/test_debug.py
 backend/test_docker.py
 backend/test_ws.py
 backend/test_output.txt
+
+# Build output
+build/
+.react-router/
