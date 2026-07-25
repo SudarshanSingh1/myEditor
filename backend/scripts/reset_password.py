@@ -19,4 +19,8 @@ def reset_password(email: str, new_password: str):
     print(f"Successfully reset password for {email} to {new_password}")
     
 if __name__ == "__main__":
-    reset_password("sudarshankushwaha1435@gmail.com", "password123")
+    import sys
+    if len(sys.argv) < 3:
+        print("Usage: python reset_password.py <email> <new_password>")
+        sys.exit(1)
+    reset_password(sys.argv[1], sys.argv[2])

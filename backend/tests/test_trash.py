@@ -3,7 +3,7 @@ import os
 import sys
 
 # Ensure backend path is in sys.path
-sys.path.append("/Users/sudarshankumar/Documents/myEditor/backend")
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.database.session import SessionLocal
 from app.services.project_service import ProjectService

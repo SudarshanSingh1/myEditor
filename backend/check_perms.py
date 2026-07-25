@@ -10,7 +10,8 @@ db = SessionLocal()
 perms = db.query(Permission.node).join(RolePermission).filter(RolePermission.role == RoleEnum.MODERATOR).all()
 print("MODERATOR perms:", [p[0] for p in perms])
 
-user = db.query(User).filter(User.username == "krsudarshan234e050").first()
+username_to_check = sys.argv[1] if len(sys.argv) > 1 else "admin"
+user = db.query(User).filter(User.username == username_to_check).first()
 if user:
     print("User role:", user.role)
     print("User effective_permissions:", user.effective_permissions)
