@@ -295,7 +295,7 @@ export default function AdminAnalyticsPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <ChartCard title="Language Distribution" subtitle="Top languages by execution count" height={220}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={languages.slice(0, 8)} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                  <BarChart data={languages.slice(0, 8)} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} style={{ background: "transparent" }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                     <XAxis dataKey="language" tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -313,7 +313,7 @@ export default function AdminAnalyticsPage() {
                 <div style={{ display: "flex", height: "100%", alignItems: "center", gap: 16 }}>
                   <div style={{ flex: "0 0 180px" }}>
                     <ResponsiveContainer width="100%" height={190}>
-                      <PieChart>
+                      <PieChart style={{ background: "transparent" }}>
                         <Pie
                           data={statusRatio}
                           cx="50%" cy="50%"

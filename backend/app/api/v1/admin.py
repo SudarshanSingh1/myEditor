@@ -879,6 +879,14 @@ def update_user_role(
     user_id: uuid.UUID, req: UserRoleUpdate, request: Request,
     db: Session = Depends(get_db), admin: User = Depends(require_permission('system.maintenance.toggle'))
 ):
+    # Hard RBAC gate: only ADMIN or OWNER can change roles — Moderators are always blocked
+    if admin.role not in [RoleEnum.ADMIN, RoleEnum.OWNER]:
+        raise HTTPException(status_code=403, detail="Only Admins and Owners can change user roles.")
+
+    # Admins cannot grant the OWNER role — only an Owner can do that
+    if admin.role == RoleEnum.ADMIN and req.role == RoleEnum.OWNER:
+        raise HTTPException(status_code=403, detail="Only an Owner can grant the Owner role.")
+
     target_user = db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -902,6 +910,7 @@ def update_user_role(
     
     AuditService.log_action(db, admin.id, "UPDATE_USER_ROLE", request.client.host, request.headers.get("user-agent"), {"user_id": str(user_id), "old_role": old_role, "new_role": req.role})
     return SuccessResponse(message="Role updated", data={"id": str(user_id), "role": req.role})
+
 
 @router.patch("/users/{user_id}/status", response_model=SuccessResponse)
 def update_user_status(

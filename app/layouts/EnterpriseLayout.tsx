@@ -14,6 +14,26 @@ import {
 } from "lucide-react";
 
 /* ─── Navigation Configuration ─────────────────────────────── */
+const moderatorNavGroups = [
+  {
+    label: "Operations",
+    items: [
+      { icon: LayoutDashboard, label: "Dashboard",    to: "/app/admin",             exact: true },
+      { icon: Users,           label: "Users",        to: "/app/admin/users" },
+      { icon: FolderOpen,      label: "Projects",     to: "/app/admin/projects" },
+    ],
+  },
+  {
+    label: "Moderation",
+    items: [
+      { icon: Flag,            label: "Reports",      to: "/app/admin/reports" },
+      { icon: MessageSquare,   label: "Feedback",     to: "/app/admin/feedback" },
+      { icon: Bug,             label: "Errors",       to: "/app/admin/errors" },
+      { icon: Bell,            label: "Notifications",to: "/app/admin/notifications" },
+    ],
+  },
+];
+
 const adminNavGroups = [
   {
     label: "Operations",
@@ -167,7 +187,7 @@ function useServerStatus() {
 /* ─── EnterpriseLayout ───────────────────────────────────── */
 export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminLayout?: boolean }) {
   const { user, logout } = useUserStore();
-  const { isSuperAdmin } = useAdminContext();
+  const { isSuperAdmin, isModerator } = useAdminContext();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -194,7 +214,12 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
     navigate("/login");
   };
 
-  const navGroups = isSuperAdminLayout ? ownerNavGroups : adminNavGroups;
+  // Role-based nav: Owner → ownerNavGroups | Moderator → moderatorNavGroups | Admin → adminNavGroups
+  const navGroups = isSuperAdminLayout
+    ? ownerNavGroups
+    : isModerator
+      ? moderatorNavGroups
+      : adminNavGroups;
 
   const getBreadcrumbs = () => {
     const segs = location.pathname.split("/").filter(Boolean);
