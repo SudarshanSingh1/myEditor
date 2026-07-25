@@ -163,5 +163,5 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 ---
 
 <p align="center">
-  Built with ❤️ by the open-source developer community. <a href="CONTRIBUTING.md">Join us!</a>
+  <b>Built with ❤️ by Sudarshan for his brother — and coders everywhere.</b> <a href="CONTRIBUTING.md">Join us!</a>
 </p>

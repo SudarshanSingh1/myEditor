@@ -60,6 +60,9 @@ export function LandingFooter() {
         </div>
         
         <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-xs md:text-sm font-medium shadow-sm">
+            <span>Built with ❤️ by Sudarshan for his brother — and coders everywhere.</span>
+          </div>
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} Hamara Editor. All rights reserved.
           </p>
