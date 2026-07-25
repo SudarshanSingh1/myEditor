@@ -67,7 +67,8 @@ jobs:
         working-directory: ./backend
         run: pytest tests/
         env:
-          DATABASE_URL: postgresql://user:password@localhost:5432/hamara_editor
+          DATABASE_URL: postgresql+psycopg://user:password@localhost:5432/hamara_editor
+          TEST_DATABASE_URL: postgresql+psycopg://user:password@localhost:5432/hamara_editor
           ENVIRONMENT: testing
           JWT_SECRET_KEY: test_secret_key_for_ci_pipeline
           SMTP_API_KEY: fake_smtp_key
