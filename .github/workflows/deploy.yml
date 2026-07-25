@@ -12,6 +12,20 @@ jobs:
   test:
     name: Run Checks (Frontend & Backend)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: hamara_editor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     
     steps:
       - name: Checkout Code
@@ -33,7 +47,7 @@ jobs:
         run: npm run typecheck
         
       - name: Run Frontend Tests
-        run: npm run test -- --run
+        run: npm run test -- --run --passWithNoTests
         
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -51,7 +65,12 @@ jobs:
         
       - name: Run Backend Tests
         working-directory: ./backend
-        run: pytest
+        run: pytest tests/
+        env:
+          DATABASE_URL: postgresql://user:password@localhost:5432/hamara_editor
+          ENVIRONMENT: testing
+          JWT_SECRET_KEY: test_secret_key_for_ci_pipeline
+          SMTP_API_KEY: fake_smtp_key
         
   deploy:
     name: Deploy to VPS
