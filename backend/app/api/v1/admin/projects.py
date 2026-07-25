@@ -100,7 +100,7 @@ def get_project_details(
     execs = db.query(ExecutionLog).filter(ExecutionLog.project_id == proj.id).order_by(ExecutionLog.created_at.desc()).limit(10).all()
     exec_data = [{
         "status": str(e.status) if hasattr(e, 'status') else None, 
-        "duration_ms": e.duration_ms, 
+        "duration_ms": e.execution_time_ms, 
         "created_at": e.created_at, 
         "exit_code": e.exit_code
     } for e in execs]
