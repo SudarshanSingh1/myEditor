@@ -1,4 +1,5 @@
-<img width="1280" height="832" alt="image" src="https://github.com/user-attachments/assets/110df4a1-daff-42b9-9100-30fc7973aef2" />
+<img width="1280" height="832" alt="image" src="https://github.com/user-attachments/assets/c292ca10-0eff-4455-b4a7-aa360e7d3bfc" />
+
 # Hamara Editor — Self-Hosted Cloud IDE & Code Execution Platform
 
 <p align="center">
