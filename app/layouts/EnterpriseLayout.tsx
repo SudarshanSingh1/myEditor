@@ -261,11 +261,11 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
           boxShadow: "0 0 16px rgba(99,102,241,0.4)",
         }}>H</div>
         <div className="e-sidebar-text" style={{ overflow: "hidden" }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: "var(--e-text-primary)", whiteSpace: "nowrap" }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", whiteSpace: "nowrap" }}>
             Hamara
           </p>
-          <p style={{ fontSize: 10, color: "var(--e-text-faint)", whiteSpace: "nowrap" }}>
-            {isSuperAdminLayout ? "Owner Console" : "Admin Portal"}
+          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>
+            {isSuperAdminLayout ? "Owner Console" : isModerator ? "Moderator Portal" : "Admin Portal"}
           </p>
         </div>
       </div>
@@ -297,7 +297,7 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
       </div>
 
       {/* User Footer */}
-      <div style={{ borderTop: "1px solid var(--e-border)", padding: "10px 8px", flexShrink: 0 }}>
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: "10px 8px", flexShrink: 0 }}>
         {!collapsed && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 6px 8px" }}>
             <div style={{
@@ -309,10 +309,10 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
               {user?.username?.slice(0, 2).toUpperCase() || "A"}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: "var(--e-text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "#ffffff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {user?.username}
               </p>
-              <p style={{ fontSize: 10, color: "var(--e-text-faint)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {user?.email}
               </p>
             </div>

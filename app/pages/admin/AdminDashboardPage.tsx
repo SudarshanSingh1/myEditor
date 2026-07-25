@@ -212,25 +212,25 @@ export default function AdminDashboardPage() {
                 <MetricLineChart
                   title="CPU Load"
                   data={cpuHistory}
-                  color="#3b82f6"
+                  color="#2563eb"
                   formatter={v => `${v.toFixed(1)}%`}
                 />
                 <MetricLineChart
                   title="Free Memory"
                   data={ramHistory.map(d => ({ t: d.t, v: (server?.ram_total_gb ?? 0) - d.v }))}
-                  color="#3b82f6"
+                  color="#2563eb"
                   formatter={v => `${v.toFixed(2)} GB`}
                 />
                 <MetricLineChart
                   title="Memory Used"
                   data={ramHistory}
-                  color="#6366f1"
+                  color="#7c3aed"
                   formatter={v => `${v.toFixed(2)} GB`}
                 />
                 <MetricLineChart
                   title="Disk Usage"
                   data={diskHistory}
-                  color="#06b6d4"
+                  color="#0891b2"
                   formatter={v => `${v.toFixed(1)}%`}
                 />
               </div>
@@ -269,12 +269,12 @@ export default function AdminDashboardPage() {
                       <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                  <XAxis dataKey="day" tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                  <XAxis dataKey="day" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
                   <Tooltip
-                    contentStyle={{ background: "#0d0e1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }}
-                    labelStyle={{ color: "#f1f5f9" }}
+                    contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}
+                    labelStyle={{ color: "#334155", fontWeight: 600 }}
                   />
                   <Area type="monotone" dataKey="users"      stroke="#6366f1" fill="url(#dg-users)" strokeWidth={2} dot={false} name="Users" activeDot={{ r: 4 }} />
                   <Area type="monotone" dataKey="executions" stroke="#06b6d4" fill="url(#dg-exec)"  strokeWidth={2} dot={false} name="Executions" activeDot={{ r: 4 }} />
@@ -313,16 +313,15 @@ export default function AdminDashboardPage() {
           </WidgetShell>
         </div>
 
-        {/* ── Error Rate Chart ── */}
         <WidgetShell title="Error Rate" subtitle="System errors per day">
           <div style={{ height: 100 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={CHART_MOCK} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                <XAxis dataKey="day" tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#0d0e1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }} />
-                <Bar dataKey="errors" fill="#ef4444" opacity={0.8} radius={[3, 3, 0, 0]} name="Errors" />
+              <BarChart data={CHART_MOCK} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} style={{ background: "transparent" }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }} />
+                <Bar dataKey="errors" fill="#dc2626" opacity={0.8} radius={[3, 3, 0, 0]} name="Errors" />
               </BarChart>
             </ResponsiveContainer>
           </div>

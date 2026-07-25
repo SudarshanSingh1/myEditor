@@ -1,57 +1,57 @@
 /* ============================================================
-   ENTERPRISE ADMIN DESIGN SYSTEM
-   Premium dark enterprise aesthetic for the admin portals
+   ENTERPRISE ADMIN DESIGN SYSTEM — LIGHT THEME
+   Clean white enterprise aesthetic for the admin portals
    ============================================================ */
 
 /* --- CSS Custom Properties (Design Tokens) --- */
 :root {
   /* Backgrounds */
-  --e-bg-base:       #07080f;
-  --e-bg-surface:    #0d0e1a;
-  --e-bg-elevated:   #131525;
-  --e-bg-hover:      rgba(255,255,255,0.04);
-  --e-bg-active:     rgba(99,102,241,0.12);
+  --e-bg-base:       #f0f2f6;
+  --e-bg-surface:    #ffffff;
+  --e-bg-elevated:   #f8f9fb;
+  --e-bg-hover:      rgba(99,102,241,0.05);
+  --e-bg-active:     rgba(99,102,241,0.08);
 
   /* Borders */
-  --e-border:        rgba(255,255,255,0.07);
-  --e-border-strong: rgba(255,255,255,0.12);
-  --e-border-accent: rgba(99,102,241,0.4);
+  --e-border:        #e2e8f0;
+  --e-border-strong: #cbd5e1;
+  --e-border-accent: rgba(99,102,241,0.35);
 
   /* Brand Accent */
   --e-accent:        #6366f1;
-  --e-accent-light:  #818cf8;
-  --e-accent-glow:   rgba(99,102,241,0.25);
+  --e-accent-light:  #4f46e5;
+  --e-accent-glow:   rgba(99,102,241,0.15);
 
   /* Text */
-  --e-text-primary:  #f1f5f9;
-  --e-text-secondary:#94a3b8;
-  --e-text-muted:    #475569;
-  --e-text-faint:    #334155;
+  --e-text-primary:  #0f172a;
+  --e-text-secondary:#334155;
+  --e-text-muted:    #64748b;
+  --e-text-faint:    #94a3b8;
 
   /* Semantic Status Colors */
-  --e-green:         #10b981;
-  --e-green-bg:      rgba(16,185,129,0.1);
-  --e-green-border:  rgba(16,185,129,0.2);
+  --e-green:         #16a34a;
+  --e-green-bg:      #f0fdf4;
+  --e-green-border:  #bbf7d0;
 
-  --e-amber:         #f59e0b;
-  --e-amber-bg:      rgba(245,158,11,0.1);
-  --e-amber-border:  rgba(245,158,11,0.2);
+  --e-amber:         #d97706;
+  --e-amber-bg:      #fffbeb;
+  --e-amber-border:  #fde68a;
 
-  --e-red:           #ef4444;
-  --e-red-bg:        rgba(239,68,68,0.1);
-  --e-red-border:    rgba(239,68,68,0.2);
+  --e-red:           #dc2626;
+  --e-red-bg:        #fef2f2;
+  --e-red-border:    #fecaca;
 
-  --e-blue:          #3b82f6;
-  --e-blue-bg:       rgba(59,130,246,0.1);
-  --e-blue-border:   rgba(59,130,246,0.2);
+  --e-blue:          #2563eb;
+  --e-blue-bg:       #eff6ff;
+  --e-blue-border:   #bfdbfe;
 
-  --e-purple:        #a855f7;
-  --e-purple-bg:     rgba(168,85,247,0.1);
-  --e-purple-border: rgba(168,85,247,0.2);
+  --e-purple:        #7c3aed;
+  --e-purple-bg:     #f5f3ff;
+  --e-purple-border: #ddd6fe;
 
-  --e-cyan:          #06b6d4;
-  --e-cyan-bg:       rgba(6,182,212,0.1);
-  --e-cyan-border:   rgba(6,182,212,0.2);
+  --e-cyan:          #0891b2;
+  --e-cyan-bg:       #ecfeff;
+  --e-cyan-border:   #a5f3fc;
 
   /* Spacing Scale */
   --e-space-1: 4px;
@@ -69,10 +69,10 @@
   --e-radius-xl:  18px;
 
   /* Shadows */
-  --e-shadow-sm:  0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-  --e-shadow-md:  0 4px 16px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
-  --e-shadow-lg:  0 10px 40px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
-  --e-shadow-accent: 0 0 24px rgba(99,102,241,0.2);
+  --e-shadow-sm:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --e-shadow-md:  0 4px 16px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05);
+  --e-shadow-lg:  0 10px 40px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
+  --e-shadow-accent: 0 0 24px rgba(99,102,241,0.15);
 }
 
 /* --- Enterprise Layout Base --- */
@@ -90,8 +90,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--e-bg-surface);
-  border-right: 1px solid var(--e-border);
+  background: #1e1b4b;
+  border-right: 1px solid rgba(255,255,255,0.08);
   transition: width 250ms cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   flex-shrink: 0;
@@ -105,7 +105,7 @@
   align-items: center;
   gap: 10px;
   padding: 14px 12px;
-  border-bottom: 1px solid var(--e-border);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   min-height: 52px;
   overflow: hidden;
   white-space: nowrap;
@@ -117,7 +117,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--e-text-faint);
+  color: rgba(255,255,255,0.35);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -131,7 +131,7 @@
   margin: 1px 6px;
   font-size: 13px;
   font-weight: 500;
-  color: var(--e-text-secondary);
+  color: rgba(255,255,255,0.65);
   text-decoration: none;
   transition: all 150ms ease;
   white-space: nowrap;
@@ -139,20 +139,20 @@
   position: relative;
 }
 .e-nav-item:hover {
-  background: var(--e-bg-hover);
-  color: var(--e-text-primary);
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
 }
 .e-nav-item.active {
-  background: var(--e-bg-active);
-  color: var(--e-accent-light);
-  border: 1px solid var(--e-border-accent);
+  background: rgba(255,255,255,0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.15);
 }
-.e-nav-item.active .e-nav-icon { color: var(--e-accent-light); }
+.e-nav-item.active .e-nav-icon { color: #ffffff; }
 .e-nav-icon {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
-  color: var(--e-text-muted);
+  color: rgba(255,255,255,0.5);
   transition: color 150ms;
 }
 
@@ -329,7 +329,7 @@
 .e-table th:first-child { padding-left: 16px; }
 .e-table td {
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--e-border);
   color: var(--e-text-secondary);
   vertical-align: middle;
 }
@@ -344,7 +344,7 @@
 .e-progress {
   height: 4px;
   border-radius: 2px;
-  background: rgba(255,255,255,0.06);
+  background: var(--e-border);
   overflow: hidden;
 }
 .e-progress-bar {
@@ -403,7 +403,7 @@
   display: flex;
   gap: 10px;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--e-border);
 }
 .e-feed-item:last-child { border-bottom: none; }
 .e-feed-dot {
@@ -509,10 +509,10 @@
   flex: 1;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
+  scrollbar-color: rgba(0,0,0,0.12) transparent;
 }
 .e-content::-webkit-scrollbar { width: 6px; }
-.e-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.e-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
 .e-content::-webkit-scrollbar-track { background: transparent; }
 
 .e-page { padding: 20px 24px; max-width: 1600px; }
@@ -532,7 +532,7 @@
   100% { background-position: 400px 0; }
 }
 .e-skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.04) 75%);
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
   background-size: 800px 100%;
   animation: e-shimmer 1.5s infinite;
   border-radius: var(--e-radius-md);
@@ -565,14 +565,14 @@
 /* --- Recharts custom styles --- */
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {
-  stroke: rgba(255,255,255,0.05);
+  stroke: rgba(0,0,0,0.06);
 }
 
 /* --- Command palette backdrop --- */
 .e-cmd-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.4);
   backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
@@ -583,10 +583,10 @@
 .e-cmd-palette {
   width: 600px;
   max-width: calc(100vw - 48px);
-  background: var(--e-bg-elevated);
+  background: var(--e-bg-surface);
   border: 1px solid var(--e-border-strong);
   border-radius: var(--e-radius-xl);
-  box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+  box-shadow: var(--e-shadow-lg);
   overflow: hidden;
 }
 .e-cmd-input {

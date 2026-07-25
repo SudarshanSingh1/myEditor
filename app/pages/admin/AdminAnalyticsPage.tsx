@@ -24,13 +24,13 @@ function useDebounceValue<T>(value: T, delay: number): T {
 }
 
 /* ── colour palettes ────────────────────────────────────────────── */
-const PIE_COLORS   = ["#6366f1", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6", "#3b82f6"];
+const PIE_COLORS   = ["#4f46e5", "#0891b2", "#16a34a", "#d97706", "#dc2626", "#db2777", "#7c3aed", "#2563eb"];
 const TOOLTIP_STYLE = {
   contentStyle: {
-    background: "#0d0e1a", border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 12, fontSize: 12, color: "#f1f5f9", boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+    background: "#ffffff", border: "1px solid #e2e8f0",
+    borderRadius: 12, fontSize: 12, color: "#334155", boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
   },
-  labelStyle: { color: "#94a3b8", marginBottom: 4 },
+  labelStyle: { color: "#64748b", marginBottom: 4, fontWeight: 600 },
 };
 
 const formatBytes = (bytes: number) => {
