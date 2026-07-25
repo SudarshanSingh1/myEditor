@@ -1,60 +1,126 @@
-# Hamara Editor
+# Hamara Editor — Self-Hosted Cloud IDE & Code Execution Platform
 
-Hamara Editor is an advanced, self-hosted web-based Integrated Development Environment (IDE).
-It supports execution for multiple programming languages using isolated Docker containers, guaranteeing secure, reproducible environments for every code run.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.13-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.13" />
+  <img src="https://img.shields.io/badge/React-19.0-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 5" />
+  <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Docker-Sandbox%20Isolated-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Isolated" />
+  <img src="https://img.shields.io/badge/PostgreSQL-15+-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white" alt="GitHub Actions" />
+  <img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="MIT License" />
+</p>
 
-## Features
+<p align="center">
+  <b>An advanced, production-ready, self-hosted web IDE that safely executes untrusted code across multiple programming languages inside ephemeral Linux sandbox containers.</b>
+</p>
 
-- **Multi-Language Support**: Run C, C++, Python, Java, JavaScript, TypeScript, Go, and Rust.
-- **Docker-Isolated Execution**: Code is executed in secure, resource-limited Docker containers with temporary filesystems and disabled networking.
-- **Real-Time Terminal**: Full xterm.js integration providing interactive stdin, stdout, and stderr streaming via WebSockets.
-- **Robust File Explorer**: Nested folder structures, drag-and-drop support, context menus, and file state persistence.
-- **Monaco Editor**: Powerful editor with syntax highlighting, language intelligence, and tab management.
+---
 
-## Production Deployment (Docker Compose)
+## ✨ Why Hamara Editor?
 
-Hamara Editor is ready for production deployment using Docker Compose. The stack consists of:
-1. **Frontend**: A React SPA built with Vite and served via Nginx.
-2. **Backend**: A FastAPI application managing workspaces, users, and Docker container orchestration.
-3. **Database**: PostgreSQL for persistent storage of users, projects, and file contents.
+Running untrusted code submitted by web users requires extreme security, low latency, and robust resource management. **Hamara Editor** combines the editing power of VS Code's **Monaco Editor**, real-time interactive **WebSockets terminals**, and **zero-trust Docker container isolation** to deliver a seamless, enterprise-grade development platform that you can self-host anywhere in minutes.
 
-### Prerequisites
+---
 
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
-- Ensure the Docker daemon is running, as the backend API needs to mount `/var/run/docker.sock` to orchestrate execution containers.
+## 🌟 Key Features
 
-### Setup Instructions
+- ⚡ **Multi-Language Execution Engine:** Native support for **Python 3.13, JavaScript (Node 20), TypeScript, C, C++, Java, Go, and Rust**.
+- 🖥️ **Monaco IDE & Real-Time Terminal:** Full IntelliSense, syntax highlighting, multi-tab file management, and interactive xterm.js terminal streaming (stdin, stdout, stderr) via low-latency WebSockets.
+- 🛡️ **Zero-Trust Sandbox Isolation:** Every code run spawns an ephemeral, unprivileged Linux container with **networking completely disabled (`--network none`)**, read-only root filesystems, hard RAM caps (`cgroups`), and strict execution timeouts.
+- 🔐 **Granular RBAC Hierarchy:** Built-in Role-Based Access Control (`GUEST`, `USER`, `MODERATOR`, `ADMIN`, `OWNER`) protecting code workspaces, community moderation, and system settings.
+- 📊 **Enterprise Admin & Security Dashboards:** Real-time audit logging, automated IP blocking (`blocked_ips`), report resolution, and container liveness telemetry.
+- ☁️ **Cloud Native & Self-Hostable:** Built for automated deployment on VPS, AWS, or bare-metal servers using Docker Compose, Nginx SSL reverse proxy, and managed PostgreSQL (e.g., Neon DB) with automated GitHub Actions CI/CD.
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repo-url>
-   cd myEditor
-   ```
+---
 
-2. **Configure Environment Variables**:
-   Copy the example environment files and adjust if necessary (e.g., set a secure `SECRET_KEY`).
-   ```bash
-   cp backend/.env.example backend/.env
-   cp .env.example .env
-   ```
+## 📚 Official Documentation Suite
 
-3. **Start the Stack**:
-   Run the following command in the root directory:
-   ```bash
-   docker-compose up -d --build
-   ```
+We have modularized our documentation into dedicated guides tailored to your role. Choose your path below:
 
-4. **Access the Application**:
-   Open your browser and navigate to `http://localhost`.
+| Documentation Guide | Audience & Contents |
+| :--- | :--- |
+| 🚀 **[Quick Start Guide](docs/QUICK_START.md)** | **For New Users:** Spin up the complete stack locally in 5 minutes via Docker Compose or set up local dev servers without Docker. |
+| 🌐 **[Self-Hosting & VPS Guide](docs/SELF_HOSTING.md)** | **For System Admins & DevOps:** Deploy on Ubuntu VPS with Nginx SSL (Let's Encrypt), Neon PostgreSQL, and automated GitHub Actions CD pipeline. |
+| 💻 **[Developer & Contributor Guide](docs/DEVELOPING.md)** | **For Developers:** Set up Vite + FastAPI hot-reload environments, run Pytest/Ruff/ESLint test suites, and understand core codebase architecture. |
+| 🔐 **[Security & RBAC Guide](docs/SECURITY_AND_RBAC.md)** | **For Security Reviewers:** Deep-dive into Docker container isolation mechanics, memory limits, network disabling, and RBAC permission matrices. |
+| 🤝 **[Contributing Guidelines](CONTRIBUTING.md)** | **For Contributors:** Learn our git branching workflow, coding style standards, commit naming conventions, and PR submission process. |
 
-### Security Considerations
+---
 
-- **Docker Socket**: The backend mounts the host's Docker socket to spawn containers. Ensure the host is secured.
-- **Container Limits**: The execution containers are strictly limited (e.g. 128MB RAM, 5 seconds execution timeout, no network, read-only base images).
-- **CORS & Cookies**: In production, ensure `FRONTEND_URL` is set correctly and the backend environment variables are tuned to enforce `secure` cookies over HTTPS.
+## ⚡ 5-Minute Quick Start (Docker Compose)
 
-## Development
+The fastest way to experience Hamara Editor is using Docker Compose. Ensure Docker Engine and Docker Compose are installed and your user has access to `/var/run/docker.sock`.
 
-For local development without Docker Compose, refer to the frontend and backend `README` or run:
-- Frontend: `npm run dev`
-- Backend: `cd backend && source venv/bin/activate && uvicorn app.main:app --reload`
+### 1. Clone & Configure
+```bash
+git clone https://github.com/sudarshankushwaha/myEditor.git
+cd myEditor
+
+# Copy default environment files
+cp .env.example .env
+cp backend/.env.example backend/.env
+```
+
+### 2. Launch the Stack
+```bash
+docker compose up -d --build
+```
+On startup, Docker Compose will automatically build the React 19 Frontend and Python 3.13 Backend, initialize PostgreSQL 15, and run all database migrations (`alembic upgrade head`) automatically.
+
+### 3. Open Your IDE
+Open your browser and navigate to:
+```text
+http://localhost:8080   (or http://localhost depending on your port configuration)
+```
+*(For detailed local development instructions without Docker Compose, check out our **[Quick Start Guide](docs/QUICK_START.md)**).*
+
+---
+
+## 🏗️ High-Level System Architecture
+
+```
+[ Client Browser ] ──(HTTPS / WebSockets)──> [ Nginx Reverse Proxy ]
+                                                     │
+                             ┌───────────────────────┴───────────────────────┐
+                             ▼                                               ▼
+                 [ React 19 UI (Vite) ]                          [ FastAPI Backend (Python 3.13) ]
+                                                                             │
+                              ┌──────────────────────────────────────────────┴──────────────┐
+                              ▼                                                             ▼
+                    [ PostgreSQL / Neon DB ]                                     [ Docker Engine Socket ]
+                (Persistent Workspaces & Users)                                 (/var/run/docker.sock)
+                                                                                            │
+                                                                                            ▼
+                                                                           [ Ephemeral Sandbox Containers ]
+                                                                           (No Network / RAM Cap / Read-Only)
+```
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+Hamara Editor maintains strict quality checks. To run automated tests locally:
+
+```bash
+# Run Backend Pytest Test Suite (in /backend directory)
+cd backend && source venv/bin/activate && pytest tests/api/ -v
+
+# Run Backend Python Linting & Formatting Check
+ruff check .
+
+# Run Frontend TypeScript Verification (in project root)
+npm run typecheck && npm run lint
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
+---
+
+<p align="center">
+  Built with ❤️ by the open-source developer community. <a href="CONTRIBUTING.md">Join us!</a>
+</p>

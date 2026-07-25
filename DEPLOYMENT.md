@@ -1,107 +1,48 @@
-# Deployment Guide
+# 🌐 Production Deployment Guide
 
-Hamara Editor is designed for production deployment using Docker, Docker Compose, and GitHub Actions for continuous integration and delivery. This guide covers how to deploy the application in a production environment.
+Hamara Editor is architected for secure, zero-downtime production deployment using **Docker Compose**, **Nginx Reverse Proxy (SSL/HTTPS)**, **PostgreSQL**, and automated **CI/CD via GitHub Actions**.
 
-## Infrastructure Architecture
+> **Note:** Our deployment documentation has been modularized and upgraded into our dedicated official documentation suite. Please follow the comprehensive guides below based on your deployment requirements:
 
-- **Frontend**: Served via Nginx (unprivileged) from a multi-stage Docker build.
-- **Backend**: FastAPI running with Uvicorn/Gunicorn in a multi-stage Docker build (running as a non-root user).
-- **Database**: PostgreSQL (can be self-hosted via Docker or managed like Neon/AWS RDS).
-- **Execution Engine**: Code execution requires access to the Docker daemon. The backend mounts `/var/run/docker.sock` to spawn isolated, ephemeral containers for running user code safely.
+---
 
-## Prerequisites
+## 📖 Official Documentation Suite
 
-- A server (e.g., Ubuntu 22.04 LTS) with at least 4GB RAM and 2 vCPUs.
-- Docker and Docker Compose installed.
-- Domain name configured with DNS pointing to your server.
-- SSL certificates (e.g., via Let's Encrypt/Certbot).
-- GitHub repository with GitHub Actions enabled.
+### 1. ⚡ [5-Minute Quick Start Guide](docs/QUICK_START.md)
+*Best for local evaluations, development testing, and instant Docker Compose provisioning.*
+- One-command startup (`docker compose up -d --build`)
+- Automated database migrations & RBAC seeding
+- Local development server setup (Vite + FastAPI + hot reload)
 
-## Environment Configuration
+### 2. 🚀 [Self-Hosting & VPS Production Deployment Guide](docs/SELF_HOSTING.md)
+*Best for System Administrators, DevOps Engineers, and Production Hosting (AWS, DigitalOcean, VPS).*
+- Full production architecture diagram (Client ──> Nginx SSL ──> FastAPI ──> Docker Socket ──> Neon PostgreSQL)
+- Nginx reverse proxy configuration with Let's Encrypt SSL certificates
+- Production environment variables and security hardening
+- Automated Continuous Deployment (CD) pipeline setup via GitHub Actions (`.github/workflows/deploy.yml`)
+- Health check endpoints (`/api/v1/health/live`, `/api/v1/health/ready`) & PostgreSQL backup/restore workflows
 
-You must provide a `.env.production` file for the backend and frontend configurations.
+### 3. 🔐 [Security Architecture & RBAC Guide](docs/SECURITY_AND_RBAC.md)
+*Best for Security Reviewers, System Architects, and Enterprise Administrators.*
+- Ephemeral Docker sandbox container isolation mechanics (cgroups, RAM caps, network disabling `--network none`)
+- Read-only base filesystems with ephemeral `tmpfs` scratch volumes
+- Granular Role-Based Access Control (RBAC) permission hierarchy (`GUEST`, `USER`, `MODERATOR`, `ADMIN`, `OWNER`)
+- Real-time Security Dashboard, blocked IP tracking, and administrative audit logging
 
-```ini
-# .env.production
+---
 
-# Backend
-ENVIRONMENT=production
-HOST=0.0.0.0
-PORT=8000
-DATABASE_URL=postgresql://user:password@db_host:5432/hamara_editor
-JWT_SECRET_KEY=your_very_secure_long_random_string
-JWT_REFRESH_SECRET_KEY=another_secure_random_string
-ACCESS_TOKEN_EXPIRE_MINUTES=15
-REFRESH_TOKEN_EXPIRE_DAYS=7
+## ⚡ Quick Production Command Reference
 
-# Execution Settings
-MAX_EXECUTION_TIME_SECONDS=5
-MAX_EXECUTION_MEMORY_MB=256
-
-# SMTP (Emails)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASSWORD=your_app_password
-FRONTEND_URL=https://yourdomain.com
-```
-
-## Continuous Deployment (CI/CD)
-
-The repository uses GitHub Actions for an automated CI/CD pipeline:
-1. **CI Pipeline** (`.github/workflows/ci.yml`): Runs on every push and PR. Executes frontend linting and testing, and backend Ruff linting, Black formatting, Bandit security checks, and Pytest suites.
-2. **CD Pipeline** (`.github/workflows/cd.yml`): Runs on pushes to the `main` branch. Builds the Docker images, pushes them to GitHub Container Registry (`ghcr.io`), and triggers the deployment script on your remote server via SSH.
-
-### GitHub Secrets for CD
-Ensure the following secrets are configured in your repository settings:
-- `PROD_HOST`: The IP address or domain of your production server.
-- `PROD_USERNAME`: SSH username (e.g., `ubuntu`).
-- `PROD_SSH_KEY`: Private SSH key for accessing the server.
-
-## Manual Deployment
-
-You can use the provided shell scripts for manual deployment and rollback on the production server.
-
-### Deploying
-
-The deployment script automatically pulls the latest images, runs database migrations, and restarts the containers.
+If your VPS infrastructure and `.env` files are already configured, execute the following from the project root directory:
 
 ```bash
-chmod +x scripts/deploy.sh
-./scripts/deploy.sh
+# Pull latest code from main branch
+git pull origin main
+
+# Rebuild and launch production containers in detached mode
+docker compose -f docker-compose.prod.yml up -d --build
+
+# Verify container liveness and health status
+docker compose -f docker-compose.prod.yml ps
 ```
-
-### Rolling Back
-
-If a deployment fails, you can roll back to a specific Git commit hash:
-
-```bash
-chmod +x scripts/rollback.sh
-./scripts/rollback.sh <git-commit-hash>
-```
-
-## Maintenance and Diagnostics
-
-### Checking Health
-The API exposes health check endpoints for Kubernetes and load balancers:
-- **Liveness**: `GET /api/v1/health/live`
-- **Readiness**: `GET /api/v1/health/ready`
-- **Full Health Check**: `GET /api/v1/health/health`
-
-### Verifying Database Migrations
-To check if the database schema is in sync with the SQLAlchemy models:
-```bash
-python3 backend/scripts/check_migrations.py
-```
-
-### Viewing Logs
-To view the production logs for the backend API:
-```bash
-docker compose -f docker-compose.prod.yml logs -f api
-```
-
-### Security Considerations
-
-- **Non-Root Containers**: Both frontend and backend Dockerfiles are optimized to run as non-root users.
-- **Docker Socket**: The backend requires access to `/var/run/docker.sock` to execute user code. Ensure the host system restricts access to this socket appropriately.
-- **Rate Limiting**: Production API routes are protected by rate limiters to prevent abuse.
+*(If using the standard `docker-compose.yml`, omit the `-f docker-compose.prod.yml` flag).*
