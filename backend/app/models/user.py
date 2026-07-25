@@ -44,7 +44,7 @@ class User(Base):
     
     # RBAC effective permissions cache (list of permission nodes)
     from sqlalchemy import JSON, text
-    effective_permissions = Column(JSON, nullable=True, default=list, server_default=text("'[]'::json"))
+    effective_permissions = Column(JSON, nullable=True, default=list, server_default="[]")
     
     # 2FA and Security
     totp_secret = Column(String(255), nullable=True)

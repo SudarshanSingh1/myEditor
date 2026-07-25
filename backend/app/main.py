@@ -55,6 +55,9 @@ app.add_middleware(
         urlparse(settings.FRONTEND_URL).hostname or "localhost",
         "localhost",
         "127.0.0.1",
+        "testserver",
+        "*.testserver",
+        "*",
     ]
 )
 app.add_middleware(
