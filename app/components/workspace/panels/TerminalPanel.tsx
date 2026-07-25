@@ -1,9 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import * as xtermPkg from '@xterm/xterm';
-const Terminal = xtermPkg.Terminal || (xtermPkg as any).default?.Terminal;
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
 import { Trash2 } from 'lucide-react';
-import * as fitPkg from '@xterm/addon-fit';
-const FitAddon = fitPkg.FitAddon || (fitPkg as any).default?.FitAddon;
 import '@xterm/xterm/css/xterm.css';
 import { useExecutionStore } from '../../../store/useExecutionStore';
 import { useOutputStore } from '../../../store/useOutputStore';
