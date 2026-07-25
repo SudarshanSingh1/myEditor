@@ -35,10 +35,12 @@ export default function ProjectWorkspace({ projectId }: { projectId?: string } =
   const { connectionStatus } = useStatusBarStore();
 
   const [isPanelOpen, setIsPanelOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
     const saved = localStorage.getItem('hamara-bottom-panel-open');
     return saved ? saved === 'true' : false;
   });
   const [activePanelTab, setActivePanelTab] = useState<Tab>(() => {
+    if (typeof window === 'undefined') return 'PROBLEMS';
     const saved = localStorage.getItem('hamara-bottom-panel-tab');
     return (saved as Tab) || 'PROBLEMS';
   });
@@ -47,11 +49,13 @@ export default function ProjectWorkspace({ projectId }: { projectId?: string } =
 
   // Explorer Resizer State
   const [explorerWidth, setExplorerWidth] = useState(() => {
+    if (typeof window === 'undefined') return 300;
     const saved = localStorage.getItem('hamara-explorer-width');
     return saved ? parseInt(saved, 10) : 300;
   });
   const [isDragging, setIsDragging] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'FILES' | 'SEARCH' | 'GIT' | 'RUN' | 'EXTENSIONS' | null>(() => {
+    if (typeof window === 'undefined') return 'FILES';
     const saved = localStorage.getItem('hamara-sidebar-tab');
     if (saved === 'null') return null;
     if (saved === null) return 'FILES';

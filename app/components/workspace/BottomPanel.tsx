@@ -20,6 +20,7 @@ const MAX_HEIGHT_PERCENT = 0.6; // 60% of window height
 
 export const BottomPanel: React.FC<BottomPanelProps> = ({ projectId, isOpen, onClose, activeTab, setActiveTab }) => {
   const [height, setHeight] = useState(() => {
+    if (typeof window === 'undefined') return 250;
     const saved = localStorage.getItem('ide_bottom_panel_height');
     return saved ? parseInt(saved, 10) : 250;
   });

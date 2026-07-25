@@ -23,6 +23,14 @@ const languageData = [
   { name: "Rust", value: 150, color: "#dea584" },
   { name: "Go", value: 130, color: "#00ADD8" },
   { name: "Java", value: 120, color: "#b07219" },
+  { name: "HTML/CSS", value: 110, color: "#e34c26" },
+  { name: "SQL", value: 95, color: "#e38c00" },
+  { name: "Bash", value: 85, color: "#89e051" },
+  { name: "PHP", value: 80, color: "#4F5D95" },
+  { name: "Ruby", value: 75, color: "#701516" },
+  { name: "C#", value: 70, color: "#178600" },
+  { name: "Swift", value: 65, color: "#F05138" },
+  { name: "Kotlin", value: 60, color: "#A97BFF" },
 ];
 
 const featureData = [

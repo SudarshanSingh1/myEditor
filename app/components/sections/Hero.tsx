@@ -179,6 +179,14 @@ export function Hero() {
                     { name: "Rust", color: "#dea584", ver: "1.75" },
                     { name: "Go", color: "#00ADD8", ver: "1.21" },
                     { name: "Java", color: "#b07219", ver: "JDK 17" },
+                    { name: "HTML/CSS", color: "#e34c26", ver: "HTML5/CSS3" },
+                    { name: "SQL", color: "#e38c00", ver: "SQLite/PG" },
+                    { name: "Bash", color: "#89e051", ver: "5.2" },
+                    { name: "PHP", color: "#4F5D95", ver: "8.2" },
+                    { name: "Ruby", color: "#701516", ver: "3.2" },
+                    { name: "C#", color: "#178600", ver: ".NET 8" },
+                    { name: "Swift", color: "#F05138", ver: "5.9" },
+                    { name: "Kotlin", color: "#A97BFF", ver: "1.9" },
                   ].map((lang) => (
                     <div 
                       key={lang.name} 
