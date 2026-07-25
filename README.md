@@ -110,10 +110,40 @@ http://localhost:8080   (or http://localhost depending on your port configuratio
 
 ## 🧪 Testing & Quality Assurance
 
-Hamara Editor maintains strict quality checks. To run automated tests locally:
+Hamara Editor maintains strict automated test suites across both frontend and backend services. You can run tests directly on your local machine or inside isolated Docker containers.
+
+### 🐳 Running Tests Inside Docker (Recommended)
+When running via Docker Compose, you can execute the test suite directly inside the live containers without installing local Python or Node dependencies:
 
 ```bash
-# Run Backend Pytest Test Suite (in /backend directory)
+# 1. Run Backend API Pytest Test Suite inside Docker
+docker compose exec api pytest tests/ -v
+
+# 2. Run specific Security Dashboard & RBAC permission tests in Docker
+docker compose exec api pytest tests/api/test_admin.py -k security -v
+
+# 3. Check database migration consistency inside Docker
+docker compose exec api python3 scripts/check_migrations.py
+```
+
+### 🛡️ Testing & Verifying Docker Sandbox Isolation
+Hamara Editor executes untrusted user code inside ephemeral Docker containers with networking disabled (`--network none`) and strict memory caps. To verify that your host Docker daemon is ready to spawn sandbox runners:
+
+```bash
+# Test Python 3.13 isolated sandbox runner (No Network / Read-Only Test)
+docker run --rm --network none -i python:3.13-slim python3 -c 'print("🐳 Python Sandbox OK!")'
+
+# Test Node.js 20 isolated sandbox runner
+docker run --rm --network none -i node:20-alpine node -e 'console.log("🐳 Node Sandbox OK!")'
+
+# Monitor ephemeral sandbox containers spawning in real-time during code execution
+docker ps --filter "status=running"
+```
+
+### 💻 Running Tests Locally (Without Docker)
+
+```bash
+# Run Backend Pytest Test Suite (in /backend directory with venv active)
 cd backend && source venv/bin/activate && pytest tests/api/ -v
 
 # Run Backend Python Linting & Formatting Check
