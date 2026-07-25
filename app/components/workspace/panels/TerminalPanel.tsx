@@ -1,6 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
 import { Trash2 } from 'lucide-react';
 import '@xterm/xterm/css/xterm.css';
 import { useExecutionStore } from '../../../store/useExecutionStore';
@@ -23,6 +21,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
   const execWsRef = useRef<WebSocket | null>(null);
   const execOutputBuffer = useRef<string>('');
   const [preserveOutput, setPreserveOutput] = React.useState(true);
+  const [isTerminalReady, setIsTerminalReady] = React.useState(false);
 
   const pendingExecution = useExecutionStore((state: any) => state.pendingExecution);
   const setPendingExecution = useExecutionStore((state: any) => state.setPendingExecution);
@@ -44,106 +43,119 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
   // Initialize Terminal exactly once
   useEffect(() => {
     if (!terminalRef.current) return;
+    let isMounted = true;
+    let resizeObserver: ResizeObserver | null = null;
+    let onDataDisposable: any = null;
+    let termInstance: any = null;
+    let fitAddonInstance: any = null;
     
     if (!xtermRef.current) {
-      const term = new Terminal({
-        theme: {
-          background: '#1e1e1e',
-          foreground: '#d4d4d4',
-          cursor: '#ffffff',
-          selectionBackground: '#264f78',
-        },
-        fontFamily: '"JetBrains Mono", "Fira Code", Consolas, Menlo, Monaco, "Courier New", monospace',
-        fontSize: 13,
-        cursorBlink: true,
-        disableStdin: false,
-      });
-      
-      const fitAddon = new FitAddon();
-      term.loadAddon(fitAddon);
-      
-      term.open(terminalRef.current);
-      fitAddon.fit();
-      
-      // No noisy ready message
-      
-      xtermRef.current = term;
-      fitAddonRef.current = fitAddon;
-      
-      // Use ResizeObserver for robust fitting
-      const resizeObserver = new ResizeObserver(() => {
-        try {
-          fitAddon.fit();
-        } catch (e) {}
-      });
-      resizeObserver.observe(terminalRef.current);
-      
-      // Custom key handlers for Ctrl+C and Ctrl+L
-      term.attachCustomKeyEventHandler((arg) => {
-        if (arg.type === 'keydown') {
-          // Ctrl+C
-          if (arg.ctrlKey && arg.key === 'c' && !arg.shiftKey && !arg.altKey && !arg.metaKey) {
-            // Send SIGINT to the currently active websocket
-            const activeWs = currentMode.current === 'execution' ? execWsRef.current : shellWsRef.current;
-            if (activeWs && activeWs.readyState === WebSocket.OPEN) {
-              activeWs.send(JSON.stringify({ type: 'signal', signal: 'SIGINT' }));
-              return false; // Prevent default
+      Promise.all([
+        import('@xterm/xterm'),
+        import('@xterm/addon-fit')
+      ]).then(([xtermPkg, fitPkg]) => {
+        if (!isMounted || !terminalRef.current) return;
+        
+        const TerminalClass = xtermPkg.Terminal || xtermPkg.default?.Terminal || (xtermPkg as any).default;
+        const FitAddonClass = fitPkg.FitAddon || fitPkg.default?.FitAddon || (fitPkg as any).default;
+        
+        if (!TerminalClass || !FitAddonClass) return;
+        
+        const term = new TerminalClass({
+          theme: {
+            background: '#1e1e1e',
+            foreground: '#d4d4d4',
+            cursor: '#ffffff',
+            selectionBackground: '#264f78',
+          },
+          fontFamily: '"JetBrains Mono", "Fira Code", Consolas, Menlo, Monaco, "Courier New", monospace',
+          fontSize: 13,
+          cursorBlink: true,
+          disableStdin: false,
+        });
+        
+        const fitAddon = new FitAddonClass();
+        term.loadAddon(fitAddon);
+        
+        term.open(terminalRef.current);
+        try { fitAddon.fit(); } catch (e) {}
+        
+        termInstance = term;
+        fitAddonInstance = fitAddon;
+        xtermRef.current = term;
+        fitAddonRef.current = fitAddon;
+        setIsTerminalReady(true);
+        
+        resizeObserver = new ResizeObserver(() => {
+          try {
+            fitAddon.fit();
+          } catch (e) {}
+        });
+        resizeObserver.observe(terminalRef.current);
+        
+        // Custom key handlers for Ctrl+C and Ctrl+L
+        term.attachCustomKeyEventHandler((arg: any) => {
+          if (arg.type === 'keydown') {
+            // Ctrl+C
+            if (arg.ctrlKey && arg.key === 'c' && !arg.shiftKey && !arg.altKey && !arg.metaKey) {
+              const activeWs = currentMode.current === 'execution' ? execWsRef.current : shellWsRef.current;
+              if (activeWs && activeWs.readyState === WebSocket.OPEN) {
+                activeWs.send(JSON.stringify({ type: 'signal', signal: 'SIGINT' }));
+                return false;
+              }
+            }
+            // Ctrl+L
+            if (arg.ctrlKey && arg.key === 'l' && !arg.shiftKey && !arg.altKey && !arg.metaKey) {
+              term.clear();
+              return false;
             }
           }
-          // Ctrl+L
-          if (arg.ctrlKey && arg.key === 'l' && !arg.shiftKey && !arg.altKey && !arg.metaKey) {
-            term.clear();
-            return false;
-          }
-        }
-        return true;
-      });
-
-      let localBuffer = '';
-      
-      // Route input to the active websocket
-      const onDataDisposable = term.onData((data) => {
-        const activeWs = currentMode.current === 'execution' ? execWsRef.current : shellWsRef.current;
-        if (activeWs && activeWs.readyState === WebSocket.OPEN) {
-          activeWs.send(data);
-        } else {
-          // No active connection (e.g. Guest who finished execution)
-          // Implement a very basic local echo and 'clear' support
-          if (data === '\r') {
-             const cmd = localBuffer.trim();
-             if (cmd === 'clear') {
-                term.write('\x1b[2J\x1b[3J\x1b[H$ ');
-             } else if (cmd !== '') {
-                term.writeln(`\r\n\x1b[33mbash: ${cmd}: command not found\x1b[0m`);
-                term.writeln('\x1b[90m(Guest terminals only support code execution output. Please Log In for a full Linux shell!)\x1b[0m');
-                term.write('$ ');
-             } else {
-                term.write('\r\n$ ');
-             }
-             localBuffer = '';
-          } else if (data === '\x7f') { // Backspace
-             if (localBuffer.length > 0) {
-                 localBuffer = localBuffer.slice(0, -1);
-                 term.write('\b \b');
-             }
+          return true;
+        });
+        
+        let localBuffer = '';
+        
+        onDataDisposable = term.onData((data: string) => {
+          const activeWs = currentMode.current === 'execution' ? execWsRef.current : shellWsRef.current;
+          if (activeWs && activeWs.readyState === WebSocket.OPEN) {
+            activeWs.send(data);
           } else {
-             // Basic printable characters
-             if (data >= String.fromCharCode(0x20) && data <= String.fromCharCode(0x7E)) {
-                 localBuffer += data;
-                 term.write(data);
-             }
+            if (data === '\r') {
+               const cmd = localBuffer.trim();
+               if (cmd === 'clear') {
+                  term.write('\x1b[2J\x1b[3J\x1b[H$ ');
+               } else if (cmd !== '') {
+                  term.writeln(`\r\n\x1b[33mbash: ${cmd}: command not found\x1b[0m`);
+                  term.writeln('\x1b[90m(Guest terminals only support code execution output. Please Log In for a full Linux shell!)\x1b[0m');
+                  term.write('$ ');
+               } else {
+                  term.write('\r\n$ ');
+               }
+               localBuffer = '';
+            } else if (data === '\x7f') {
+               if (localBuffer.length > 0) {
+                   localBuffer = localBuffer.slice(0, -1);
+                   term.write('\b \b');
+               }
+            } else {
+               if (data >= String.fromCharCode(0x20) && data <= String.fromCharCode(0x7E)) {
+                   localBuffer += data;
+                   term.write(data);
+               }
+            }
           }
-        }
+        });
       });
-
-      return () => {
-        resizeObserver.disconnect();
-        onDataDisposable.dispose();
-        term.dispose();
-        xtermRef.current = null;
-        fitAddonRef.current = null;
-      };
     }
+    
+    return () => {
+      isMounted = false;
+      if (resizeObserver) resizeObserver.disconnect();
+      if (onDataDisposable) onDataDisposable.dispose();
+      if (termInstance) termInstance.dispose();
+      xtermRef.current = null;
+      fitAddonRef.current = null;
+    };
   }, []);
 
   // ---------------------------------------------------------
@@ -226,7 +238,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
       // We DO NOT close the shell websocket here, so it persists across re-renders!
       // This solves the persistent shell requirement.
     };
-  }, [projectId]);
+  }, [projectId, isTerminalReady]);
 
   // ---------------------------------------------------------
   // Handle Execution Trigger (Creates a temporary WS)
@@ -382,7 +394,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         execWsRef.current.close();
       }
     };
-  }, [pendingExecution, setExecutionFinished, appendLog, preserveOutput]);
+  }, [pendingExecution, setExecutionFinished, appendLog, preserveOutput, isTerminalReady]);
 
   // Handle manual cancel from Stop button
   useEffect(() => {
@@ -391,7 +403,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
       execWsRef.current.close();
       setExecutionFinished(1);
     }
-  }, [isCancelling, setExecutionFinished]);
+  }, [isCancelling, setExecutionFinished, isTerminalReady]);
 
   // Force fit when panel opens/shows
   useEffect(() => {
