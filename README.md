@@ -90,23 +90,38 @@ http://localhost:8080   (or http://localhost depending on your port configuratio
 
 ---
 
-## 🏗️ High-Level System Architecture
+## 🏗️ System Architecture
 
-```
-[ Client Browser ] ──(HTTPS / WebSockets)──> [ Nginx Reverse Proxy ]
-                                                     │
-                             ┌───────────────────────┴───────────────────────┐
-                             ▼                                               ▼
-                 [ React 19 UI (Vite) ]                          [ FastAPI Backend (Python 3.13) ]
-                                                                             │
-                              ┌──────────────────────────────────────────────┴──────────────┐
-                              ▼                                                             ▼
-                    [ PostgreSQL / Neon DB ]                                     [ Docker Engine Socket ]
-                (Persistent Workspaces & Users)                                 (/var/run/docker.sock)
-                                                                                            │
-                                                                                            ▼
-                                                                           [ Ephemeral Sandbox Containers ]
-                                                                           (No Network / RAM Cap / Read-Only)
+```text
+                        ┌────────────────────────────┐
+                        │      Client Browser        │
+                        │ HTTPS • WebSockets • Auth │
+                        └─────────────┬──────────────┘
+                                      │
+                                      ▼
+                      ┌─────────────────────────────────┐
+                      │       Nginx Reverse Proxy       │
+                      │ SSL • Routing • Load Balancing  │
+                      └─────────────┬───────────────────┘
+                                    │
+                 ┌──────────────────┴──────────────────┐
+                 ▼                                     ▼
+      ┌─────────────────────┐              ┌──────────────────────┐
+      │ React 19 Frontend   │              │ FastAPI Backend      │
+      │ Monaco • xterm.js   │              │ REST • WebSockets    │
+      └──────────┬──────────┘              └──────────┬───────────┘
+                 │                                    │
+                 ▼                                    ▼
+      ┌─────────────────────┐              ┌──────────────────────┐
+      │ PostgreSQL / Neon   │              │ Docker Engine        │
+      │ Users • Projects    │              │ Container Manager    │
+      └─────────────────────┘              └──────────┬───────────┘
+                                                      ▼
+                                         ┌────────────────────────┐
+                                         │ Ephemeral Sandboxes    │
+                                         │ CPU • RAM • Network    │
+                                         │ Isolated Execution     │
+                                         └────────────────────────┘
 ```
 
 ---
