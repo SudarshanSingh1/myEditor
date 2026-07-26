@@ -95,7 +95,7 @@ http://localhost:8080   (or http://localhost depending on your port configuratio
 ```text
                         ┌────────────────────────────┐
                         │      Client Browser        │
-                        │ HTTPS • WebSockets • Auth │
+                        │ HTTPS • WebSockets • Auth  │
                         └─────────────┬──────────────┘
                                       │
                                       ▼
