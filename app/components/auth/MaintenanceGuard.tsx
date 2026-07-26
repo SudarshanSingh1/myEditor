@@ -57,11 +57,6 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     location.pathname.startsWith("/cookies") ||
     location.pathname.startsWith("/maintenance");
 
-  // Never block auth or maintenance routes so staff can always log in and guests can see maintenance screen
-  if (isAuthOrLegalRoute) {
-    return <>{children}</>;
-  }
-
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   const userRole = user?.role?.toUpperCase();
   const isStaffRole = userRole === "OWNER" || userRole === "ADMIN" || userRole === "MODERATOR";
@@ -74,12 +69,17 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
   const isBlocked = isMaintenanceMode && !canBypass && !(token && !user);
 
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || isAuthOrLegalRoute) return;
 
     if (isBlocked && !location.pathname.startsWith("/maintenance")) {
       navigate("/maintenance", { replace: true });
     }
-  }, [isReady, isBlocked, navigate, location.pathname]);
+  }, [isReady, isAuthOrLegalRoute, isBlocked, navigate, location.pathname]);
+
+  // Never block auth or maintenance routes so staff can always log in and guests can see maintenance screen
+  if (isAuthOrLegalRoute) {
+    return <>{children}</>;
+  }
 
   // Block rendering until BOTH checks complete
   if (!isReady) {

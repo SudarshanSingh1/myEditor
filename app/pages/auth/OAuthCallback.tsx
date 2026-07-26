@@ -101,7 +101,7 @@ export default function OAuthCallback() {
     };
 
     exchangeCode();
-  }, [provider, code, navigate, login]);
+  }, [provider, code, navigate, login, searchParams]);
 
   if (error) {
     return (

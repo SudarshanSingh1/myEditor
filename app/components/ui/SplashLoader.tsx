@@ -10,8 +10,8 @@ interface SplashLoaderProps {
 
 export function SudarshanaMandala({
   className = "w-16 h-16",
-  color = "purple",
-  isAdmin,
+  color: _color = "purple",
+  isAdmin: _isAdmin,
 }: {
   className?: string;
   color?: "purple" | "default" | string;

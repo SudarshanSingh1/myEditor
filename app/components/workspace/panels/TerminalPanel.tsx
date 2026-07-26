@@ -159,6 +159,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
       isMounted = false;
       if (resizeObserver) resizeObserver.disconnect();
       if (onDataDisposable) onDataDisposable.dispose();
+      if (fitAddonInstance) fitAddonInstance.dispose();
       if (termInstance) termInstance.dispose();
       xtermRef.current = null;
       fitAddonRef.current = null;

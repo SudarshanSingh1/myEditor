@@ -183,7 +183,6 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
     editor.setPosition({ lineNumber: 1, column: 1 });
 
     // Restore View State (Cursor/Scroll)
-    const currentViewState = viewState;
     if (viewState) {
       if (viewState.cursorPosition) {
         editor.setPosition(viewState.cursorPosition);
