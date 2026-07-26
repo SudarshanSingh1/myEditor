@@ -49,8 +49,27 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
 
   const canBypass = isStaffRole && (userRole === "OWNER" || userRole === "ADMIN" || hasBypassPerm || allowAdmin);
 
+  // Define routes that are considered "inside" the app, admin portals, or authentication flows.
+  // When maintenance mode is active, admins can bypass maintenance ONLY on these internal/auth routes.
+  // Visiting public marketing routes like the landing page (/) will redirect to /maintenance so even admins can view the maintenance screen.
+  const isInsideOrAuthRoute =
+    location.pathname.startsWith("/app") ||
+    location.pathname.startsWith("/super-admin") ||
+    location.pathname.startsWith("/login") ||
+    location.pathname.startsWith("/admin-login") ||
+    location.pathname.startsWith("/signup") ||
+    location.pathname.startsWith("/forgot-password") ||
+    location.pathname.startsWith("/reset-password") ||
+    location.pathname.startsWith("/verify-email") ||
+    location.pathname.startsWith("/force-password-change") ||
+    location.pathname.startsWith("/oauth") ||
+    location.pathname.startsWith("/403") ||
+    location.pathname.startsWith("/privacy") ||
+    location.pathname.startsWith("/terms") ||
+    location.pathname.startsWith("/cookies");
+
   // If we have a token but user hasn't loaded yet, don't prematurely redirect
-  const isBlocked = isMaintenanceMode && !canBypass && !(token && !useUserStore.getState().user);
+  const isBlocked = isMaintenanceMode && (!isInsideOrAuthRoute || !canBypass) && !(token && !useUserStore.getState().user);
 
   useEffect(() => {
     if (!isReady) return;

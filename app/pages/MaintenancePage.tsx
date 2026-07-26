@@ -10,6 +10,7 @@ import { useUserStore } from "../stores/useUserStore";
 import { fetchApi } from "../lib/api";
 
 import { Navigate, useLocation } from "react-router-dom";
+import { SplashLoader } from "../components/ui/SplashLoader";
 
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -304,15 +305,7 @@ export function MaintenancePage() {
   // Without this, the default `isMaintenanceMode: false` causes an immediate redirect
   // to /app, which triggers MaintenanceGuard → redirect back here → infinite loop.
   if (!hasChecked || isChecking) {
-    return (
-      <div className="relative min-h-screen bg-[#050508] flex flex-col items-center justify-center overflow-hidden font-sans">
-        <BinaryRain />
-        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0),rgba(255,255,255,0)_50%,rgba(0,0,0,0.1)_50%,rgba(0,0,0,0.1))] bg-[length:100%_4px] mix-blend-overlay opacity-30" />
-        <div className="flex flex-col items-center z-10">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-500/50 border-t-cyan-500" />
-        </div>
-      </div>
-    );
+    return <SplashLoader message="Verifying maintenance status..." submessage="Connecting to Hamara Editor system" />;
   }
 
   // Only redirect AFTER we've confirmed maintenance is genuinely off

@@ -75,6 +75,9 @@ export default function OAuthCallback() {
 
           login(userData);
           toast.success(`Successfully logged in with ${provider}`);
+          const redirectUrl = sessionStorage.getItem("oauth_redirect_url") || searchParams.get("state") || null;
+          if (redirectUrl) sessionStorage.removeItem("oauth_redirect_url");
+
           if (redirectUrl && redirectUrl !== "/login" && redirectUrl !== "/admin-login") {
             navigate(redirectUrl, { replace: true });
           } else if (isAdminPortal) {
