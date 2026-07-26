@@ -15,7 +15,7 @@ import { SplashLoader } from "../components/ui/SplashLoader";
 import { motion, useReducedMotion } from "framer-motion";
 
 // --- Matrix Rain Component ---
-const MATRIX_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ";
+const MATRIX_CHARSET = "01";
 
 const BinaryRain = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -32,19 +32,19 @@ const BinaryRain = () => {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    const fontSize = 24;
+    const fontSize = 40;
     const charSpacing = fontSize;
     const columns = Math.floor(width / fontSize);
     
-    // Classic Matrix greens
-    const colors = ["#00FF41", "#00FF41", "#03A062", "#008F11"];
+    // Neon Cyan / Blue matrix colors
+    const colors = ["#00FFFF", "#00E5FF", "#00B8D4", "#0091EA"];
     
     const getRandomChar = () => MATRIX_CHARSET.charAt(Math.floor(Math.random() * MATRIX_CHARSET.length));
 
     const drops: { y: number; speed: number; chars: string[]; color: string; opacity: number; length: number }[] = [];
 
     for (let x = 0; x < columns; x++) {
-      const speed = 1 + Math.random() * 2; 
+      const speed = 0.5 + Math.random() * 1.5; 
       const length = 10 + Math.random() * 30;
       drops[x] = {
         y: -(Math.random() * 100), 
@@ -98,7 +98,7 @@ const BinaryRain = () => {
           
           if (isHead) {
             ctx.shadowBlur = 10;
-            ctx.shadowColor = "#00FF41";
+            ctx.shadowColor = "#00FFFF";
           } else {
             ctx.shadowBlur = 0;
           }
@@ -108,10 +108,10 @@ const BinaryRain = () => {
         ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 0;
 
-        drop.y += drop.speed * dt * 12;
+        drop.y += drop.speed * dt * 6;
 
         if (drop.y - drop.length > height / charSpacing) {
-          drop.speed = 1 + Math.random() * 2;
+          drop.speed = 0.5 + Math.random() * 1.5;
           drop.y = -drop.length;
           drop.color = colors[Math.floor(Math.random() * colors.length)];
           drop.opacity = 0.7 + Math.random() * 0.3;
@@ -240,7 +240,7 @@ export function MaintenancePage() {
   const [stageIndex, setStageIndex] = useState(0);
 
   // Status dot color
-  const statusColors = ["bg-red-500", "bg-yellow-500", "bg-green-500"];
+  const statusColors = ["bg-red-500", "bg-yellow-500", "bg-cyan-500"];
   const [statusColorIdx, setStatusColorIdx] = useState(0);
 
   useEffect(() => {
@@ -350,8 +350,8 @@ export function MaintenancePage() {
         
         {/* Simple Minimalist Icon */}
         <div className="relative mb-8 group">
-          <div className="relative h-24 w-24 bg-[#0a0a0f] border border-green-500/30 rounded-2xl flex items-center justify-center overflow-hidden">
-            <Server className="w-12 h-12 text-green-500 relative z-10" strokeWidth={1.5} />
+          <div className="relative h-24 w-24 bg-[#0a0a0f] border border-cyan-500/30 rounded-2xl flex items-center justify-center overflow-hidden">
+            <Server className="w-12 h-12 text-cyan-500 relative z-10" strokeWidth={1.5} />
             <div className="absolute bottom-3 right-3 h-2.5 w-2.5 rounded-full flex items-center justify-center">
               <div className={`absolute inset-0 rounded-full animate-ping opacity-75 ${statusColors[statusColorIdx]}`} />
               <div className={`relative h-1.5 w-1.5 rounded-full ${statusColors[statusColorIdx]}`} />
@@ -363,18 +363,18 @@ export function MaintenancePage() {
           SYSTEM MAINTENANCE
         </h1>
         
-        <p className="text-base md:text-lg text-green-400 text-center max-w-lg mb-12 font-mono">
+        <p className="text-base md:text-lg text-cyan-400 text-center max-w-lg mb-12 font-mono">
           {maintenanceMessage}
         </p>
 
         {/* Minimal Terminal Card */}
-        <div className="w-full relative bg-[#050508]/90 border border-green-500/20 rounded-xl p-6 md:p-8 backdrop-blur-sm">
+        <div className="w-full relative bg-[#050508]/90 border border-cyan-500/20 rounded-xl p-6 md:p-8 backdrop-blur-sm">
           
           <div className={`grid grid-cols-1 ${timeLeft !== null && timeLeft > 0 ? "md:grid-cols-2" : ""} gap-6 mb-8`}>
             
             <div className={`space-y-2 ${timeLeft === null || timeLeft === 0 ? "flex flex-col items-center text-center" : ""}`}>
-              <p className={`text-[10px] font-bold text-green-600/80 flex items-center gap-2 uppercase tracking-[0.2em] ${timeLeft === null || timeLeft === 0 ? "justify-center" : ""}`}>
-                <Activity className="w-3.5 h-3.5 text-green-500" /> Current Stage
+              <p className={`text-[10px] font-bold text-cyan-600/80 flex items-center gap-2 uppercase tracking-[0.2em] ${timeLeft === null || timeLeft === 0 ? "justify-center" : ""}`}>
+                <Activity className="w-3.5 h-3.5 text-cyan-500" /> Current Stage
               </p>
               <div className="flex items-center min-h-[2rem]">
                 <motion.span 
@@ -382,7 +382,7 @@ export function MaintenancePage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-green-400 font-mono text-sm tracking-widest uppercase"
+                  className="text-cyan-400 font-mono text-sm tracking-widest uppercase"
                 >
                   &gt; {STAGES[stageIndex]}
                 </motion.span>
@@ -391,8 +391,8 @@ export function MaintenancePage() {
 
             {timeLeft !== null && (
               <div className={`space-y-2 ${timeLeft === 0 ? "flex flex-col items-center text-center mt-4 md:mt-0" : "md:text-right"}`}>
-                <p className={`text-[10px] font-bold text-green-600/80 flex items-center gap-2 uppercase tracking-[0.2em] ${timeLeft === 0 ? "justify-center" : "md:justify-end"}`}>
-                  <Terminal className="w-3.5 h-3.5 text-green-500" /> Time Remaining
+                <p className={`text-[10px] font-bold text-cyan-600/80 flex items-center gap-2 uppercase tracking-[0.2em] ${timeLeft === 0 ? "justify-center" : "md:justify-end"}`}>
+                  <Terminal className="w-3.5 h-3.5 text-cyan-500" /> Time Remaining
                 </p>
                 <div className={`flex items-center ${timeLeft === 0 ? "justify-center" : "md:justify-end"}`}>
                   {timeLeft > 0 ? (
@@ -400,7 +400,7 @@ export function MaintenancePage() {
                       {formatTime(timeLeft)}
                     </p>
                   ) : (
-                    <span className="text-sm font-bold text-green-400 uppercase tracking-widest">
+                    <span className="text-sm font-bold text-cyan-400 uppercase tracking-widest">
                       Completing soon...
                     </span>
                   )}
@@ -412,16 +412,16 @@ export function MaintenancePage() {
           {/* Progress Bar */}
           {timeLeft !== null && timeLeft > 0 && (
             <div className="space-y-3">
-              <div className="flex justify-between text-[10px] text-green-600/80 font-mono uppercase tracking-[0.2em]">
+              <div className="flex justify-between text-[10px] text-cyan-600/80 font-mono uppercase tracking-[0.2em]">
                 <span>System Recovery</span>
                 <span>{Math.floor(progressPercent)}%</span>
               </div>
-              <div className="h-1 w-full bg-[#111] overflow-hidden border border-green-500/10">
+              <div className="h-1 w-full bg-[#111] overflow-hidden border border-cyan-500/10">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPercent}%` }}
                   transition={{ duration: 1, ease: "linear" }}
-                  className="h-full bg-green-500"
+                  className="h-full bg-cyan-500"
                 />
               </div>
             </div>
@@ -433,9 +433,9 @@ export function MaintenancePage() {
           <div>
             <button
               onClick={handleLoginWithAnotherAccount}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.15em] text-green-400 bg-green-950/30 hover:bg-green-900/40 border border-green-500/30 rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.15em] text-cyan-400 bg-cyan-950/30 hover:bg-cyan-900/40 border border-cyan-500/30 rounded-lg transition-colors cursor-pointer"
             >
-              <ShieldAlert className="w-3.5 h-3.5 text-green-400" />
+              <ShieldAlert className="w-3.5 h-3.5 text-cyan-400" />
               {isAuthenticated ? "Switch Account" : "Administrator Login"}
             </button>
           </div>
