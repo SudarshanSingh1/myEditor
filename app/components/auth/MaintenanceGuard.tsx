@@ -57,16 +57,16 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     location.pathname.startsWith("/cookies") ||
     location.pathname.startsWith("/maintenance");
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  const userRole = user?.role?.toUpperCase();
+  const userRole = (user?.role || "").toUpperCase();
   const isStaffRole = userRole === "OWNER" || userRole === "ADMIN" || userRole === "MODERATOR";
-  const hasBypassPerm = permissions.includes("*") || permissions.includes("system.maintenance.bypass");
+  const perms = permissions.length > 0 ? permissions : (user?.effective_permissions || []);
+  const hasBypassPerm = perms.includes("*") || perms.includes("system.maintenance.bypass");
 
   // Owner can always bypass. Other staff roles (Admin, Moderator) or users with bypass permission can bypass if allowAdmin is enabled.
   const canBypass = userRole === "OWNER" || (allowAdmin && (isStaffRole || hasBypassPerm));
 
-  // If we have a token but user hasn't loaded yet, don't prematurely redirect
-  const isBlocked = isMaintenanceMode && !canBypass && !(token && !user);
+  // If user is currently loading, don't prematurely block or redirect when using HttpOnly cookies
+  const isBlocked = isMaintenanceMode && !canBypass && !(!user && userLoading);
 
   useEffect(() => {
     if (!isReady || isAuthOrLegalRoute) return;

@@ -19,6 +19,7 @@ interface User {
   timezone?: string;
   theme_preference?: string;
   totp_enabled?: boolean;
+  effective_permissions?: string[];
 }
 
 interface GuestQuota {
@@ -64,16 +65,17 @@ export const useUserStore = create<UserState>()(
           try {
             const response = await fetchApi('/auth/me');
             if (response.success && response.data) {
-              let perms: string[] = [];
+              let perms: string[] = response.data.effective_permissions || [];
               try {
                 const permResp = await fetchApi('/rbac/my-permissions');
-                if (permResp.permissions) {
+                if (permResp && permResp.permissions) {
                   perms = permResp.permissions;
                 }
               } catch (e) {
                 console.error("Failed to fetch permissions", e);
               }
-              set({ user: response.data, permissions: perms, isAuthenticated: true });
+              const userWithPerms = { ...response.data, effective_permissions: perms };
+              set({ user: userWithPerms, permissions: perms, isAuthenticated: true });
             } else {
               set({ user: null, permissions: [], isAuthenticated: false });
               // If not auth, we initialize guest
@@ -140,16 +142,17 @@ export const useUserStore = create<UserState>()(
       },
       
       login: async (user) => {
-        let perms: string[] = [];
+        let perms: string[] = user.effective_permissions || [];
         try {
           const permResp = await fetchApi('/rbac/my-permissions');
-          if (permResp.permissions) {
+          if (permResp && permResp.permissions) {
             perms = permResp.permissions;
           }
         } catch (e) {
           console.error("Failed to fetch permissions on login", e);
         }
-        set({ user, permissions: perms, isAuthenticated: true, guestQuota: null });
+        const userWithPerms = { ...user, effective_permissions: perms };
+        set({ user: userWithPerms, permissions: perms, isAuthenticated: true, guestQuota: null });
       },
       
       logout: async () => {

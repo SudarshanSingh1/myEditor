@@ -46,7 +46,7 @@ export default function OAuthCallback() {
           await useSystemStore.getState().checkStatus(true);
           const isMaint = useSystemStore.getState().isMaintenanceMode;
           const allowAdmin = useSystemStore.getState().allowAdmin;
-          const role = userData.role || "";
+          const role = (userData.role || "").toUpperCase();
           const isSuperAdmin = role === "OWNER";
           const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
           const perms: string[] = userData.effective_permissions || [];
@@ -73,14 +73,14 @@ export default function OAuthCallback() {
             return;
           }
 
-          login(userData);
+          await login(userData);
           toast.success(`Successfully logged in with ${provider}`);
           const redirectUrl = sessionStorage.getItem("oauth_redirect_url") || searchParams.get("state") || null;
           if (redirectUrl) sessionStorage.removeItem("oauth_redirect_url");
 
-          if (redirectUrl && redirectUrl !== "/login" && redirectUrl !== "/admin-login") {
+          if (redirectUrl && redirectUrl !== "/login" && redirectUrl !== "/admin-login" && redirectUrl !== "/maintenance" && !redirectUrl.startsWith("/maintenance")) {
             navigate(redirectUrl, { replace: true });
-          } else if (isAdminPortal) {
+          } else if (isSuperAdmin) {
             navigate("/super-admin", { replace: true });
           } else if (isAdminOrMod) {
             navigate("/app/admin", { replace: true });

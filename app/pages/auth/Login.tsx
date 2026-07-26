@@ -25,14 +25,14 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
 
   useEffect(() => {
     if (!isUserLoading && isAuthenticated && user) {
-      const role = user.role || "";
+      const role = (user.role || "").toUpperCase();
       const isSuperAdmin = role === "OWNER";
       const isAdmin = role === "ADMIN";
       const isMod = role === "MODERATOR";
       
       const isMaint = useSystemStore.getState().isMaintenanceMode;
       const allowAdmin = useSystemStore.getState().allowAdmin;
-      const perms: string[] = user.effective_permissions || [];
+      const perms: string[] = user.effective_permissions || useUserStore.getState().permissions || [];
       const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
       const isStaff = isSuperAdmin || isAdmin || isMod || canBypass;
 
@@ -93,7 +93,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
             // Get profile and login (this should be adapted if verify-2fa returns the same struct as login)
             const profileResp = await fetchApi("/auth/me");
             if (profileResp.success && profileResp.data) {
-                const role: string = profileResp.data.role || "";
+                const role: string = (profileResp.data.role || "").toUpperCase();
                 const isSuperAdmin = role === "OWNER";
                 const isAdmin = role === "ADMIN";
                 const isMod = role === "MODERATOR";
@@ -103,7 +103,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
                 }
                 const isMaint = useSystemStore.getState().isMaintenanceMode;
                 const allowAdmin = useSystemStore.getState().allowAdmin;
-                const perms: string[] = profileResp.data.effective_permissions || [];
+                const perms: string[] = profileResp.data.effective_permissions || useUserStore.getState().permissions || [];
                 const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
                 const isStaff = isSuperAdmin || isAdmin || isMod || canBypass;
 
@@ -159,7 +159,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
       if (response.success) {
         const profileResp = await fetchApi("/auth/me");
         if (profileResp.success && profileResp.data) {
-          const role: string = profileResp.data.role || "";
+          const role: string = (profileResp.data.role || "").toUpperCase();
           const isSuperAdmin = role === "OWNER";
           const isAdmin = role === "ADMIN";
           const isMod = role === "MODERATOR";
@@ -167,7 +167,8 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
           await useSystemStore.getState().checkStatus(true);
           const isMaint = useSystemStore.getState().isMaintenanceMode;
           const allowAdmin = useSystemStore.getState().allowAdmin;
-          const canBypass = isSuperAdmin || isAdmin || isMod || perms.includes("*") || perms.includes("system.maintenance.bypass") || allowAdmin;
+          const perms: string[] = profileResp.data.effective_permissions || useUserStore.getState().permissions || [];
+          const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
           const isStaff = isSuperAdmin || isAdmin || isMod || canBypass;
 
           if (isAdminPortal && !isStaff) {
