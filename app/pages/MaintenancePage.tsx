@@ -210,7 +210,7 @@ const STAGES = [
 
 export function MaintenancePage() {
   const { isMaintenanceMode, maintenanceMessage, maintenanceEndTime, checkStatus, isChecking, hasChecked, _allowAdmin } = useSystemStore();
-  const { _user } = useUserStore();
+  const { isAuthenticated } = useUserStore();
   const prefersReducedMotion = useReducedMotion();
   const _location = useLocation();
 
@@ -443,7 +443,7 @@ export function MaintenancePage() {
               className="inline-flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.15em] text-green-400 bg-green-950/30 hover:bg-green-900/40 border border-green-500/30 rounded-lg transition-colors cursor-pointer"
             >
               <ShieldAlert className="w-3.5 h-3.5 text-green-400" />
-              Login with another account
+              {isAuthenticated ? "Switch Account" : "Administrator Login"}
             </button>
           </div>
           <p className="text-gray-500 text-[10px] font-mono uppercase tracking-[0.2em]">

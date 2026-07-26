@@ -4,7 +4,6 @@ import React, { useEffect, useRef } from 'react';
 
 import { Trash2 } from 'lucide-react';
 
-import '@xterm/xterm/css/xterm.css';
 import { useExecutionStore } from '../../../stores/useExecutionStore';
 
 import { useOutputStore } from '../../../stores/useOutputStore';
@@ -59,7 +58,8 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
     if (!xtermRef.current) {
       Promise.all([
         import('@xterm/xterm'),
-        import('@xterm/addon-fit')
+        import('@xterm/addon-fit'),
+        import('@xterm/xterm/css/xterm.css')
       ]).then(([xtermPkg, fitPkg]) => {
         if (!isMounted || !terminalRef.current) return;
         

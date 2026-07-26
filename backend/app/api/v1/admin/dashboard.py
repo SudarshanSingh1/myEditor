@@ -43,50 +43,59 @@ router = APIRouter()
 # --- Dashboard & Stats ---
 @router.get("/dashboard", response_model=SuccessResponse)
 def get_dashboard(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
-    total_users = db.query(User).filter(User.is_deleted == False).count()
-    total_projects = db.query(Project).count()
-    total_executions = db.query(ExecutionLog).count()
-    
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    users_today = db.query(User).filter(User.created_at >= today, User.is_deleted == False).count()
-    executions_today = db.query(ExecutionLog).filter(ExecutionLog.created_at >= today).count()
-    total_feedback = db.query(Feedback).count()
-    total_errors = db.query(SystemError).count()
-    active_users = db.query(User).filter(User.status == StatusEnum.ACTIVE, User.is_deleted == False).count()
+    
+    query = text("""
+        SELECT 
+            (SELECT COUNT(*) FROM users WHERE is_deleted = false) as total_users,
+            (SELECT COUNT(*) FROM projects) as total_projects,
+            (SELECT COUNT(*) FROM execution_logs) as total_executions,
+            (SELECT COUNT(*) FROM users WHERE created_at >= :today AND is_deleted = false) as users_today,
+            (SELECT COUNT(*) FROM execution_logs WHERE created_at >= :today) as executions_today,
+            (SELECT COUNT(*) FROM feedback) as total_feedback,
+            (SELECT COUNT(*) FROM system_errors) as total_errors,
+            (SELECT COUNT(*) FROM users WHERE status = 'ACTIVE' AND is_deleted = false) as active_users
+    """)
+    
+    result = db.execute(query, {"today": today}).fetchone()
     
     return SuccessResponse(message="Dashboard retrieved", data={
-        "total_users": total_users,
-        "users_today": users_today,
-        "active_users": active_users,
-        "total_projects": total_projects,
-        "total_executions": total_executions,
-        "executions_today": executions_today,
-        "total_feedback": total_feedback,
-        "total_errors": total_errors,
+        "total_users": result.total_users,
+        "users_today": result.users_today,
+        "active_users": result.active_users,
+        "total_projects": result.total_projects,
+        "total_executions": result.total_executions,
+        "executions_today": result.executions_today,
+        "total_feedback": result.total_feedback,
+        "total_errors": result.total_errors,
     })
 
 @router.get("/statistics", response_model=SuccessResponse)
 def get_statistics(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
-    total_users = db.query(User).filter(User.is_deleted == False).count()
-    active_users = db.query(User).filter(User.status == StatusEnum.ACTIVE, User.is_deleted == False).count()
-    admins = db.query(User).filter(User.role.in_([RoleEnum.ADMIN, RoleEnum.OWNER]), User.is_deleted == False).count()
-    
-    projects = db.query(Project).count()
-    files = db.query(File).count()
-    feedback = db.query(Feedback).count()
-    
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    errors_today = db.query(SystemError).filter(SystemError.created_at >= today).count()
+    
+    query = text("""
+        SELECT 
+            (SELECT COUNT(*) FROM users WHERE is_deleted = false) as total_users,
+            (SELECT COUNT(*) FROM users WHERE status = 'ACTIVE' AND is_deleted = false) as active_users,
+            (SELECT COUNT(*) FROM users WHERE role IN ('ADMIN', 'OWNER') AND is_deleted = false) as admins,
+            (SELECT COUNT(*) FROM projects) as projects,
+            (SELECT COUNT(*) FROM files) as files,
+            (SELECT COUNT(*) FROM feedback) as feedback,
+            (SELECT COUNT(*) FROM system_errors WHERE created_at >= :today) as errors_today
+    """)
+    
+    result = db.execute(query, {"today": today}).fetchone()
     
     return SuccessResponse(message="Stats retrieved", data={
-        "total_users": total_users,
-        "active_users": active_users,
-        "admins": admins,
-        "projects": projects,
-        "files": files,
-        "feedback_count": feedback,
-        "errors_today": errors_today,
-        "storage_used_bytes": files * 1024
+        "total_users": result.total_users,
+        "active_users": result.active_users,
+        "admins": result.admins,
+        "projects": result.projects,
+        "files": result.files,
+        "feedback_count": result.feedback,
+        "errors_today": result.errors_today,
+        "storage_used_bytes": result.files * 1024
     })
 
 @router.get("/server", response_model=SuccessResponse)

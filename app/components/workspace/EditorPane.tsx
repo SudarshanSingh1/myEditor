@@ -1,9 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* oxlint-disable react-hooks/exhaustive-deps */
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { workspaceApi } from '../../lib/api/workspace';
-import { MonacoWrapper } from './MonacoWrapper';
+const MonacoWrapper = React.lazy(() => import('./MonacoWrapper').then(m => ({ default: m.MonacoWrapper })));
 import { AlertCircle, FileX, Loader2 } from 'lucide-react';
 import { useSaveStore } from '../../stores/useSaveStore';
 import { useEditorStore } from '../../stores/useEditorStore';
@@ -71,11 +71,18 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ fileId }) => {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background">
-      <MonacoWrapper 
-        fileId={fileNode!.id} 
-        filename={fileNode!.name} 
-        initialContent={fileNode!.content || ''} 
-      />
+      <Suspense fallback={
+        <div className="flex-1 flex flex-col items-center justify-center text-gray-500 bg-background">
+          <Loader2 className="animate-spin mb-4" size={32} />
+          <p className="text-sm">Loading editor...</p>
+        </div>
+      }>
+        <MonacoWrapper 
+          fileId={fileNode!.id} 
+          filename={fileNode!.name} 
+          initialContent={fileNode!.content || ''} 
+        />
+      </Suspense>
     </div>
   );
 };

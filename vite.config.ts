@@ -33,7 +33,7 @@ export default defineConfig({
     minify: 'oxc',
     sourcemap: false,
     chunkSizeWarningLimit: 600,
-    target: 'es2020',
+    target: 'esnext',
     rollupOptions: {
       output: {
         // Use a function form (correct type) for manualChunks

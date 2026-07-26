@@ -65,24 +65,13 @@ export const useUserStore = create<UserState>()(
             const response = await fetchApi('/auth/me');
             if (response.success && response.data) {
               let perms: string[] = [];
-              
-              // Check if we should fetch RBAC
-              const isMaintenance = useSystemStore.getState().isMaintenanceMode;
-              const role = response.data.role || "";
-              const isSuperAdmin = role === "OWNER";
-              const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
-              const allowAdminAccess = useSystemStore.getState().allowAdmin;
-              const canBypassMaintenance = isSuperAdmin || (isAdminOrMod && allowAdminAccess);
-
-              if (!isMaintenance || canBypassMaintenance) {
-                try {
-                  const permResp = await fetchApi('/rbac/my-permissions');
-                  if (permResp.permissions) {
-                    perms = permResp.permissions;
-                  }
-                } catch (e) {
-                  console.error("Failed to fetch permissions", e);
+              try {
+                const permResp = await fetchApi('/rbac/my-permissions');
+                if (permResp.permissions) {
+                  perms = permResp.permissions;
                 }
+              } catch (e) {
+                console.error("Failed to fetch permissions", e);
               }
               set({ user: response.data, permissions: perms, isAuthenticated: true });
             } else {
@@ -152,24 +141,13 @@ export const useUserStore = create<UserState>()(
       
       login: async (user) => {
         let perms: string[] = [];
-        
-        // Check if we should fetch RBAC
-        const isMaintenance = useSystemStore.getState().isMaintenanceMode;
-        const role = user.role || "";
-        const isSuperAdmin = role === "OWNER";
-        const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
-        const allowAdminAccess = useSystemStore.getState().allowAdmin;
-        const canBypassMaintenance = isSuperAdmin || (isAdminOrMod && allowAdminAccess);
-
-        if (!isMaintenance || canBypassMaintenance) {
-          try {
-            const permResp = await fetchApi('/rbac/my-permissions');
-            if (permResp.permissions) {
-              perms = permResp.permissions;
-            }
-          } catch (e) {
-            console.error("Failed to fetch permissions on login", e);
+        try {
+          const permResp = await fetchApi('/rbac/my-permissions');
+          if (permResp.permissions) {
+            perms = permResp.permissions;
           }
+        } catch (e) {
+          console.error("Failed to fetch permissions on login", e);
         }
         set({ user, permissions: perms, isAuthenticated: true, guestQuota: null });
       },

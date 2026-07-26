@@ -4,15 +4,16 @@ import { useEffect, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSystemStore } from "../../stores/useSystemStore";
 import { useUserStore } from "../../stores/useUserStore";
+import { hasPermission } from "../../lib/rbac";
 
 export function MaintenanceGuard({ children }: { children: ReactNode }) {
   const {
     isMaintenanceMode,
     checkStatus,
+    isChecking: _maintenanceChecking,
     hasChecked: maintenanceChecked,
-    allowAdmin,
   } = useSystemStore();
-  const { user, isLoading: userLoading } = useUserStore();
+  const { isLoading: userLoading } = useUserStore();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -47,9 +48,7 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     typeof window !== "undefined" &&
     sessionStorage.getItem("maintenance_preview") === "true";
 
-  const isSuperAdmin = user?.role === "OWNER";
-  const isNormalAdminOrMod = user?.role === "ADMIN" || user?.role === "MODERATOR";
-  const isAllowedToBypass = isSuperAdmin || (isNormalAdminOrMod && allowAdmin);
+  const isAllowedToBypass = hasPermission("system.maintenance.bypass");
 
   const isAllowedPublicRoute =
     location.pathname.startsWith("/maintenance") ||

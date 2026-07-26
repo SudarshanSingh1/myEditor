@@ -62,6 +62,8 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
             # OAuth – authorize redirects and code-exchange callbacks must always work
             # so that admins/super-admins can still log in during maintenance
             "/api/v1/auth/oauth",
+            # RBAC – users need to be able to fetch their permissions to bypass maintenance
+            "/api/v1/rbac/my-permissions",
         ]
         
         if not any(request.url.path.startswith(path) for path in excluded_paths):
@@ -92,7 +94,7 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
                                 if user:
                                     if user.role == RoleEnum.OWNER:
                                         is_admin_allowed = True
-                                    elif config["allow_admin"] and user.role in [RoleEnum.ADMIN, RoleEnum.MODERATOR]:
+                                    elif user.effective_permissions and "system.maintenance.bypass" in user.effective_permissions:
                                         is_admin_allowed = True
                         except JWTError:
                             pass

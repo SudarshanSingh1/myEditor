@@ -22,8 +22,8 @@ class ExecutionLog(Base):
     user_id = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     project_id = Column(Uuid(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
     
-    language = Column(String(50), nullable=False)
-    status = Column(Enum(ExecutionStatus), nullable=False)
+    language = Column(String(50), nullable=False, index=True)
+    status = Column(Enum(ExecutionStatus), nullable=False, index=True)
     execution_time_ms = Column(Integer, nullable=True)  # How long it took in milliseconds
     
     compiler = Column(String(100), nullable=True)
