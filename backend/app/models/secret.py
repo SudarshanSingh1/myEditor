@@ -6,7 +6,7 @@ from app.utils.identifiers import generate_uuid
 class Secret(Base):
     __tablename__ = "secrets"
 
-    id = Column(String(32), primary_key=True, default=generate_uuid)
+    id = Column(String(36), primary_key=True, default=generate_uuid)
     name = Column(String(255), nullable=False, unique=True)
     category = Column(String(100), nullable=True)
     encrypted_value = Column(String, nullable=False)

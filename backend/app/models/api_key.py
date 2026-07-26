@@ -6,10 +6,10 @@ from app.utils.identifiers import generate_uuid
 class ApiKey(Base):
     __tablename__ = "api_keys"
 
-    id = Column(String(32), primary_key=True, default=generate_uuid)
+    id = Column(String(36), primary_key=True, default=generate_uuid)
     name = Column(String(255), nullable=False)
     key_hash = Column(String(255), nullable=False, unique=True)
-    prefix = Column(String(32), nullable=False)
+    prefix = Column(String(36), nullable=False)
     scopes = Column(JSON, default=list)
     created_at = Column(DateTime(timezone=True), default=utc_now)
     expires_at = Column(DateTime(timezone=True), nullable=True)

@@ -6,7 +6,7 @@ from app.utils.identifiers import generate_uuid
 class FeatureFlag(Base):
     __tablename__ = "feature_flags"
 
-    id = Column(String(32), primary_key=True, default=generate_uuid)
+    id = Column(String(36), primary_key=True, default=generate_uuid)
     name = Column(String(255), nullable=False)
     key = Column(String(255), nullable=False, unique=True)
     description = Column(String(500), nullable=True)

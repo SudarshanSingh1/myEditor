@@ -33,7 +33,7 @@ def get_url():
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = get_url()
-    context.configure(
+    context.configure(compare_type=True,
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
@@ -58,7 +58,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
+        context.configure(compare_type=True,
             connection=connection, target_metadata=target_metadata
         )
 

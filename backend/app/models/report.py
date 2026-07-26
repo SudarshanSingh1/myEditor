@@ -18,10 +18,10 @@ class ReportStatus(str, enum.Enum):
 class Report(Base):
     __tablename__ = "reports"
 
-    id = Column(String(32), primary_key=True, default=generate_uuid)
+    id = Column(String(36), primary_key=True, default=generate_uuid)
     reporter_id = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=False)
     target_type = Column(Enum(ReportTargetType), nullable=False)
-    target_id = Column(String(32), nullable=False)  # User ID or Project ID
+    target_id = Column(String(36), nullable=False)  # User ID or Project ID
     reason = Column(Text, nullable=False)
     status = Column(Enum(ReportStatus), default=ReportStatus.PENDING, nullable=False)
     assigned_to = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=True)

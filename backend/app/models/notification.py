@@ -16,7 +16,7 @@ class NotificationType(str, enum.Enum):
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id = Column(String(32), primary_key=True, default=generate_uuid)
+    id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=False)
     type = Column(Enum(NotificationType), default=NotificationType.SYSTEM, nullable=False)
     title = Column(String(255), nullable=False)
@@ -30,7 +30,7 @@ class Notification(Base):
 class UserNotificationSettings(Base):
     __tablename__ = "user_notification_settings"
 
-    id = Column(String(32), primary_key=True, default=generate_uuid)
+    id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True)
     email_alerts = Column(Boolean, default=True)
     system_alerts = Column(Boolean, default=True)
