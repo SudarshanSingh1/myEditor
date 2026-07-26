@@ -51,6 +51,7 @@ class UserProfileResponse(BaseModel):
     timezone: str | None = None
     theme_preference: str | None = None
     totp_enabled: bool = False
+    effective_permissions: list[str] = []
     
     model_config = {"from_attributes": True}
 

@@ -27,7 +27,8 @@ export default function Login() {
       
       const isMaint = useSystemStore.getState().isMaintenanceMode;
       const allowAdmin = useSystemStore.getState().allowAdmin;
-      const canBypass = isSuperAdmin || ((isAdmin || isMod) && allowAdmin);
+      const perms: string[] = user.effective_permissions || [];
+      const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
 
       if (isMaint && !canBypass) {
         navigate("/maintenance", { replace: true });
@@ -88,7 +89,8 @@ export default function Login() {
                 }
                 const isMaint = useSystemStore.getState().isMaintenanceMode;
                 const allowAdmin = useSystemStore.getState().allowAdmin;
-                const canBypass = isSuperAdmin || ((isAdmin || isMod) && allowAdmin);
+                const perms: string[] = profileResp.data.effective_permissions || [];
+                const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
 
                 if (isMaint && !canBypass) {
                     await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
@@ -144,7 +146,8 @@ export default function Login() {
           }
           const isMaint = useSystemStore.getState().isMaintenanceMode;
           const allowAdmin = useSystemStore.getState().allowAdmin;
-          const canBypass = isSuperAdmin || ((isAdmin || isMod) && allowAdmin);
+          const perms: string[] = profileResp.data.effective_permissions || [];
+          const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
 
           if (isMaint && !canBypass) {
             await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});

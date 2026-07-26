@@ -339,6 +339,8 @@ def _create_session_response(
                     "first_name": user.first_name,
                     "last_name": user.last_name,
                     "avatar": user.avatar,
+                    "role": user.role.value if hasattr(user.role, "value") else str(user.role),
+                    "effective_permissions": user.effective_permissions or [],
                 },
             },
         }

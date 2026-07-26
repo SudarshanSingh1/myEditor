@@ -38,7 +38,7 @@ export default function OAuthCallback() {
             }
           } catch {
             // If /auth/me fails (e.g. maintenance), use what the oauth response gave us
-            userData = { ...response.data.user, role: "USER" };
+            userData = { ...response.data.user, role: response.data.user.role || "USER" };
           }
 
 
@@ -51,7 +51,8 @@ export default function OAuthCallback() {
           const role = userData.role || "";
           const isSuperAdmin = role === "OWNER";
           const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
-          const canBypass = isSuperAdmin || (isAdminOrMod && allowAdmin);
+          const perms: string[] = userData.effective_permissions || [];
+          const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdminOrMod) && allowAdmin);
 
           if (isMaint && !canBypass) {
             await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
