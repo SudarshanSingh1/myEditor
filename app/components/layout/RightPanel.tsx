@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
-import { X, Bell, Check, Trash2 } from "lucide-react";
+
+import { X, Bell, Check } from "lucide-react";
 import { useSidebarStore } from "../../stores/useSidebarStore";
+
 import { cn } from "../../lib/utils";
+
 import { Button } from "../ui/Button";
+
 import { fetchApi } from "../../lib/api";
+
 import { toast } from "sonner";
+
 import { useUserStore } from "../../stores/useUserStore";
 
 interface Notification {
@@ -46,7 +52,7 @@ export function RightPanel() {
     try {
       await fetchApi(`/notifications/${id}/read`, { method: "POST" });
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-    } catch (e: any) {
+    } catch {
       toast.error("Failed to mark as read");
     }
   };
@@ -56,7 +62,7 @@ export function RightPanel() {
       await fetchApi(`/notifications/read-all`, { method: "POST" });
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       toast.success("All caught up!");
-    } catch (e: any) {
+    } catch {
       toast.error("Failed to mark all as read");
     }
   };

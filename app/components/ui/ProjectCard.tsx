@@ -30,7 +30,7 @@ export function ProjectCard({
   language, 
   updated_at, 
   favorite = false,
-  color,
+  _color,
   icon,
   onFavorite,
   onOpen,

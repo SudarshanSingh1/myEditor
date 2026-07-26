@@ -1,18 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
-import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useUserStore } from "../stores/useUserStore";
-import { useAdminContext } from "../components/auth/AdminAuthGuard";
-import { fetchApi } from "../lib/api";
-import "../styles/enterprise.css";
-import {
-  LayoutDashboard, BarChart3, Users, FolderOpen, PlaySquare,
-  MessageSquare, Bug, Server, Database, Settings, ShieldCheck,
-  ClipboardList, Mail, LogOut, GitBranch, Flag, Bell, TerminalSquare,
-  HardDriveUpload, Rocket, AlertOctagon, Search, ChevronLeft,
-  ChevronRight, Activity, X, ArrowRight, ExternalLink, Cpu,
-  HardDrive, Wifi, Shield, Key, Layers, AlertTriangle, FileText
-} from "lucide-react";
 
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+
+import { useUserStore } from "../stores/useUserStore";
+
+import { useSystemStore } from "../stores/useSystemStore";
+
+import { useAdminContext } from "../components/auth/AdminAuthGuard";
+
+import { fetchApi } from "../lib/api";
+
+import "../styles/enterprise.css";
+import { LayoutDashboard, BarChart3, Users, FolderOpen, PlaySquare, MessageSquare, Bug, Server, Database, Settings, ShieldCheck, ClipboardList, Mail, LogOut, GitBranch, Flag, Bell, TerminalSquare, HardDriveUpload, Rocket, AlertOctagon, Search, ChevronLeft, ChevronRight, X, ArrowRight, ExternalLink } from "lucide-react";
 /* ─── Navigation Configuration ─────────────────────────────── */
 const moderatorNavGroups = [
   {
@@ -370,6 +369,13 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
 
       {/* Main column */}
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, overflow: "hidden" }}>
+        {useSystemStore().isMaintenanceMode && (
+          <div className="bg-red-500/10 border-b border-red-500/20 text-red-500 text-sm py-1.5 px-4 flex items-center justify-center gap-2 shrink-0 z-50">
+            <AlertOctagon size={14} />
+            <span className="font-medium">Maintenance Mode is ACTIVE.</span>
+            <span className="opacity-80">Regular users are being redirected.</span>
+          </div>
+        )}
         {/* Header bar */}
         <header className="e-header">
           {/* Mobile hamburger */}

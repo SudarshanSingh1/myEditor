@@ -63,11 +63,9 @@ def create_flag(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="CREATE_FEATURE_FLAG",
-        target_id=flag.id,
-        target_type="FEATURE_FLAG",
-        details={"key": flag.key}
+        metadata_json={"key": flag.key, "target_type": "FEATURE_FLAG", "flag_id": flag.id}
     )
     
     return {"success": True, "message": "Feature flag created"}
@@ -93,11 +91,9 @@ def update_flag(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="UPDATE_FEATURE_FLAG",
-        target_id=flag.id,
-        target_type="FEATURE_FLAG",
-        details={"key": flag.key, "enabled": flag.enabled}
+        metadata_json={"key": flag.key, "enabled": flag.enabled, "target_type": "FEATURE_FLAG", "flag_id": flag.id}
     )
     
     return {"success": True, "message": "Feature flag updated"}
@@ -117,11 +113,9 @@ def delete_flag(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="DELETE_FEATURE_FLAG",
-        target_id=flag_id,
-        target_type="FEATURE_FLAG",
-        details={"key": flag.key}
+        metadata_json={"key": flag.key, "target_type": "FEATURE_FLAG", "flag_id": flag_id}
     )
     
     return {"success": True, "message": "Feature flag deleted"}

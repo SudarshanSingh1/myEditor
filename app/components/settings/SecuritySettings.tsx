@@ -1,18 +1,26 @@
 import { useState, useEffect } from "react";
+
 import { fetchApi } from "../../lib/api";
+
 import { useUserStore } from "../../stores/useUserStore";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/Card";
+
 import { Button } from "../../components/ui/Button";
+
 import { Input } from "../../components/ui/Input";
+
 import { Modal } from "../../components/ui/Modal";
-import { Shield, Smartphone, Mail, Laptop, Globe, LogOut, CheckCircle } from "lucide-react";
+
+import { Shield, Smartphone, Laptop, LogOut } from "lucide-react";
 import { toast } from "sonner";
+
 import { QRCodeSVG } from "qrcode.react";
 
 export function SecuritySettings() {
   const { user, updateProfile } = useUserStore();
   const [sessions, setSessions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, _setIsLoading] = useState(false);
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [qrUri, setQrUri] = useState("");
   const [totpCode, setTotpCode] = useState("");

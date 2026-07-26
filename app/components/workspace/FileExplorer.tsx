@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { workspaceApi } from '../../lib/api/workspace';
+
 import type { FileNode, FolderTree, ProjectTree } from '../../lib/api/workspace';
+
 import { FolderItem } from './FolderItem';
+
 import { FileItem } from './FileItem';
-import { Plus, FolderPlus, FilePlus, RefreshCw, Loader2, ChevronsUp } from 'lucide-react';
-import { useWorkspaceStore } from '../../store/useWorkspaceStore';
-import { useEditorStore } from '../../store/useEditorStore';
+
+import { FolderPlus, FilePlus, RefreshCw, Loader2, ChevronsUp } from 'lucide-react';
+import { useWorkspaceStore } from '../../stores/useWorkspaceStore';
+
+import { useEditorStore } from '../../stores/useEditorStore';
+
 import { Modal } from '../ui/Modal';
+
 import { Button } from '../ui/Button';
+
 import { Input } from '../ui/Input';
 
 type DialogState = {
@@ -171,7 +181,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     onSuccess: invalidateTree
   });
 
-
   const handleDropItem = (draggedId: string, type: 'file' | 'folder', targetFolderId: string | null) => {
     if (type === 'file') {
       updateFileMut.mutate({ id: draggedId, folder_id: targetFolderId });
@@ -301,7 +310,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
             const data = JSON.parse(e.dataTransfer.getData("application/json"));
             // If dropped on the root container directly (not a child folder)
             handleDropItem(data.id, data.type, null);
-          } catch(err) {}
+          } catch {}
         }}
       >
         {(!tree?.folders?.length && !tree?.files?.length) ? (

@@ -1,10 +1,16 @@
 import React from 'react';
-import { useStatusBarStore } from '../../store/useStatusBarStore';
-import { useSaveStore } from '../../store/useSaveStore';
-import { useEditorStore } from '../../store/useEditorStore';
-import { useExecutionStore } from '../../store/useExecutionStore';
+
+import { useStatusBarStore } from '../../stores/useStatusBarStore';
+
+import { useSaveStore } from '../../stores/useSaveStore';
+
+import { useEditorStore } from '../../stores/useEditorStore';
+
+import { useExecutionStore } from '../../stores/useExecutionStore';
+
 import { useUserStore } from '../../stores/useUserStore';
-import { CheckCircle2, AlertCircle, Loader2, RefreshCw, Zap } from 'lucide-react';
+
+import { CheckCircle2, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const StatusBar: React.FC = () => {
@@ -13,8 +19,8 @@ export const StatusBar: React.FC = () => {
     spacesOrTabs, tabSize, connectionStatus 
   } = useStatusBarStore();
   
-  const isAuthenticated = useUserStore((state) => state.isAuthenticated);
-  const guestQuota = useUserStore((state) => state.guestQuota);
+  const _isAuthenticated = useUserStore((state) => state.isAuthenticated);
+  const _guestQuota = useUserStore((state) => state.guestQuota);
   
   const activeFileId = useEditorStore((state) => state.activeFileId);
   const activeStatus = useSaveStore((state) => activeFileId ? state.fileStatuses[activeFileId] : undefined);

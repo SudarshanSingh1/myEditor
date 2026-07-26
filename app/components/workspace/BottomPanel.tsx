@@ -3,7 +3,7 @@ import { X, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { ProblemsPanel } from './panels/ProblemsPanel';
 import { TerminalPanel } from './panels/TerminalPanel';
-import { useProblemsStore } from '../../store/useProblemsStore';
+import { useProblemsStore } from '../../stores/useProblemsStore';
 
 type Tab = 'PROBLEMS' | 'OUTPUT' | 'INPUT' | 'EXECUTION' | 'TERMINAL';
 
@@ -170,8 +170,12 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({ projectId, isOpen, onC
 
       {/* Panel Content */}
       <div className={cn("flex-1 overflow-hidden", !isOpen && "hidden")}>
-        {activeTab === 'PROBLEMS' && <ProblemsPanel />}
-        {activeTab === 'TERMINAL' && <TerminalPanel projectId={projectId} />}
+        <div className={cn("h-full w-full", activeTab !== 'PROBLEMS' && "hidden")}>
+          <ProblemsPanel />
+        </div>
+        <div className={cn("h-full w-full", activeTab !== 'TERMINAL' && "hidden")}>
+          <TerminalPanel projectId={projectId} />
+        </div>
       </div>
     </div>
   );

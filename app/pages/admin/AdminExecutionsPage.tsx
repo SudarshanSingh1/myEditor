@@ -1,10 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchApi } from "../../lib/api";
-import { toast } from "sonner";
-import { ExecutionDetailsDrawer } from "./ExecutionDetailsDrawer";
-import { Modal } from "../../components/ui/Modal";
-import { Settings, Play, Server, Clock, Activity, AlertTriangle, CheckCircle, Database, Eye, Maximize2 } from "lucide-react";
 
+import { fetchApi } from "../../lib/api";
+
+import { toast } from "sonner";
+
+import { ExecutionDetailsDrawer } from "./ExecutionDetailsDrawer";
+
+import { Modal } from "../../components/ui/Modal";
+
+import { Settings, Play, Server, Clock, Activity, AlertTriangle, CheckCircle, Database, Maximize2 } from "lucide-react";
 function useDebounceValue<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {

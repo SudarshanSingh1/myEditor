@@ -1,5 +1,5 @@
 import React from 'react';
-import { useProblemsStore } from '../../../store/useProblemsStore';
+import { useProblemsStore } from '../../../stores/useProblemsStore';
 import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 

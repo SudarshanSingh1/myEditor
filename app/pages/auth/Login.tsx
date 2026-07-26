@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
@@ -12,8 +14,32 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const isExpired = searchParams.get("expired") === "true";
 
-  const { login } = useUserStore();
+  const { login, isAuthenticated, user, isLoading: isUserLoading } = useUserStore();
+  const { _isMaintenanceMode, _allowAdmin } = useSystemStore();
   const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    if (!isUserLoading && isAuthenticated && user) {
+      const role = user.role || "";
+      const isSuperAdmin = role === "OWNER";
+      const isAdmin = role === "ADMIN";
+      const isMod = role === "MODERATOR";
+      
+      const isMaint = useSystemStore.getState().isMaintenanceMode;
+      const allowAdmin = useSystemStore.getState().allowAdmin;
+      const canBypass = isSuperAdmin || ((isAdmin || isMod) && allowAdmin);
+
+      if (isMaint && !canBypass) {
+        navigate("/maintenance", { replace: true });
+      } else if (isSuperAdmin) {
+        navigate("/super-admin", { replace: true });
+      } else if (isAdmin || isMod) {
+        navigate("/app/admin", { replace: true });
+      } else {
+        navigate("/app/dashboard", { replace: true });
+      }
+    }
+  }, [isUserLoading, isAuthenticated, user, navigate]);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -52,8 +78,35 @@ export default function Login() {
             // Get profile and login (this should be adapted if verify-2fa returns the same struct as login)
             const profileResp = await fetchApi("/auth/me");
             if (profileResp.success && profileResp.data) {
-                login(profileResp.data);
-                navigate("/app/dashboard");
+                const role: string = profileResp.data.role || "";
+                const isSuperAdmin = role === "OWNER";
+                const isAdmin = role === "ADMIN";
+                const isMod = role === "MODERATOR";
+
+                if (!useSystemStore.getState().hasChecked) {
+                    await useSystemStore.getState().checkStatus();
+                }
+                const isMaint = useSystemStore.getState().isMaintenanceMode;
+                const allowAdmin = useSystemStore.getState().allowAdmin;
+                const canBypass = isSuperAdmin || ((isAdmin || isMod) && allowAdmin);
+
+                if (isMaint && !canBypass) {
+                    await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
+                    localStorage.removeItem("access_token");
+                    localStorage.removeItem("refresh_token");
+                    navigate("/maintenance", { replace: true });
+                    return;
+                }
+
+                await login(profileResp.data);
+
+                if (isSuperAdmin) {
+                    navigate("/super-admin", { replace: true });
+                } else if (isAdmin || isMod) {
+                    navigate("/app/admin", { replace: true });
+                } else {
+                    navigate("/app/dashboard", { replace: true });
+                }
             }
         }
       } catch (err: any) {
@@ -79,20 +132,38 @@ export default function Login() {
       });
       
       if (response.success) {
-        try {
-          const profileResp = await fetchApi("/auth/me");
-          if (profileResp.success && profileResp.data) {
-            resetUnauthorizedFlag();
-            login(profileResp.data);
-            navigate("/app/dashboard");
+        const profileResp = await fetchApi("/auth/me");
+        if (profileResp.success && profileResp.data) {
+          const role: string = profileResp.data.role || "";
+          const isSuperAdmin = role === "OWNER";
+          const isAdmin = role === "ADMIN";
+          const isMod = role === "MODERATOR";
+
+          if (!useSystemStore.getState().hasChecked) {
+            await useSystemStore.getState().checkStatus();
           }
-        } catch (profileErr: any) {
-          const isMaintenance = useSystemStore.getState().isMaintenanceMode;
-          if (isMaintenance) {
+          const isMaint = useSystemStore.getState().isMaintenanceMode;
+          const allowAdmin = useSystemStore.getState().allowAdmin;
+          const canBypass = isSuperAdmin || ((isAdmin || isMod) && allowAdmin);
+
+          if (isMaint && !canBypass) {
+            await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
             navigate("/maintenance", { replace: true });
             return;
           }
-          throw profileErr;
+
+          resetUnauthorizedFlag();
+          await login(profileResp.data);
+
+          if (isSuperAdmin) {
+            navigate("/super-admin", { replace: true });
+          } else if (isAdmin || isMod) {
+            navigate("/app/admin", { replace: true });
+          } else {
+            navigate("/app/dashboard", { replace: true });
+          }
         }
       }
     } catch (err: any) {
@@ -102,14 +173,7 @@ export default function Login() {
         return;
       }
       
-      const isMaintenance = useSystemStore.getState().isMaintenanceMode;
       const errorText = (err.message || "").toLowerCase();
-      const isMaintenanceError = errorText.includes("maintenance") || errorText.includes("upgrade") || errorText.includes("scheduled");
-      
-      if (isMaintenance || isMaintenanceError) {
-        navigate("/maintenance", { replace: true });
-        return;
-      }
       
       // Map generic backend errors to friendly messages
       if (errorText.includes("credentials") || errorText.includes("unauthorized")) {

@@ -1,28 +1,32 @@
 import { useEffect, useState, useRef } from "react";
-import type { ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Code,
-  Cloud,
-  Terminal,
-  GitMerge,
-  FilePlus,
-  FolderUp,
-} from "lucide-react";
 
+import type { ChangeEvent } from "react";
+
+import { useNavigate } from "react-router-dom";
+
+import { Code, FilePlus, FolderUp } from "lucide-react";
 import { useUserStore } from "../../stores/useUserStore";
+
 import { useProjectsStore } from "../../stores/useProjectsStore";
 
 import { PageHeader } from "../../components/ui/PageHeader";
-import { StatCard } from "../../components/ui/StatCard";
+
 import { ProjectCard } from "../../components/ui/ProjectCard";
+
 import { Button } from "../../components/ui/Button";
+
 import { CreateProjectModal } from "../../components/projects/CreateProjectModal";
+
 import { LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
+
 import { ActivityHeatmap } from "../../components/dashboard/ActivityHeatmap";
+
 import { ExecutionChart } from "../../components/dashboard/ExecutionChart";
+
 import { workspaceApi } from "../../lib/api/workspace";
+
 import { fetchApi } from "../../lib/api";
+
 import { useQuery } from "@tanstack/react-query";
 
 export default function Dashboard() {
@@ -32,7 +36,7 @@ export default function Dashboard() {
 
   const {
     projects,
-    totalProjects,
+    _totalProjects,
     toggleFavorite,
     fetchProjects,
     createProject,

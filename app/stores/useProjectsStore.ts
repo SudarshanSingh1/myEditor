@@ -33,7 +33,7 @@ interface ProjectsState {
   selectProject: (project: Project | null) => void;
 }
 
-export const useProjectsStore = create<ProjectsState>((set, get) => ({
+export const useProjectsStore = create<ProjectsState>((set, _get) => ({
   projects: [],
   trash: [],
   selectedProject: null,

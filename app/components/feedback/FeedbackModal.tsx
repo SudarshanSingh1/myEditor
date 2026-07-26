@@ -47,7 +47,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       onClose();
       setSubject('');
       setDescription('');
-    } catch (error) {
+    } catch {
       // Error handled by fetchApi
     } finally {
       setIsSubmitting(false);
@@ -63,7 +63,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
           if (resp?.success) {
             setMyFeedback(resp.data || []);
           }
-        } catch (error) {
+        } catch {
           toast.error('Failed to load your feedback');
         } finally {
           setIsLoadingFeedback(false);

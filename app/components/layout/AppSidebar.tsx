@@ -1,7 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Folder, LayoutTemplate, Users, Clock, Star, Settings, HelpCircle, PanelLeftClose, PanelLeftOpen, Trash2 } from "lucide-react";
+
+import { LayoutDashboard, Folder, LayoutTemplate, Users, Clock, Star, HelpCircle, PanelLeftClose, PanelLeftOpen, Trash2 } from "lucide-react";
 import { useSidebarStore } from "../../stores/useSidebarStore";
+
 import { cn } from "../../lib/utils";
+
 import { Button } from "../ui/Button";
 
 const SIDEBAR_ITEMS = [

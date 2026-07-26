@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
+
 import { fetchApi } from "../../../lib/api";
+
 import { toast } from "sonner";
-import { Plus, Key, Copy, Check, Trash2, Eye, EyeOff } from "lucide-react";
+
+import { Plus, Key, Trash2 } from "lucide-react";
 import { Modal } from "../../../components/ui/Modal";
+
 import { Button } from "../../../components/ui/Button";
 
 export default function ApiKeysTab() {

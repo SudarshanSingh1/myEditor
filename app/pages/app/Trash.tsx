@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 import { useProjectsStore } from "../../stores/useProjectsStore";

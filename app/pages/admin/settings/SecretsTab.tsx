@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
+
 import { fetchApi } from "../../../lib/api";
+
 import { toast } from "sonner";
-import { Lock, Plus, Trash2, Edit2, ShieldAlert, Eye, EyeOff } from "lucide-react";
+
+import { Lock, Plus, Trash2, Edit2, ShieldAlert } from "lucide-react";
 import { Modal } from "../../../components/ui/Modal";
+
 import { Button } from "../../../components/ui/Button";
 
 export default function SecretsTab() {

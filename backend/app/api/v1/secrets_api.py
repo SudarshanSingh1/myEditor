@@ -59,11 +59,9 @@ def create_secret(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="CREATE_SECRET",
-        target_id=sec.id,
-        target_type="SECRET",
-        details={"name": sec.name}
+        metadata_json={"name": sec.name, "target_type": "SECRET", "secret_id": sec.id}
     )
     
     return {"success": True, "message": "Secret created successfully"}
@@ -91,11 +89,9 @@ def update_secret(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="UPDATE_SECRET",
-        target_id=sec.id,
-        target_type="SECRET",
-        details={"name": sec.name}
+        metadata_json={"name": sec.name, "target_type": "SECRET", "secret_id": sec.id}
     )
     
     return {"success": True, "message": "Secret updated successfully"}
@@ -115,11 +111,9 @@ def delete_secret(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="DELETE_SECRET",
-        target_id=secret_id,
-        target_type="SECRET",
-        details={"name": sec.name}
+        metadata_json={"name": sec.name, "target_type": "SECRET", "secret_id": secret_id}
     )
     
     return {"success": True, "message": "Secret deleted successfully"}

@@ -58,11 +58,9 @@ def create_api_key(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="CREATE_API_KEY",
-        target_id=new_key.id,
-        target_type="API_KEY",
-        details={"name": name}
+        metadata_json={"name": name, "target_type": "API_KEY", "api_key_id": new_key.id}
     )
     
     return {
@@ -91,11 +89,9 @@ def revoke_api_key(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="REVOKE_API_KEY",
-        target_id=key.id,
-        target_type="API_KEY",
-        details={"name": key.name}
+        metadata_json={"name": key.name, "target_type": "API_KEY", "api_key_id": key.id}
     )
     
     return {"success": True, "message": "API Key revoked successfully"}

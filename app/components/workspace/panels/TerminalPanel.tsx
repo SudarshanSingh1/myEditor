@@ -1,13 +1,20 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef } from 'react';
+
 import { Trash2 } from 'lucide-react';
+
 import '@xterm/xterm/css/xterm.css';
-import { useExecutionStore } from '../../../store/useExecutionStore';
-import { useOutputStore } from '../../../store/useOutputStore';
-import { useEditorStore } from '../../../store/useEditorStore';
+import { useExecutionStore } from '../../../stores/useExecutionStore';
+
+import { useOutputStore } from '../../../stores/useOutputStore';
+
+import { useEditorStore } from '../../../stores/useEditorStore';
+
 import { useUserStore } from '../../../stores/useUserStore';
-import { History, Play } from 'lucide-react';
+
+import { History } from 'lucide-react';
 import { Modal } from '../../ui/Modal';
-import { Button } from '../../ui/Button';
 
 interface TerminalPanelProps {
   projectId: string;
@@ -24,13 +31,13 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
   const [isTerminalReady, setIsTerminalReady] = React.useState(false);
 
   const pendingExecution = useExecutionStore((state: any) => state.pendingExecution);
-  const setPendingExecution = useExecutionStore((state: any) => state.setPendingExecution);
+  const _setPendingExecution = useExecutionStore((state: any) => state.setPendingExecution);
   const setExecutionFinished = useExecutionStore((state: any) => state.setExecutionFinished);
   const isCancelling = useExecutionStore((state: any) => state.isCancelling);
   const history = useExecutionStore((state: any) => state.history);
-  const runCode = useExecutionStore((state: any) => state.runCode);
+  const _runCode = useExecutionStore((state: any) => state.runCode);
   const { settings: editorSettings } = useEditorStore();
-  const user = useUserStore((state: any) => state.user);
+  const _user = useUserStore((state: any) => state.user);
   
   const appendLog = useOutputStore((state: any) => state.appendLog);
 
@@ -78,7 +85,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         term.loadAddon(fitAddon);
         
         term.open(terminalRef.current);
-        try { fitAddon.fit(); } catch (e) {}
+        try { fitAddon.fit(); } catch {}
         
         termInstance = term;
         fitAddonInstance = fitAddon;
@@ -89,7 +96,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         resizeObserver = new ResizeObserver(() => {
           try {
             fitAddon.fit();
-          } catch (e) {}
+          } catch {}
         });
         resizeObserver.observe(terminalRef.current);
         
@@ -211,7 +218,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
               }
             }
             xtermRef.current.write(event.data.replace(/\r?\n/g, '\r\n'));
-          } catch (e) {
+          } catch {
             xtermRef.current.write(event.data.replace(/\r?\n/g, '\r\n'));
           }
         }
@@ -323,7 +330,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
               }
             }
             term.write(event.data.replace(/\r?\n/g, '\r\n'));
-          } catch (e) {
+          } catch {
             term.write(event.data.replace(/\r?\n/g, '\r\n'));
           }
         }
@@ -340,12 +347,14 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         
         // Parse compiler output for markers
         if (pendingExecution.language === 'cpp' || pendingExecution.language === 'c') {
+          // oxlint-disable-next-line no-control-regex
+          // eslint-disable-next-line no-control-regex
           const rawOutput = execOutputBuffer.current.replace(/\x1b\[[0-9;]*m/g, ''); // strip ansi
-          const regex = /^([a-zA-Z0-9_\-\.]+):(\d+):(?:(\d+):)?\s+(error|warning|fatal error):\s+(.*)$/gm;
+          const regex = /^([a-zA-Z0-9_\-.]+):(\d+):(?:(\d+):)?\s+(error|warning|fatal error):\s+(.*)$/gm;
           let match;
           const markers = [];
           while ((match = regex.exec(rawOutput)) !== null) {
-            const [, file, line, col, severityStr, msg] = match;
+            const [, _file, line, col, severityStr, msg] = match;
             // Severity mapping
             let severity = 8; // Error
             if (severityStr === 'warning') severity = 4; // Warning

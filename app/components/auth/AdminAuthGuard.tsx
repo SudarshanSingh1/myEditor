@@ -18,6 +18,8 @@ const AdminContext = createContext<AdminContextValue>({
   adminRole: null,
 });
 
+// oxlint-disable-next-line react/only-export-components
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAdminContext = () => useContext(AdminContext);
 
 interface AdminAuthGuardProps {

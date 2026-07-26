@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useVersionStore } from '../../store/useVersionStore';
-import { useEditorStore } from '../../store/useEditorStore';
-import { History, Clock, Search, X, Check, ArrowLeftRight, Trash2 } from 'lucide-react';
+
+import { useVersionStore } from '../../stores/useVersionStore';
+
+import { useEditorStore } from '../../stores/useEditorStore';
+
+import { History, Clock, Search, X, ArrowLeftRight, Trash2 } from 'lucide-react';
 import { useConfirm } from "../../components/ui/ConfirmProvider";
 
 export function VersionHistoryPanel({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

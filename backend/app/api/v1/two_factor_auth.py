@@ -7,6 +7,7 @@ from app.schemas.responses import StandardResponse
 import pyotp
 import json
 from pydantic import BaseModel
+from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/security", tags=["security"])
 
@@ -36,7 +37,8 @@ def setup_2fa(current_user: User = Depends(get_current_active_user), db: Session
     return StandardResponse(success=True, message="2FA setup initialized", data={"secret": secret, "uri": provisioning_uri})
 
 @router.post("/2fa/enable", response_model=StandardResponse)
-def enable_2fa(req: TOTPVerifyRequest, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def enable_2fa(req: TOTPVerifyRequest, request: Request, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     if current_user.totp_enabled:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="2FA is already enabled")
         
@@ -63,7 +65,8 @@ def enable_2fa(req: TOTPVerifyRequest, current_user: User = Depends(get_current_
     )
 
 @router.post("/2fa/disable", response_model=StandardResponse)
-def disable_2fa(req: TOTPVerifyRequest, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def disable_2fa(req: TOTPVerifyRequest, request: Request, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     if not current_user.totp_enabled:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="2FA is not enabled")
         

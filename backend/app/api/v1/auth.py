@@ -47,6 +47,7 @@ def register(req: UserRegisterRequest, request: Request, db: Session = Depends(g
     )
 
 @router.post("/verify-email", response_model=SuccessResponse[TokenResponse])
+@limiter.limit("5/minute")
 def verify_email(req: VerifyEmailRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     ip_address = request.client.host if request.client else None
     user = AuthService.verify_email(db, req.token, req.otp)
@@ -87,14 +88,6 @@ def resend_verification(req: ResendVerificationRequest, request: Request, db: Se
 def login(req: UserLoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     ip_address = request.client.host if request.client else None
     user, access_token, refresh_token = AuthService.authenticate_user(db, req, ip_address)
-    
-    # Block login if maintenance mode is active and user is not OWNER/ADMIN
-    from app.models.system_settings import SystemSettings
-    from app.models.user import RoleEnum
-    settings_obj = db.query(SystemSettings).first()
-    if settings_obj and settings_obj.maintenance_mode:
-        if user.role not in [RoleEnum.OWNER, RoleEnum.ADMIN]:
-            raise HTTPException(status_code=503, detail=settings_obj.maintenance_message or "System is under maintenance.")
             
     # Prepare HTTPOnly cookies architecture
     # Currently also returning in JSON payload for flexible frontend integration

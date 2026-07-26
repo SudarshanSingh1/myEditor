@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
-import { fetchApi } from "../../lib/api";
-import { toast } from "sonner";
-import { Container, Play, Square, RefreshCw, Trash2, Terminal } from "lucide-react";
-import { Drawer } from "../../components/ui/Drawer";
-import { PageHeader } from "../../components/enterprise/PageHeader";
-import { StatusChip, LiveDot } from "../../components/enterprise/MiniSparkline";
 
+import { fetchApi } from "../../lib/api";
+
+import { toast } from "sonner";
+
+import { Container, Square, RefreshCw, Trash2, Terminal } from "lucide-react";
+import { Drawer } from "../../components/ui/Drawer";
+
+import { PageHeader } from "../../components/enterprise/PageHeader";
+
+import { LiveDot } from "../../components/enterprise/MiniSparkline";
 interface DockerContainer {
   id: string;
   name: string;

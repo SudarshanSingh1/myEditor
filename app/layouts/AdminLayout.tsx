@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useUserStore } from "../stores/useUserStore";
+import { useSystemStore } from "../stores/useSystemStore";
 import { useAdminContext } from "../components/auth/AdminAuthGuard";
 import { fetchApi } from "../lib/api";
 import { 
@@ -201,6 +202,14 @@ export function AdminLayout({ isSuperAdminLayout = false }: { isSuperAdminLayout
 
       {/* Main column */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        {useSystemStore().isMaintenanceMode && (
+          <div className="bg-red-500/10 border-b border-red-500/20 text-red-400 text-sm py-2 px-4 flex items-center justify-center gap-2 shrink-0">
+            <AlertOctagon size={16} />
+            <span className="font-medium">Maintenance Mode is ACTIVE.</span>
+            <span className="opacity-80">Regular users are being redirected.</span>
+          </div>
+        )}
+        
         {/* Top navbar */}
         <header className="flex items-center gap-4 px-4 lg:px-6 h-14 border-b border-white/8 bg-[#0a0a10] flex-shrink-0">
           {/* Hamburger */}

@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { fetchApi } from '../lib/api';
+import { useSystemStore } from './useSystemStore';
+
+// Share the exact same promise for concurrent callers
+let _authPromise: Promise<void> | null = null;
 
 interface User {
   id: string;
@@ -48,35 +52,65 @@ export const useUserStore = create<UserState>()(
       isLoading: true,
       
       checkAuth: async () => {
-        set({ isLoading: true });
-        try {
-          const response = await fetchApi('/auth/me');
-          if (response.success && response.data) {
-            // Also fetch permissions
-            let perms: string[] = [];
-            try {
-              const permResp = await fetchApi('/rbac/my-permissions');
-              if (permResp.permissions) {
-                perms = permResp.permissions;
-              }
-            } catch (e) {
-              console.error("Failed to fetch permissions", e);
-            }
-            set({ user: response.data, permissions: perms, isAuthenticated: true });
-          } else {
-            set({ user: null, permissions: [], isAuthenticated: false });
-            // If not auth, we initialize guest
-            await get().initGuest();
+        if (_authPromise) return _authPromise;
+
+        _authPromise = (async () => {
+          const { checkStatus, hasChecked } = useSystemStore.getState();
+          if (!hasChecked) {
+            await checkStatus();
           }
-        } catch {
-          set({ user: null, permissions: [], isAuthenticated: false });
-          await get().initGuest();
-        } finally {
-          set({ isLoading: false });
-        }
+
+          set({ isLoading: true });
+          try {
+            const response = await fetchApi('/auth/me');
+            if (response.success && response.data) {
+              let perms: string[] = [];
+              
+              // Check if we should fetch RBAC
+              const isMaintenance = useSystemStore.getState().isMaintenanceMode;
+              const role = response.data.role || "";
+              const isSuperAdmin = role === "OWNER";
+              const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
+              const allowAdminAccess = useSystemStore.getState().allowAdmin;
+              const canBypassMaintenance = isSuperAdmin || (isAdminOrMod && allowAdminAccess);
+
+              if (!isMaintenance || canBypassMaintenance) {
+                try {
+                  const permResp = await fetchApi('/rbac/my-permissions');
+                  if (permResp.permissions) {
+                    perms = permResp.permissions;
+                  }
+                } catch (e) {
+                  console.error("Failed to fetch permissions", e);
+                }
+              }
+              set({ user: response.data, permissions: perms, isAuthenticated: true });
+            } else {
+              set({ user: null, permissions: [], isAuthenticated: false });
+              // If not auth, we initialize guest
+              if (!useSystemStore.getState().isMaintenanceMode) {
+                await get().initGuest();
+              }
+            }
+          } catch {
+            set({ user: null, permissions: [], isAuthenticated: false });
+            if (!useSystemStore.getState().isMaintenanceMode) {
+              await get().initGuest();
+            }
+          } finally {
+            set({ isLoading: false });
+            _authPromise = null;
+          }
+        })();
+
+        return _authPromise;
       },
       
       initGuest: async () => {
+        if (useSystemStore.getState().isMaintenanceMode) {
+          return;
+        }
+
         // If we already have a quota that isn't expired, don't re-init
         const quota = get().guestQuota;
         if (quota && new Date(quota.expires_at).getTime() > Date.now()) {
@@ -118,13 +152,24 @@ export const useUserStore = create<UserState>()(
       
       login: async (user) => {
         let perms: string[] = [];
-        try {
-          const permResp = await fetchApi('/rbac/my-permissions');
-          if (permResp.permissions) {
-            perms = permResp.permissions;
+        
+        // Check if we should fetch RBAC
+        const isMaintenance = useSystemStore.getState().isMaintenanceMode;
+        const role = user.role || "";
+        const isSuperAdmin = role === "OWNER";
+        const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
+        const allowAdminAccess = useSystemStore.getState().allowAdmin;
+        const canBypassMaintenance = isSuperAdmin || (isAdminOrMod && allowAdminAccess);
+
+        if (!isMaintenance || canBypassMaintenance) {
+          try {
+            const permResp = await fetchApi('/rbac/my-permissions');
+            if (permResp.permissions) {
+              perms = permResp.permissions;
+            }
+          } catch (e) {
+            console.error("Failed to fetch permissions on login", e);
           }
-        } catch (e) {
-          console.error("Failed to fetch permissions on login", e);
         }
         set({ user, permissions: perms, isAuthenticated: true, guestQuota: null });
       },

@@ -93,11 +93,9 @@ def assign_report(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="ASSIGN_REPORT",
-        target_id=report.id,
-        target_type="REPORT",
-        details={"report_id": report.id, "assigned_to": current_user.username}
+        metadata_json={"report_id": report.id, "assigned_to": current_user.username, "target_type": "REPORT", "target_id": report.id}
     )
     
     return {"success": True, "message": "Report assigned successfully"}
@@ -117,11 +115,9 @@ def resolve_report(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="RESOLVE_REPORT",
-        target_id=report.id,
-        target_type="REPORT",
-        details={"report_id": report.id}
+        metadata_json={"report_id": report.id, "target_type": "REPORT", "target_id": report.id}
     )
     
     return {"success": True, "message": "Report resolved"}
@@ -141,11 +137,9 @@ def reject_report(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="REJECT_REPORT",
-        target_id=report.id,
-        target_type="REPORT",
-        details={"report_id": report.id}
+        metadata_json={"report_id": report.id, "target_type": "REPORT", "target_id": report.id}
     )
     
     return {"success": True, "message": "Report rejected"}

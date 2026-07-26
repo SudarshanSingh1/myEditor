@@ -1,8 +1,16 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react-hooks/exhaustive-deps */
+import React, { useEffect, useRef, useState } from "react";
 import { Server, ShieldAlert, Activity, Terminal } from "lucide-react";
+
 import { useSystemStore } from "../stores/useSystemStore";
+
 import { useUserStore } from "../stores/useUserStore";
+
+import { fetchApi } from "../lib/api";
+
 import { Navigate, useLocation } from "react-router-dom";
+
 import { motion, useReducedMotion } from "framer-motion";
 
 // --- Matrix Rain Component ---
@@ -201,14 +209,33 @@ const STAGES = [
 ];
 
 export function MaintenancePage() {
-  const { isMaintenanceMode, maintenanceMessage, maintenanceEndTime, checkStatus, isChecking, hasChecked, allowAdmin } = useSystemStore();
-  const { user } = useUserStore();
+  const { isMaintenanceMode, maintenanceMessage, maintenanceEndTime, checkStatus, isChecking, hasChecked, _allowAdmin } = useSystemStore();
+  const { _user } = useUserStore();
   const prefersReducedMotion = useReducedMotion();
-  const location = useLocation();
+  const _location = useLocation();
+
+  const handleLoginWithAnotherAccount = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await fetchApi("/auth/logout", { method: "POST" });
+    } catch {
+      // ignore
+    }
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+    localStorage.removeItem("hamara-user-storage");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    sessionStorage.clear();
+    useUserStore.setState({ user: null, permissions: [], isAuthenticated: false, guestQuota: null, isLoading: false });
+    useSystemStore.setState({ hasChecked: false, isChecking: true });
+    window.location.href = "/login";
+  };
 
   // Countdown state
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [totalDuration, setTotalDuration] = useState<number>(3600); // Default 1hr baseline for progress
+  const [totalDuration, _setTotalDuration] = useState<number>(3600); // Default 1hr baseline for progress
   const [stageIndex, setStageIndex] = useState(0);
 
   // Status dot color
@@ -220,7 +247,6 @@ export function MaintenancePage() {
     checkStatus();
     const id = setInterval(() => checkStatus(), 30000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -290,8 +316,9 @@ export function MaintenancePage() {
   }
 
   // Only redirect AFTER we've confirmed maintenance is genuinely off
-  if (!isMaintenanceMode) return <Navigate to={location.state?.from || "/app"} replace />;
-  if (user?.role === "OWNER" || user?.role === "ADMIN" || (user?.role === "MODERATOR" && allowAdmin)) return <Navigate to={location.state?.from || "/app"} replace />;
+  if (!isMaintenanceMode) {
+    return <Navigate to="/" replace />;
+  }
 
   const progressPercent = timeLeft !== null ? Math.max(0, Math.min(100, 100 - (timeLeft / totalDuration) * 100)) : 100;
 
@@ -409,9 +436,18 @@ export function MaintenancePage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-12 text-center">
-          <p className="text-gray-500 text-[10px] font-mono uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-            <ShieldAlert className="w-3 h-3 text-red-500/70" /> Need urgent access? Contact admin or <a href="/login" className="underline hover:text-gray-300 transition-colors">Admin Login</a>.
+        <div className="mt-12 text-center space-y-4">
+          <div>
+            <button
+              onClick={handleLoginWithAnotherAccount}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.15em] text-green-400 bg-green-950/30 hover:bg-green-900/40 border border-green-500/30 rounded-lg transition-colors cursor-pointer"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-green-400" />
+              Login with another account
+            </button>
+          </div>
+          <p className="text-gray-500 text-[10px] font-mono uppercase tracking-[0.2em]">
+            Need urgent access? Contact system administrator.
           </p>
         </div>
       </div>

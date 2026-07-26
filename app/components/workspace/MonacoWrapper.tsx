@@ -2,15 +2,15 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Editor, { DiffEditor, useMonaco } from '@monaco-editor/react';
 import type { Monaco } from '@monaco-editor/react';
 import type * as MonacoEditor from 'monaco-editor';
-import { useEditorStore } from '../../store/useEditorStore';
-import { useThemeStore } from '../../store/useThemeStore';
-import { useSaveStore } from '../../store/useSaveStore';
+import { useEditorStore } from '../../stores/useEditorStore';
+import { useThemeStore } from '../../stores/useThemeStore';
+import { useSaveStore } from '../../stores/useSaveStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { THEMES } from '../../lib/monaco-themes';
 import { useConfirm } from "../../components/ui/ConfirmProvider";
-import { useStatusBarStore } from '../../store/useStatusBarStore';
-import { useNotificationStore } from '../../store/useNotificationStore';
-import { useVersionStore } from '../../store/useVersionStore';
+import { useStatusBarStore } from '../../stores/useStatusBarStore';
+import { useNotificationStore } from '../../stores/useNotificationStore';
+import { useVersionStore } from '../../stores/useVersionStore';
 import { RotateCcw } from 'lucide-react';
 
 interface MonacoWrapperProps {
@@ -52,14 +52,11 @@ function getLanguageFromFilename(filename: string): string {
 }
 
 export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, initialContent }) => {
-  const { 
-    settings, 
-    localContents, 
-    viewStates,
-    setViewState,
-    clearDirtyState,
-    setFileContent
-  } = useEditorStore();
+  const settings = useEditorStore((state) => state.settings);
+  const localContent = useEditorStore((state) => state.localContents[fileId]);
+  const viewState = useEditorStore((state) => state.viewStates[fileId]);
+  const setViewState = useEditorStore((state) => state.setViewState);
+  const setFileContent = useEditorStore((state) => state.setFileContent);
   
   const activeFileId = useEditorStore((state) => state.activeFileId);
   const activeFileMarkers = useEditorStore((state) => activeFileId ? state.markers[activeFileId] : undefined);
@@ -132,7 +129,7 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
   }, [fileId]);
 
   // The actual text model content logic
-  const content = localContents[fileId] !== undefined ? localContents[fileId] : initialContent;
+  const content = localContent !== undefined ? localContent : initialContent;
   const language = getLanguageFromFilename(filename);
 
   useEffect(() => {
@@ -185,7 +182,7 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
     editor.setPosition({ lineNumber: 1, column: 1 });
 
     // Restore View State (Cursor/Scroll)
-    const viewState = viewStates[fileId];
+    const currentViewState = viewState;
     if (viewState) {
       if (viewState.cursorPosition) {
         editor.setPosition(viewState.cursorPosition);
@@ -250,7 +247,7 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
       await saveStore.saveAll();
       addToast({ type: 'success', title: 'Save All', message: `All files have been saved.` });
     });
-  }, [fileId, filename, viewStates, setViewState, addToast]);
+  }, [fileId, filename, viewState, setViewState, addToast]);
 
   const handleRestore = useCallback(async () => {
     if (!selectedVersion) return;

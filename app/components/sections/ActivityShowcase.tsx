@@ -1,9 +1,12 @@
 import React, { useMemo } from "react";
+
 import { motion } from "framer-motion";
+
 import { Container } from "../layout/Container";
-import { TerminalSquare, Flame, Trophy, FileText, CheckCircle2, XCircle } from "lucide-react";
+
+import { TerminalSquare, Flame, Trophy } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { cn } from "../../lib/utils";
+
 import { WindowControls } from "../ui/WindowControls";
 
 // Mock graph data to look very active and realistic
@@ -202,7 +205,6 @@ export function ActivityShowcase() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
             </div>
           </motion.div>
-
 
           {/* RIGHT COLUMN: Graph & Heatmap */}
           <motion.div 

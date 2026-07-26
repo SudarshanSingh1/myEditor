@@ -1,8 +1,8 @@
 import { PassThrough } from "stream";
 
-import type { EntryContext } from "react-router";
+import type { EntryContext } from "react-router-dom";
 import { createReadableStreamFromReadable } from "@react-router/node";
-import { ServerRouter } from "react-router";
+import { ServerRouter } from "react-router-dom";
 import { isbot } from "isbot";
 import type { RenderToPipeableStreamOptions } from "react-dom/server";
 import { renderToPipeableStream } from "react-dom/server";
@@ -14,10 +14,10 @@ export default function handleRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   routerContext: EntryContext,
-  loadContext: any
+  _loadContext: any
 ) {
   return new Promise((resolve, reject) => {
-    let shellRendered = false;
+    let _shellRendered = false;
     let userAgent = request.headers.get("user-agent");
 
     let readyOption: keyof RenderToPipeableStreamOptions =
@@ -29,7 +29,7 @@ export default function handleRequest(
       <ServerRouter context={routerContext} url={request.url} />,
       {
         [readyOption]() {
-          shellRendered = true;
+          _shellRendered = true;
           const body = new PassThrough();
           const stream = createReadableStreamFromReadable(body);
 
@@ -45,13 +45,12 @@ export default function handleRequest(
           pipe(body);
         },
         onShellError(error: unknown) {
+          console.error("SSR onShellError:", error);
           reject(error);
         },
         onError(error: unknown) {
           responseStatusCode = 500;
-          if (shellRendered) {
-            console.error(error);
-          }
+          console.error("SSR onError:", error);
         },
       }
     );

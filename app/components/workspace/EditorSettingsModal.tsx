@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEditorStore } from '../../store/useEditorStore';
+import { useEditorStore } from '../../stores/useEditorStore';
 import { Modal } from '../ui/Modal';
 import { Settings2 } from 'lucide-react';
 

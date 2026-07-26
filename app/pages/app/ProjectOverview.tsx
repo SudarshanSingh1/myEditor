@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+
+import { useParams, useNavigate } from "react-router-dom";
 import { useProjectsStore } from "../../stores/useProjectsStore";
+
 import { fetchApi } from "../../lib/api";
-import { 
-  Code, FolderOpen, Clock, Users, PlaySquare, Calendar, 
-  Settings, ArrowLeft, Terminal, GitBranch, ChevronRight, Activity 
-} from "lucide-react";
+
+import { Code, FolderOpen, Clock, PlaySquare, Calendar, Settings, ArrowLeft, Terminal, GitBranch, Activity } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+
 import { LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
-import { PageHeader } from "../../components/ui/PageHeader";
 
 export default function ProjectOverview() {
   const { id } = useParams<{ id: string }>();

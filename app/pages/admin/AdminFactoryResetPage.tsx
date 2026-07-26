@@ -13,7 +13,7 @@ export default function AdminFactoryResetPage() {
   });
   const [confirmText, setConfirmText] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
 
   const toggleScope = (key: string) => setScopes(s => ({ ...s, [key]: !s[key] }));
 

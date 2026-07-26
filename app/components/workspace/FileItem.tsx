@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
+
 import type { FileNode } from '../../lib/api/workspace';
-import { useEditorStore } from '../../store/useEditorStore';
-import { FileIcon, MoreVertical, Edit2, Trash2, Copy, FileJson, FileCode2, FileText, Terminal, Database, FileImage, Image as ImageIcon } from 'lucide-react';
+
+import { useEditorStore } from '../../stores/useEditorStore';
+
+import { FileIcon, MoreVertical, Edit2, Trash2, Copy, FileJson, FileCode2, FileText, Terminal, Database, Image as ImageIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
+
 import { useOnClickOutside } from '../../hooks/useOnClickOutside';
 
 interface FileItemProps {
@@ -14,7 +18,7 @@ interface FileItemProps {
   onDropItem?: (id: string, type: "file" | "folder", targetId: string | null) => void;
 }
 
-export const FileItem: React.FC<FileItemProps> = React.memo(({ file, level, onRename, onDelete, onDuplicate, onDropItem }) => {
+export const FileItem: React.FC<FileItemProps> = React.memo(({ file, level, onRename, onDelete, onDuplicate, _onDropItem }) => {
   const activeFileId = useEditorStore(state => state.activeFileId);
   const openTab = useEditorStore(state => state.openTab);
   const isDirty = useEditorStore(state => state.dirtyFiles[file.id]);
@@ -28,12 +32,12 @@ export const FileItem: React.FC<FileItemProps> = React.memo(({ file, level, onRe
     setShowMenu(true);
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (_e: React.MouseEvent) => {
     // Single click opens in preview mode
     openTab({ id: file.id, name: file.name, language: file.language }, true);
   };
 
-  const handleDoubleClick = (e: React.MouseEvent) => {
+  const handleDoubleClick = (_e: React.MouseEvent) => {
     // Double click opens/pins the tab permanently
     openTab({ id: file.id, name: file.name, language: file.language }, false);
   };

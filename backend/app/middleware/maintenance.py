@@ -28,7 +28,10 @@ def _get_maintenance_status(db):
             
             # Auto recovery
             if is_enabled and settings_obj.maintenance_end_time:
-                if datetime.now(timezone.utc) > settings_obj.maintenance_end_time:
+                end_time = settings_obj.maintenance_end_time
+                if end_time.tzinfo is None:
+                    end_time = end_time.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) > end_time:
                     is_enabled = False
                     
             _maintenance_config = {
@@ -52,6 +55,8 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
             "/openapi.json",
             "/api/v1/auth/login",
             "/api/v1/auth/logout",
+            "/api/v1/auth/refresh",
+            "/api/v1/auth/me",
             "/api/v1/auth/verify-email",
             "/api/v1/system/status",
             # OAuth – authorize redirects and code-exchange callbacks must always work

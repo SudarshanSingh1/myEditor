@@ -1,10 +1,12 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react-hooks/exhaustive-deps */
 import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { workspaceApi } from '../../lib/api/workspace';
 import { MonacoWrapper } from './MonacoWrapper';
 import { AlertCircle, FileX, Loader2 } from 'lucide-react';
-import { useSaveStore } from '../../store/useSaveStore';
-import { useEditorStore } from '../../store/useEditorStore';
+import { useSaveStore } from '../../stores/useSaveStore';
+import { useEditorStore } from '../../stores/useEditorStore';
 
 interface EditorPaneProps {
   fileId: string;
@@ -12,8 +14,8 @@ interface EditorPaneProps {
 
 export const EditorPane: React.FC<EditorPaneProps> = ({ fileId }) => {
   const projectId = useEditorStore(state => state.projectId);
-  const tabs = useEditorStore(state => state.tabs);
-  const localContents = useEditorStore(state => state.localContents);
+  const tabName = useEditorStore(state => state.tabs.find(t => t.id === fileId)?.name);
+  const localContent = useEditorStore(state => state.localContents[fileId]);
   
   const isVirtual = !projectId || fileId.startsWith('guest-') || fileId.length < 20;
 
@@ -30,8 +32,8 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ fileId }) => {
   const fileNode = isVirtual 
     ? { 
         id: fileId, 
-        name: tabs.find(t => t.id === fileId)?.name || fileId, 
-        content: localContents[fileId] || '',
+        name: tabName || fileId, 
+        content: localContent || '',
         version: 1 
       } 
     : serverFileNode;

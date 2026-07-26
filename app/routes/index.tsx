@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
@@ -98,10 +98,14 @@ import { useUserStore } from "../stores/useUserStore";
 
 export default function AppRouter() {
   const checkAuth = useUserStore((state) => state.checkAuth);
+  const location = useLocation();
 
   useEffect(() => {
+    if (location.pathname.startsWith("/maintenance")) {
+      return;
+    }
     checkAuth();
-  }, [checkAuth]);
+  }, [checkAuth, location.pathname]);
 
   return (
     <ErrorBoundary>

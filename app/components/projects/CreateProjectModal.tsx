@@ -13,7 +13,7 @@ interface CreateProjectModalProps {
 }
 
 const LANGUAGES = ["TypeScript", "JavaScript", "Python", "Java", "C", "C++", "Rust", "Go", "HTML/CSS"];
-const COLORS = ["blue", "green", "purple", "orange", "red", "yellow", "cyan", "pink"];
+const _COLORS = ["blue", "green", "purple", "orange", "red", "yellow", "cyan", "pink"];
 const ICONS = ["💻", "📚", "⚡", "🚀", "🧠", "🔥", "✨", "🛠️"];
 
 export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProjectModalProps) {
@@ -23,7 +23,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
   const [description, setDescription] = useState("");
   const [language, setLanguage] = useState("TypeScript");
   const [visibility, setVisibility] = useState<ProjectVisibility>("PRIVATE");
-  const [color, setColor] = useState("blue");
+  const [color, _setColor] = useState("blue");
   const [icon, setIcon] = useState("💻");
 
   const [validationError, setValidationError] = useState("");

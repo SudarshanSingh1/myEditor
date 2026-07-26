@@ -91,11 +91,9 @@ def broadcast_notification(
     
     AdminAuditService.log_action(
         db=db,
-        admin_id=current_user.id,
+        actor_id=current_user.id,
         action="BROADCAST_NOTIFICATION",
-        target_id="ALL_USERS",
-        target_type="SYSTEM",
-        details={"title": title, "type": type}
+        metadata_json={"title": title, "type": type, "target_type": "SYSTEM", "target_id": "ALL_USERS"}
     )
     
     return {"success": True, "message": f"Broadcast sent to {len(users)} users"}

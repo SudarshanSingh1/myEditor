@@ -1,23 +1,40 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react-hooks/exhaustive-deps */
+import { useEffect, type ReactNode } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSystemStore } from "../../stores/useSystemStore";
 import { useUserStore } from "../../stores/useUserStore";
 
 export function MaintenanceGuard({ children }: { children: ReactNode }) {
-  const { isMaintenanceMode, checkStatus, isChecking, allowAdmin } = useSystemStore();
-  const { user, isLoading } = useUserStore();
+  const {
+    isMaintenanceMode,
+    checkStatus,
+    hasChecked: maintenanceChecked,
+    allowAdmin,
+  } = useSystemStore();
+  const { user, isLoading: userLoading } = useUserStore();
   const location = useLocation();
-  const [hasCheckedOnce, setHasCheckedOnce] = useState(false);
+  const navigate = useNavigate();
 
+  // ─── Initial status check on mount ───────────────────────────────────────
   useEffect(() => {
-    // Only check status ONCE on mount — not on every path change.
-    // Re-checking on path change was causing repeated API calls during the redirect loop.
-    checkStatus().then(() => setHasCheckedOnce(true));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    checkStatus();
   }, []);
 
-  // Allow bypassing via URL parameter for development/preview purposes
-  // This only bypasses the frontend UI block, the backend API will still reject requests
+  // ─── Poll every 30 s so mid-session toggles propagate quickly ────────────
+  useEffect(() => {
+    const id = setInterval(() => checkStatus(), 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ─── React to 503 events fired by api.ts on any blocked request ──────────
+  useEffect(() => {
+    const handler = () => checkStatus();
+    window.addEventListener("maintenance:active", handler);
+    return () => window.removeEventListener("maintenance:active", handler);
+  }, []);
+
+  // ─── Preview bypass (dev/staging) ────────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get("preview") === "true") {
@@ -25,9 +42,44 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     }
   }, [location.search]);
 
-  // We no longer block on isChecking, so users don't see a spinner on every refresh.
-  // AuthGuard already blocks on isLoading.
-  if (isLoading) {
+  // ─── Calculate status & hooks before ANY conditional returns (Rules of Hooks) ───
+  const isPreview =
+    typeof window !== "undefined" &&
+    sessionStorage.getItem("maintenance_preview") === "true";
+
+  const isSuperAdmin = user?.role === "OWNER";
+  const isNormalAdminOrMod = user?.role === "ADMIN" || user?.role === "MODERATOR";
+  const isAllowedToBypass = isSuperAdmin || (isNormalAdminOrMod && allowAdmin);
+
+  const isAllowedPublicRoute =
+    location.pathname.startsWith("/maintenance") ||
+    location.pathname.startsWith("/login") ||
+    location.pathname.startsWith("/oauth/callback");
+
+  const isBlocked =
+    isMaintenanceMode &&
+    !isAllowedToBypass &&
+    !isPreview &&
+    !isAllowedPublicRoute;
+
+
+  useEffect(() => {
+    if (isBlocked) {
+      navigate("/maintenance", { replace: true, state: { from: location.pathname } });
+    }
+  }, [isBlocked, navigate, location.pathname]);
+
+  // ─── Never block /maintenance route with spinners or checks ──────────────
+  if (location.pathname.startsWith("/maintenance")) {
+    return <>{children}</>;
+  }
+
+  // ─── CRITICAL: Block rendering until BOTH checks complete ────────────────
+  // If we render before either check is done, the defaults (isMaintenanceMode=false,
+  // user=null) cause children to render and the maintenance redirect never fires.
+  const isReady = maintenanceChecked && !userLoading;
+
+  if (!isReady) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -35,25 +87,17 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  const isPreview = typeof window !== "undefined" && sessionStorage.getItem("maintenance_preview") === "true";
-  
-  const isSuperAdmin = user?.role === "OWNER";
-  const isNormalAdminOrMod = user?.role === "ADMIN" || user?.role === "MODERATOR";
-  const isAllowedToBypass = isSuperAdmin || (isNormalAdminOrMod && allowAdmin);
 
-  const isExemptRoute = [
-    "/maintenance",
-    "/login",
-    "/force-password-change",
-    "/verify-email",
-    "/oauth/callback",
-    "/super-admin",
-    "/app/admin",
-  ].some(route => location.pathname.startsWith(route));
-  
-  if (isMaintenanceMode && !isAllowedToBypass && !isExemptRoute && !isPreview) {
-    return <Navigate to="/maintenance" replace state={{ from: location.pathname }} />;
+  if (isBlocked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
   }
 
   return <>{children}</>;
 }
+
+
+

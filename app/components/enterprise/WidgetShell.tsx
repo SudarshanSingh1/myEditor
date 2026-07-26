@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { MoreHorizontal, RefreshCw } from "lucide-react";
 
+import { RefreshCw } from "lucide-react";
 interface WidgetShellProps {
   title: string;
   subtitle?: string;

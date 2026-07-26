@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
+
 import { fetchApi } from "../../lib/api";
+
 import { toast } from "sonner";
+
 import { Rocket, Plus } from "lucide-react";
+
 import { Modal } from "../../components/ui/Modal";
+
 import { PageHeader } from "../../components/enterprise/PageHeader";
-import { StatusChip } from "../../components/enterprise/MiniSparkline";
+
 import { Button } from "../../components/ui/Button";
 
 export default function AdminDeploymentsPage() {

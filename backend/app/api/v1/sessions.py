@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.dependencies.database import get_db
@@ -37,7 +38,7 @@ def get_sessions(current_user: User = Depends(get_current_active_user), db: Sess
     return StandardResponse(success=True, message="Active sessions retrieved", data={"sessions": session_data})
 
 @router.delete("/{session_id}", response_model=StandardResponse)
-def revoke_session(session_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+def revoke_session(session_id: uuid.UUID, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     session = db.query(UserSession).filter(
         UserSession.id == session_id,
         UserSession.user_id == current_user.id

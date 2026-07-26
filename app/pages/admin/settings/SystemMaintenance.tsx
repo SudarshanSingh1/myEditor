@@ -53,7 +53,13 @@ export default function SystemMaintenance() {
             label="Enable Maintenance Mode"
             description="Immediately redirects all non-admin users to the maintenance screen."
             checked={settings.maintenance_mode}
-            onChange={(v) => set("maintenance_mode")(v)}
+            onChange={(v) => {
+              set("maintenance_mode")(v);
+              if (!v) {
+                set("maintenance_end_time")(null);
+                set("maintenance_show_countdown")(false);
+              }
+            }}
             icon={Power}
             colorClass="bg-red-500"
           />

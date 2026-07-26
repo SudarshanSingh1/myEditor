@@ -1,6 +1,8 @@
 import { useOutletContext } from "react-router-dom";
+
 import type { Settings } from "./adminSettingsTypes";
-import { Toggle, TextInput } from "./SettingsFormControls";
+
+import { TextInput } from "./SettingsFormControls";
 import { Globe } from "lucide-react";
 
 export default function GeneralSettings() {

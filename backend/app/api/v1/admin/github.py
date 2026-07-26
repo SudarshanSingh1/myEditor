@@ -71,15 +71,4 @@ def disconnect_admin_github_repository(repo_id: str, request: Request, db: Sessi
     AuditService.log_action(db, admin.id, "DISCONNECT_GITHUB_REPO", request.client.host, request.headers.get("user-agent"), {"repo_id": repo_id})
     return SuccessResponse(message="Repository disconnected")
 
-@router.get("/reports/analytics", response_model=SuccessResponse)
-def get_admin_reports_analytics(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
-    from app.models.report import Report
-    total_reports = db.query(Report).count()
-    
-    return SuccessResponse(message="Analytics retrieved", data={
-        "total_reports_generated": total_reports,
-        "average_generation_time_seconds": 0.5,
-        "most_requested_report_type": "User Activity" if total_reports > 0 else "None",
-        "storage_used_mb": 0.1,
-        "api_calls_to_report_engine": total_reports
-    })
+

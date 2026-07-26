@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useUserStore } from "../../stores/useUserStore";
-import { useEditorStore } from "../../store/useEditorStore";
+import { useEditorStore } from "../../stores/useEditorStore";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";

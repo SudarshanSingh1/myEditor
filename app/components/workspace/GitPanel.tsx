@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { GitBranch, GitCommit, GitMerge, RefreshCw, Plus, Check } from "lucide-react";
+
+import { GitBranch, RefreshCw, Check } from "lucide-react";
 import { Button } from "../ui/Button";
+
 import { Input } from "../ui/Input";
+
 import { gitApi } from "../../lib/api/github";
+
 import { toast } from "sonner";
 
 interface GitPanelProps {

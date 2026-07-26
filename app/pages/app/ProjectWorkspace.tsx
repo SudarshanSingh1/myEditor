@@ -1,26 +1,46 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState, useRef } from "react";
+
 import { useParams } from "react-router-dom";
+
 import { cn } from "../../lib/utils";
+
 import { FileExplorer } from "../../components/workspace/FileExplorer";
+
 import { EditorTabs } from "../../components/workspace/EditorTabs";
+
 import { EditorPane } from "../../components/workspace/EditorPane";
+
 import { StatusBar } from "../../components/workspace/StatusBar";
+
 import { BottomPanel } from "../../components/workspace/BottomPanel";
+
 import { VersionHistoryPanel } from "../../components/workspace/VersionHistoryPanel";
+
 import { GitPanel } from "../../components/workspace/GitPanel";
-import { useEditorStore } from "../../store/useEditorStore";
-import { useSaveStore } from "../../store/useSaveStore";
-import { useNotificationStore } from "../../store/useNotificationStore";
-import { useExecutionStore } from "../../store/useExecutionStore";
-import { useWorkspaceStore } from "../../store/useWorkspaceStore";
+
+import { useEditorStore } from "../../stores/useEditorStore";
+
+import { useSaveStore } from "../../stores/useSaveStore";
+
+import { useNotificationStore } from "../../stores/useNotificationStore";
+
+import { useExecutionStore } from "../../stores/useExecutionStore";
+
 import { projectsApi } from "../../lib/api/projects";
+
 import { useQuery } from "@tanstack/react-query";
 
-import { useStatusBarStore } from "../../store/useStatusBarStore";
-import { AlertCircle, WifiOff, Copy, Search, GitBranch, BugPlay, Blocks, CircleUser, Settings, LogOut, Check } from 'lucide-react';
+import { useStatusBarStore } from "../../stores/useStatusBarStore";
+
+import { WifiOff, Copy, Search, GitBranch, BugPlay, CircleUser, Settings, Check } from 'lucide-react';
 import { PanelErrorBoundary } from "../../components/error/ErrorBoundary";
+
 import { Dropdown, DropdownItem, DropdownSeparator } from "../../components/ui/Dropdown";
+
 import { EditorSettingsModal } from "../../components/workspace/EditorSettingsModal";
+
 import { GuestConversionModal } from "../../components/auth/GuestConversionModal";
 
 type Tab = 'PROBLEMS' | 'OUTPUT' | 'INPUT' | 'EXECUTION' | 'TERMINAL';
@@ -127,7 +147,7 @@ export default function ProjectWorkspace({ projectId }: { projectId?: string } =
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('online', handleOnline);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally reads store via getState()
+  }, []);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -200,7 +220,6 @@ export default function ProjectWorkspace({ projectId }: { projectId?: string } =
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- dirtyFiles/localContents read via getState() inside handler
   }, [id, activeFileId, saveFile, saveAll, addToast]);
 
   // Handle Resizing
@@ -240,8 +259,7 @@ export default function ProjectWorkspace({ projectId }: { projectId?: string } =
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, explorerWidth]);
-
+  }, [isDragging, explorerWidth, sidebarTab]);
 
   // Cleanup on project switch (no longer resetting stores on unmount to preserve persistence)
   useEffect(() => {

@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
+
 import { fetchApi } from "../../lib/api";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/Card";
+
 import { Button } from "../../components/ui/Button";
-import { Mail, Globe } from "lucide-react";
+
+import { Mail } from "lucide-react";
 import { toast } from "sonner";
 
 const GithubIcon = () => (

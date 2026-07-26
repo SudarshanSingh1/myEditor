@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { FolderTree, FileNode } from '../../lib/api/workspace';
-import { useWorkspaceStore } from '../../store/useWorkspaceStore';
+import { useWorkspaceStore } from '../../stores/useWorkspaceStore';
 import { Folder as FolderIcon, FolderOpen, ChevronRight, ChevronDown, MoreVertical, Edit2, Trash2, FilePlus, FolderPlus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { FileItem } from './FileItem';
@@ -31,7 +31,7 @@ export const FolderItem: React.FC<FolderItemProps> = React.memo(({
   onDuplicateFile,
   onDropItem
 }) => {
-  const expandedFolders = useWorkspaceStore(state => state.expandedFolders);
+  const isExpanded = useWorkspaceStore(state => !!state.expandedFolders[folder.id]);
   const toggleFolder = useWorkspaceStore(state => state.toggleFolder);
   const activeFolderId = useWorkspaceStore(state => state.activeFolderId);
   const setActiveFolder = useWorkspaceStore(state => state.setActiveFolder);
@@ -39,8 +39,6 @@ export const FolderItem: React.FC<FolderItemProps> = React.memo(({
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   useOnClickOutside(containerRef, () => setShowMenu(false));
-
-  const isExpanded = expandedFolders.has(folder.id);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -84,7 +82,7 @@ export const FolderItem: React.FC<FolderItemProps> = React.memo(({
         try {
           const data = JSON.parse(e.dataTransfer.getData("application/json"));
           if (onDropItem) onDropItem(data.id, data.type, folder.id);
-        } catch(err) {}
+        } catch {}
       }}>
       <div className="relative group" ref={containerRef}>
         <div

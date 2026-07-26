@@ -32,7 +32,7 @@ class FactoryResetRequest(BaseModel):
 @router.get("/backups")
 def get_backups(db: Session = Depends(get_db), current_user: User = Depends(require_super_admin)):
     backups = db.query(BackupLog).order_by(BackupLog.created_at.desc()).all()
-    return {"success": True, "data": backups}
+    return {"success": True, "data": [{"id": b.id, "filename": b.filename, "status": b.status, "type": b.type} for b in backups]}
 
 @router.post("/backups")
 def create_backup(req: BackupRequest, db: Session = Depends(get_db), current_user: User = Depends(require_super_admin)):
@@ -48,8 +48,8 @@ def create_backup(req: BackupRequest, db: Session = Depends(get_db), current_use
     db.commit()
     db.refresh(new_backup)
     
-    AuditService.log_action(db, current_user.id, "TRIGGER_BACKUP", {"backup_id": new_backup.id})
-    return {"success": True, "message": "Backup triggered successfully", "data": new_backup}
+    AuditService.log_action(db, current_user.id, "TRIGGER_BACKUP", details={"backup_id": new_backup.id})
+    return {"success": True, "message": "Backup triggered successfully", "data": {"id": new_backup.id, "filename": new_backup.filename}}
 
 @router.post("/backups/{backup_id}/restore")
 def restore_backup(backup_id: str, db: Session = Depends(get_db), current_user: User = Depends(require_super_admin)):
@@ -57,13 +57,13 @@ def restore_backup(backup_id: str, db: Session = Depends(get_db), current_user: 
     if not backup:
         raise HTTPException(status_code=404, detail="Backup not found")
         
-    AuditService.log_action(db, current_user.id, "RESTORE_BACKUP", {"backup_id": backup.id})
+    AuditService.log_action(db, current_user.id, "RESTORE_BACKUP", details={"backup_id": backup.id})
     return {"success": True, "message": "Restore initiated (mock)"}
 
 @router.get("/deployments")
 def get_deployments(db: Session = Depends(get_db), current_user: User = Depends(require_super_admin)):
     deps = db.query(DeploymentLog).order_by(DeploymentLog.deployed_at.desc()).all()
-    return {"success": True, "data": deps}
+    return {"success": True, "data": [{"id": d.id, "version": d.version, "environment": d.environment} for d in deps]}
 
 @router.post("/deployments")
 def create_deployment(req: DeploymentRequest, db: Session = Depends(get_db), current_user: User = Depends(require_super_admin)):
@@ -77,8 +77,8 @@ def create_deployment(req: DeploymentRequest, db: Session = Depends(get_db), cur
     db.add(new_dep)
     db.commit()
     db.refresh(new_dep)
-    AuditService.log_action(db, current_user.id, "RECORD_DEPLOYMENT", {"deployment_id": new_dep.id})
-    return {"success": True, "message": "Deployment recorded", "data": new_dep}
+    AuditService.log_action(db, current_user.id, "RECORD_DEPLOYMENT", details={"deployment_id": new_dep.id})
+    return {"success": True, "message": "Deployment recorded", "data": {"id": new_dep.id, "version": new_dep.version}}
 
 @router.post("/factory-reset")
 def factory_reset(req: FactoryResetRequest, db: Session = Depends(get_db), current_user: User = Depends(require_super_admin)):
@@ -106,7 +106,7 @@ def factory_reset(req: FactoryResetRequest, db: Session = Depends(get_db), curre
             
         db.commit()
         
-        AuditService.log_action(db, current_user.id, "FACTORY_RESET", {"scope": cleared})
+        AuditService.log_action(db, current_user.id, "FACTORY_RESET", details={"scope": cleared})
         return {"success": True, "message": f"Factory reset completed. Cleared: {', '.join(cleared)}"}
     except Exception as e:
         db.rollback()

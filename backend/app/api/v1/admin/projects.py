@@ -71,10 +71,14 @@ def get_projects(
     total = query.count()
     results = query.order_by(Project.created_at.desc()).offset(skip).limit(limit).all()
     
+    project_ids = [proj.id for proj, _ in results]
+    file_counts = dict(db.query(File.project_id, func.count(File.id)).filter(File.project_id.in_(project_ids)).group_by(File.project_id).all()) if project_ids else {}
+    exec_counts = dict(db.query(ExecutionLog.project_id, func.count(ExecutionLog.id)).filter(ExecutionLog.project_id.in_(project_ids)).group_by(ExecutionLog.project_id).all()) if project_ids else {}
+    
     projects_list = []
     for proj, owner in results:
-        file_count = db.query(File).filter(File.project_id == proj.id).count()
-        executions = db.query(ExecutionLog).filter(ExecutionLog.project_id == proj.id).count()
+        file_count = file_counts.get(proj.id, 0)
+        executions = exec_counts.get(proj.id, 0)
         projects_list.append({
             "id": str(proj.id), "name": proj.name, "language": proj.language,
             "created_at": proj.created_at, "owner_username": owner.username,

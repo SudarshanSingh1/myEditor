@@ -1,7 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+
 import { fetchApi } from "../../lib/api";
+
 import { toast } from "sonner";
+
 import {
   Users, UserCheck, UserPlus, FolderOpen,
   Zap, Rocket, MessageSquare, Bug,
@@ -9,18 +12,26 @@ import {
   Flag, Bell, BarChart3, PlaySquare,
   LayoutDashboard
 } from "lucide-react";
+
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, BarChart, Bar
 } from "recharts";
+
 import { MetricCard } from "../../components/enterprise/MetricCard";
+
 import { WidgetShell } from "../../components/enterprise/WidgetShell";
+
 import { GaugeCard } from "../../components/enterprise/GaugeCard";
+
 import {
   NetworkSpeedCard, HardwareHealthCard, MetricLineChart
 } from "../../components/enterprise/DashboardCharts";
+
 import { StatusChip, LiveDot } from "../../components/enterprise/MiniSparkline";
+
 import { PageHeader, SectionLabel } from "../../components/enterprise/PageHeader";
+
 import { useAdminContext } from "../../components/auth/AdminAuthGuard";
 
 interface DashData {
@@ -45,8 +56,8 @@ interface ServerData {
   uptime_seconds: number;
 }
 
-const CHART_MOCK: any[] = [];
-const systemHealth: any[] = [];
+const _CHART_MOCK: any[] = [];
+const _systemHealth: any[] = [];
 
 const adminQuickLinks = [
   { label: "User Management",  to: "/app/admin/users",         icon: Users,        color: "var(--e-accent)",   desc: "Manage accounts, roles" },
@@ -72,7 +83,7 @@ function fmtUptime(sec: number) {
 }
 
 export default function AdminDashboardPage() {
-  const { isModerator, isSuperAdmin } = useAdminContext();
+  const { isModerator, _isSuperAdmin } = useAdminContext();
   const [data, setData] = useState<DashData | null>(null);
   const [server, setServer] = useState<ServerData | null>(null);
   const [timeline, setTimeline] = useState<any[]>([]);
@@ -144,7 +155,7 @@ export default function AdminDashboardPage() {
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const uptime = server ? fmtUptime(server.uptime_seconds) : null;
+  const _uptime = server ? fmtUptime(server.uptime_seconds) : null;
 
   return (
     <div style={{ background: "var(--e-bg-base)", minHeight: "100%" }}>

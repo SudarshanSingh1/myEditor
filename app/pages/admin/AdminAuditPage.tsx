@@ -1,13 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
+
 import { fetchApi } from "../../lib/api";
+
 import { toast } from "sonner";
+
 import { Navigate } from "react-router-dom";
+
 import { useAdminContext } from "../../components/auth/AdminAuthGuard";
+
 import { SecurityDashboardTab } from "./SecurityDashboardTab";
+
 import { BlockedIPsTab } from "./BlockedIPsTab";
-import { ClipboardList, RefreshCw, Shield, Maximize2 } from "lucide-react";
+
+import { ClipboardList, RefreshCw, Maximize2 } from "lucide-react";
 import { PageHeader } from "../../components/enterprise/PageHeader";
+
 import { EBadge } from "../../components/enterprise/PageHeader";
+
 import { Modal } from "../../components/ui/Modal";
 
 export default function AdminAuditPage() {

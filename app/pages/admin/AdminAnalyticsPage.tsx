@@ -1,16 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
+
 import { fetchApi } from "../../lib/api";
-import { toast } from "sonner";
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell, ComposedChart, Line
-} from "recharts";
-import {
-  BarChart3, Download, TrendingUp, Zap, Users, CheckCircle2,
-  XCircle, Clock, HardDrive, Database, FolderOpen, Search, RefreshCw
-} from "lucide-react";
+
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
+import { BarChart3, Download, Zap, Users, CheckCircle2, XCircle, Clock, HardDrive, Database, FolderOpen, Search } from "lucide-react";
 import { PageHeader } from "../../components/enterprise/PageHeader";
-import { WidgetShell } from "../../components/enterprise/WidgetShell";
+
 import { MetricCard } from "../../components/enterprise/MetricCard";
 
 /* ── debounce ──────────────────────────────────────────────────── */

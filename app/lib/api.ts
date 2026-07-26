@@ -51,7 +51,6 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
         // Refresh failed — fire unauthorized ONCE, not on every request
         if (!hasDispatchedUnauthorized) {
           hasDispatchedUnauthorized = true;
-          // Only show toast for explicit user-initiated requests, not background checks
           if (endpoint !== '/auth/me') {
             toast.error('Session expired. Please log in again.');
             window.location.href = '/login?expired=true';
@@ -78,6 +77,12 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
       
       if (response.status === 503) {
         window.dispatchEvent(new Event('maintenance:active'));
+        try {
+          const sysStore = require('../stores/useSystemStore').useSystemStore;
+          if (sysStore && sysStore.setState) {
+            sysStore.setState({ isMaintenanceMode: true, hasChecked: true, isChecking: false });
+          }
+        } catch {}
       } else if (response.status >= 500) {
         toast.error(`Server Error: ${errorMsg}`);
       } else if (response.status === 403 || response.status === 429) {

@@ -88,11 +88,9 @@ def restart_container(
         
         AdminAuditService.log_action(
             db=db,
-            admin_id=current_user.id,
+            actor_id=current_user.id,
             action="RESTART_CONTAINER",
-            target_id=container_id,
-            target_type="DOCKER",
-            details={"container": container.name}
+            metadata_json={"container": container.name, "target_type": "DOCKER", "container_id": container_id}
         )
         return {"success": True, "message": "Container restarted"}
     except docker.errors.NotFound:
@@ -113,11 +111,9 @@ def stop_container(
         
         AdminAuditService.log_action(
             db=db,
-            admin_id=current_user.id,
+            actor_id=current_user.id,
             action="STOP_CONTAINER",
-            target_id=container_id,
-            target_type="DOCKER",
-            details={"container": container.name}
+            metadata_json={"container": container.name, "target_type": "DOCKER", "container_id": container_id}
         )
         return {"success": True, "message": "Container stopped"}
     except docker.errors.NotFound:
@@ -138,11 +134,9 @@ def remove_container(
         
         AdminAuditService.log_action(
             db=db,
-            admin_id=current_user.id,
+            actor_id=current_user.id,
             action="REMOVE_CONTAINER",
-            target_id=container_id,
-            target_type="DOCKER",
-            details={"container": container.name}
+            metadata_json={"container": container.name, "target_type": "DOCKER", "container_id": container_id}
         )
         return {"success": True, "message": "Container removed"}
     except docker.errors.NotFound:

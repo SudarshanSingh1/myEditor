@@ -41,40 +41,38 @@ export default function OAuthCallback() {
             userData = { ...response.data.user, role: "USER" };
           }
 
-          login(userData);
-          toast.success(`Successfully logged in with ${provider}`);
 
-          // Step 3: Refresh maintenance status and apply same logic as email Login
-          await useSystemStore.getState().checkStatus();
-          const { isMaintenanceMode, allowAdmin } = useSystemStore.getState();
 
-          if (isMaintenanceMode) {
-            const role = (userData.role as string) || "USER";
-            const isSuperAdmin = role === "OWNER";
-            const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
-            const canBypass = isSuperAdmin || (isAdminOrMod && allowAdmin);
+          if (!useSystemStore.getState().hasChecked) {
+            await useSystemStore.getState().checkStatus();
+          }
+          const isMaint = useSystemStore.getState().isMaintenanceMode;
+          const allowAdmin = useSystemStore.getState().allowAdmin;
+          const role = userData.role || "";
+          const isSuperAdmin = role === "OWNER";
+          const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
+          const canBypass = isSuperAdmin || (isAdminOrMod && allowAdmin);
 
-            if (!canBypass) {
-              navigate("/maintenance", { replace: true });
-              return;
-            }
+          if (isMaint && !canBypass) {
+            await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            navigate("/maintenance", { replace: true });
+            return;
           }
 
-          navigate("/app/dashboard");
+          login(userData);
+          toast.success(`Successfully logged in with ${provider}`);
+          if (isSuperAdmin) {
+            navigate("/super-admin", { replace: true });
+          } else if (isAdminOrMod) {
+            navigate("/app/admin", { replace: true });
+          } else {
+            navigate("/app/dashboard", { replace: true });
+          }
         }
       } catch (err: any) {
-        // Check if maintenance mode caused the failure
-        const { isMaintenanceMode } = useSystemStore.getState();
-        const errorText = (err.message || "").toLowerCase();
-        const isMaintenanceError =
-          errorText.includes("maintenance") ||
-          errorText.includes("upgrade") ||
-          errorText.includes("scheduled");
 
-        if (isMaintenanceMode || isMaintenanceError) {
-          navigate("/maintenance", { replace: true });
-          return;
-        }
 
         setError(err.message || "Failed to complete OAuth login");
         toast.error("OAuth login failed");

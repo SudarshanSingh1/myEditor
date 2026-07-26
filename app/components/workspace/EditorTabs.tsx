@@ -1,16 +1,23 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import type { WheelEvent } from 'react';
-import { useEditorStore } from '../../store/useEditorStore';
-import { useExecutionStore } from '../../store/useExecutionStore';
+
+import { useEditorStore } from '../../stores/useEditorStore';
+
+import { useExecutionStore } from '../../stores/useExecutionStore';
+
 import { useUserStore } from '../../stores/useUserStore';
+
 import { useParams } from 'react-router-dom';
+
 import { X, Circle, Play, Square, Loader2 } from 'lucide-react';
+
 import { cn } from '../../lib/utils';
+
 import { Modal } from '../ui/Modal';
+
 import { Button } from '../ui/Button';
+
 import { FileIcon } from './FileIcon';
-import { EditorSettingsModal } from './EditorSettingsModal';
-import { Settings } from 'lucide-react';
 
 export const EditorTabs: React.FC = () => {
   const tabs = useEditorStore(state => state.tabs);

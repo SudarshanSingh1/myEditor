@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react";
+
 import { fetchApi } from "../../lib/api";
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, LineChart, Line
-} from "recharts";
-import { Server, Cpu, MemoryStick, HardDrive, Network, Container, RefreshCw, Activity, Wifi } from "lucide-react";
+
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { Server, Network, Container, RefreshCw, Activity, Wifi } from "lucide-react";
 import { GaugeCard } from "../../components/enterprise/GaugeCard";
+
 import { WidgetShell } from "../../components/enterprise/WidgetShell";
+
 import { MetricCard } from "../../components/enterprise/MetricCard";
+
 import { StatusChip, LiveDot } from "../../components/enterprise/MiniSparkline";
+
 import { PageHeader } from "../../components/enterprise/PageHeader";
+
 import { EnterpriseTable } from "../../components/enterprise/EnterpriseTable";
 
 interface ServerData {

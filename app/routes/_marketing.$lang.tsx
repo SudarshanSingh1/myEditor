@@ -1,18 +1,31 @@
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react-hooks/exhaustive-deps */
+import type { LoaderFunctionArgs, MetaFunction } from "react-router-dom";
+
+import { useLoaderData, useNavigate } from "react-router-dom";
+
 import { useEffect, useState, useRef } from "react";
-import { useEditorStore } from "../store/useEditorStore";
-import { useExecutionStore } from "../store/useExecutionStore";
+
+import { useEditorStore } from "../stores/useEditorStore";
+
+import { useExecutionStore } from "../stores/useExecutionStore";
+
 import { useUserStore } from "../stores/useUserStore";
-import { EditorTabs } from "../components/workspace/EditorTabs";
+
 import { EditorPane } from "../components/workspace/EditorPane";
+
 import { StatusBar } from "../components/workspace/StatusBar";
-import { BottomPanel } from "../components/workspace/BottomPanel";
+
 import { TerminalPanel } from "../components/workspace/panels/TerminalPanel";
+
 import { PanelErrorBoundary } from "../components/error/ErrorBoundary";
+
 import { cn } from "../lib/utils";
+
 import { Zap, Play, Terminal, Columns, ChevronDown } from "lucide-react";
+
 import { GuestConversionModal } from "../components/auth/GuestConversionModal";
+
 import { Dropdown, DropdownItem } from "../components/ui/Dropdown";
 
 const COMPILER_ROUTES = [
@@ -83,6 +96,8 @@ async function getLanguageSEOData(slug: string) {
   return langs[key] || langs["cpp"];
 }
 
+// oxlint-disable-next-line react/only-export-components
+// eslint-disable-next-line react-refresh/only-export-components
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\//, '');
@@ -91,6 +106,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return { seoData, slug };
 };
 
+// oxlint-disable-next-line react/only-export-components
+// eslint-disable-next-line react-refresh/only-export-components
 export const meta: MetaFunction<typeof loader> = ({ data }: any) => {
   if (!data) return [{ title: "Online Compiler" }];
   return [
@@ -101,7 +118,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }: any) => {
 
 export default function LanguageCompiler() {
   const { seoData, slug } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   
   const [layout, setLayout] = useState<'stacked' | 'split'>('stacked');
   const [sidebarWidth, setSidebarWidthState] = useState(320); // default w-80 is 320px
@@ -131,7 +148,7 @@ export default function LanguageCompiler() {
   const isRunning = useExecutionStore(s => s.isRunning);
 
   const [isReady, setIsReady] = useState(false);
-  const [activePanelTab, setActivePanelTab] = useState<'TERMINAL' | 'OUTPUT'>('TERMINAL');
+  const [_activePanelTab, setActivePanelTab] = useState<'TERMINAL' | 'OUTPUT'>('TERMINAL');
   const fileIdRef = useRef<string>(`guest-${seoData.languageId}-file`);
   const projectId = `guest-${seoData.languageId}-project`;
 

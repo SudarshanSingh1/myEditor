@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
-import { fetchApi } from "../../lib/api";
-import { Drawer } from "../../components/ui/Drawer";
-import { toast } from "sonner";
-import { useConfirm } from "../../components/ui/ConfirmProvider";
-import { HardDrive, Play, Clock, Code, Lock, Globe, EyeOff, FileText, Download, Copy, Archive, ArchiveRestore } from "lucide-react";
 
+import { fetchApi } from "../../lib/api";
+
+import { Drawer } from "../../components/ui/Drawer";
+
+import { toast } from "sonner";
+
+import { useConfirm } from "../../components/ui/ConfirmProvider";
+
+import { HardDrive, Play, Code, FileText, Download, Copy, Archive, ArchiveRestore } from "lucide-react";
 interface ProjectDetailsDrawerProps {
   projectId: string | null;
   onClose: () => void;

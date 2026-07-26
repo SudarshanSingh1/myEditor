@@ -52,7 +52,10 @@ def get_system_settings(db: Session = Depends(get_db), admin: User = Depends(req
     
     # Auto-disable maintenance mode if time has passed
     if getattr(settings_row, "maintenance_mode", False) and getattr(settings_row, "maintenance_end_time", None):
-        if datetime.now(timezone.utc) > settings_row.maintenance_end_time:
+        end_time = settings_row.maintenance_end_time
+        if end_time.tzinfo is None:
+            end_time = end_time.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > end_time:
             settings_row.maintenance_mode = False
             settings_row.maintenance_end_time = None
             db.commit()
@@ -185,6 +188,11 @@ def update_system_settings(req: SystemSettingsUpdate, request: Request, db: Sess
         req.oauth_github_client_secret = encrypt_string(req.oauth_github_client_secret)
 
     update_data = req.model_dump(exclude_unset=True) if hasattr(req, "model_dump") else req.dict(exclude_unset=True)
+    
+    # Auto-clear maintenance end time when turning off maintenance
+    if update_data.get("maintenance_mode") is False:
+        update_data["maintenance_end_time"] = None
+
     for field in fields:
         if field in update_data:
             val = update_data[field]
@@ -361,9 +369,16 @@ def update_maintenance_config(
     changes = {}
     fields = ["maintenance_mode", "maintenance_message", "maintenance_end_time", "maintenance_allow_admin_access", "maintenance_show_countdown"]
     
+    # Use model_dump(exclude_unset=True) to get fields that were actually sent, including None
+    update_data = req.model_dump(exclude_unset=True) if hasattr(req, "model_dump") else req.dict(exclude_unset=True)
+    
+    # Auto-clear maintenance end time when turning off maintenance
+    if update_data.get("maintenance_mode") is False:
+        update_data["maintenance_end_time"] = None
+        
     for field in fields:
-        val = getattr(req, field, None)
-        if val is not None:
+        if field in update_data:
+            val = update_data[field]
             setattr(settings_row, field, val)
             changes[field] = val
             

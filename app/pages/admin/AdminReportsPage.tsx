@@ -1,8 +1,12 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
+
 import { fetchApi } from "../../lib/api";
+
 import { toast } from "sonner";
-import { Flag, Search, CheckCircle, XCircle, Clock, UserPlus } from "lucide-react";
-import { useDebounce } from "../../hooks/useDebounce";
+
+import { Flag, CheckCircle, XCircle, UserPlus } from "lucide-react";
 import { PageHeader } from "../../components/enterprise/PageHeader";
 
 interface Report {

@@ -26,7 +26,8 @@ gosu appuser alembic upgrade head || echo "Warning: Alembic migrations failed. A
 # Seed database with initial permissions and data
 echo "Seeding database..."
 gosu appuser python scripts/seed_rbac.py || echo "Warning: Failed to seed RBAC permissions."
-if [ -f "scripts/seed_analytics.py" ]; then
+if [ -f "scripts/seed_analytics.py" ] && [ "$APP_ENV" = "development" ]; then
+    echo "Running in development mode: Seeding analytics..."
     gosu appuser python scripts/seed_analytics.py || echo "Warning: Failed to seed analytics."
 fi
 

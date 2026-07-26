@@ -6,6 +6,7 @@ import { Settings as SettingsIcon, Shield, Zap, Save, RotateCcw, Mail, Wrench, G
 import type { Settings } from "./settings/adminSettingsTypes";
 import { defaultSettings as defaults } from "./settings/adminSettingsTypes";
 import { PageHeader } from "../../components/enterprise/PageHeader";
+import { useSystemStore } from "../../stores/useSystemStore";
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Settings>(defaults);
@@ -13,6 +14,7 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<"idle" | "success" | "error">("idle");
+  const checkStatus = useSystemStore(state => state.checkStatus);
 
   useEffect(() => {
     const load = async () => {
@@ -37,7 +39,10 @@ export default function AdminSettingsPage() {
         method: "PUT",
         body: JSON.stringify(settings),
       });
-      if (resp?.success) toast.success("Settings saved successfully");
+      if (resp?.success) {
+        toast.success("Settings saved successfully");
+        await checkStatus();
+      }
     } catch (e: any) {
       toast.error(e.message || "Failed to save settings");
     } finally {

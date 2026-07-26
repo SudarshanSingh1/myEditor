@@ -1,8 +1,10 @@
 import { Link, Outlet } from "react-router-dom";
-import { Logo } from "../components/ui/Logo";
-import { AuthBackground } from "../components/auth/AuthBackground";
-import { Code2, Zap, Shield, Globe } from "lucide-react";
 
+import { Logo } from "../components/ui/Logo";
+
+import { AuthBackground } from "../components/auth/AuthBackground";
+
+import { Zap } from "lucide-react";
 export function AuthLayout() {
   return (
     <div className="flex flex-col lg:flex-row min-h-screen lg:h-screen lg:overflow-hidden bg-zinc-50 dark:bg-[#050508] text-foreground font-sans">

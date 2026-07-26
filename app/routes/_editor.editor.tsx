@@ -1,5 +1,7 @@
-import type { MetaFunction } from "react-router";
+import type { MetaFunction } from "react-router-dom";
 
+// oxlint-disable-next-line react/only-export-components
+// eslint-disable-next-line react-refresh/only-export-components
 export const meta: MetaFunction = () => {
   return [
     { title: "Workspace - Hamara Editor" },
