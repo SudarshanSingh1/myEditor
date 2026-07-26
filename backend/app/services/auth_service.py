@@ -154,9 +154,7 @@ class AuthService:
         maint_config = _get_maintenance_status(db)
         if maint_config.get("enabled"):
             is_allowed = False
-            if user.role == RoleEnum.OWNER:
-                is_allowed = True
-            elif user.role in (RoleEnum.ADMIN, RoleEnum.MODERATOR) and maint_config.get("allow_admin", True):
+            if user.role in (RoleEnum.OWNER, RoleEnum.ADMIN, RoleEnum.MODERATOR):
                 is_allowed = True
             elif user.effective_permissions and ("system.maintenance.bypass" in user.effective_permissions or "*" in user.effective_permissions):
                 is_allowed = True
@@ -407,11 +405,8 @@ class AuthService:
             if is_in_maintenance:
                 # Determine if user is allowed
                 is_allowed = False
-                if user:
-                    if user.role == RoleEnum.OWNER:
-                        is_allowed = True
-                    elif getattr(sys_settings, "maintenance_allow_admin_access", True) and user.role in [RoleEnum.ADMIN, RoleEnum.MODERATOR]:
-                        is_allowed = True
+                if user and user.role in (RoleEnum.OWNER, RoleEnum.ADMIN, RoleEnum.MODERATOR):
+                    is_allowed = True
                 
                 if not is_allowed:
                     raise HTTPException(
@@ -494,9 +489,7 @@ class AuthService:
             if is_in_maintenance:
                 # Determine if user is allowed
                 is_allowed = False
-                if user.role == RoleEnum.OWNER:
-                    is_allowed = True
-                elif getattr(sys_settings, "maintenance_allow_admin_access", True) and user.role in [RoleEnum.ADMIN, RoleEnum.MODERATOR]:
+                if user.role in (RoleEnum.OWNER, RoleEnum.ADMIN, RoleEnum.MODERATOR):
                     is_allowed = True
                 
                 if not is_allowed:

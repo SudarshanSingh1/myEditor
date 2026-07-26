@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { Loader2, CheckCircle2, XCircle, ArrowLeft, MailOpen } from "lucide-react";
+import { CheckCircle2, XCircle, ArrowLeft, MailOpen } from "lucide-react";
+import { SudarshanaMandala } from "../../components/ui/SplashLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
@@ -105,8 +106,8 @@ export default function VerifyEmail() {
           >
             <div className="relative flex items-center justify-center">
               <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-ping" />
-              <div className="relative w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 border border-purple-500/30">
-                <Loader2 className="w-8 h-8 animate-spin" />
+              <div className="relative w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
+                <SudarshanaMandala className="w-10 h-10" color="purple" />
               </div>
             </div>
             
@@ -155,7 +156,7 @@ export default function VerifyEmail() {
                 disabled={otp.length !== 6 || isVerifying}
                 className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-semibold shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] transition-all"
               >
-                {isVerifying ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verifying...</> : "Verify Code"}
+                {isVerifying ? <><SudarshanaMandala className="w-4 h-4 mr-2" color="purple" /> Verifying...</> : "Verify Code"}
               </Button>
               
               <div className="pt-2">
@@ -167,7 +168,7 @@ export default function VerifyEmail() {
                   className="w-full h-11 text-zinc-400 hover:text-white hover:bg-white/5"
                 >
                   {isResending ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
+                    <><SudarshanaMandala className="w-4 h-4 mr-2" color="purple" /> Sending...</>
                   ) : resendCooldown > 0 ? (
                     `Resend code in ${resendCooldown}s`
                   ) : (
@@ -240,7 +241,7 @@ export default function VerifyEmail() {
                   className="w-full h-11 bg-purple-600 text-white hover:bg-purple-500 font-semibold shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_25px_rgba(147,51,234,0.4)] transition-all"
                 >
                   {isResending ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
+                    <><SudarshanaMandala className="w-4 h-4 mr-2" color="purple" /> Sending...</>
                   ) : resendCooldown > 0 ? (
                     `Resend available in ${resendCooldown}s`
                   ) : (

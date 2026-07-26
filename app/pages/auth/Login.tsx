@@ -7,7 +7,8 @@ import { Input } from "../../components/ui/Input";
 import { fetchApi, resetUnauthorizedFlag } from "../../lib/api";
 import { useUserStore } from "../../stores/useUserStore";
 import { useSystemStore } from "../../stores/useSystemStore";
-import { Loader2, Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { SudarshanaMandala } from "../../components/ui/SplashLoader";
 
 interface LoginProps {
   isAdminPortal?: boolean;
@@ -166,8 +167,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
           await useSystemStore.getState().checkStatus(true);
           const isMaint = useSystemStore.getState().isMaintenanceMode;
           const allowAdmin = useSystemStore.getState().allowAdmin;
-          const perms: string[] = profileResp.data.effective_permissions || [];
-          const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
+          const canBypass = isSuperAdmin || isAdmin || isMod || perms.includes("*") || perms.includes("system.maintenance.bypass") || allowAdmin;
           const isStaff = isSuperAdmin || isAdmin || isMod || canBypass;
 
           if (isAdminPortal && !isStaff) {
@@ -282,7 +282,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <SudarshanaMandala className="mr-2 h-4 w-4" color="purple" />
                   Verifying...
                 </>
               ) : (
@@ -380,7 +380,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <SudarshanaMandala className="mr-2 h-4 w-4" color="purple" />
                   Signing in...
                 </>
               ) : (

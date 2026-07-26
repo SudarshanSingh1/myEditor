@@ -12,8 +12,9 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     checkStatus,
     isChecking: _maintenanceChecking,
     hasChecked: maintenanceChecked,
+    allowAdmin,
   } = useSystemStore();
-  const { isLoading: userLoading } = useUserStore();
+  const { isLoading: userLoading, user, permissions = [] } = useUserStore();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -39,22 +40,9 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
 
   const isReady = maintenanceChecked && !userLoading;
 
-  // Let's compute authorization directly from current state/localStorage
-  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  const userRole = useUserStore.getState().user?.role?.toUpperCase();
-  const isStaffRole = userRole === "OWNER" || userRole === "ADMIN" || userRole === "MODERATOR";
-  const userPerms = useUserStore.getState().permissions || [];
-  const hasBypassPerm = userPerms.includes("*") || userPerms.includes("system.maintenance.bypass");
-  const allowAdmin = useSystemStore.getState().allowAdmin;
-
-  const canBypass = isStaffRole && (userRole === "OWNER" || userRole === "ADMIN" || hasBypassPerm || allowAdmin);
-
-  // Define routes that are considered "inside" the app, admin portals, or authentication flows.
-  // When maintenance mode is active, admins can bypass maintenance ONLY on these internal/auth routes.
-  // Visiting public marketing routes like the landing page (/) will redirect to /maintenance so even admins can view the maintenance screen.
-  const isInsideOrAuthRoute =
-    location.pathname.startsWith("/app") ||
-    location.pathname.startsWith("/super-admin") ||
+  // Define auth, legal, and maintenance routes that must never be blocked by maintenance mode
+  // This ensures staff (Owner, Admin, Moderator) can visit /admin-login, /login, or /oauth to sign in!
+  const isAuthOrLegalRoute =
     location.pathname.startsWith("/login") ||
     location.pathname.startsWith("/admin-login") ||
     location.pathname.startsWith("/signup") ||
@@ -66,10 +54,24 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     location.pathname.startsWith("/403") ||
     location.pathname.startsWith("/privacy") ||
     location.pathname.startsWith("/terms") ||
-    location.pathname.startsWith("/cookies");
+    location.pathname.startsWith("/cookies") ||
+    location.pathname.startsWith("/maintenance");
+
+  // Never block auth or maintenance routes so staff can always log in and guests can see maintenance screen
+  if (isAuthOrLegalRoute) {
+    return <>{children}</>;
+  }
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+  const userRole = user?.role?.toUpperCase();
+  const isStaffRole = userRole === "OWNER" || userRole === "ADMIN" || userRole === "MODERATOR";
+  const hasBypassPerm = permissions.includes("*") || permissions.includes("system.maintenance.bypass");
+
+  // Staff roles (Owner, Admin, Moderator) or users with bypass permission are always authorized to bypass maintenance
+  const canBypass = isStaffRole || hasBypassPerm || allowAdmin;
 
   // If we have a token but user hasn't loaded yet, don't prematurely redirect
-  const isBlocked = isMaintenanceMode && (!isInsideOrAuthRoute || !canBypass) && !(token && !useUserStore.getState().user);
+  const isBlocked = isMaintenanceMode && !canBypass && !(token && !user);
 
   useEffect(() => {
     if (!isReady) return;
@@ -79,18 +81,13 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     }
   }, [isReady, isBlocked, navigate, location.pathname]);
 
-  // Never block /maintenance route with spinners or checks
-  if (location.pathname.startsWith("/maintenance")) {
-    return <>{children}</>;
-  }
-
   // Block rendering until BOTH checks complete
   if (!isReady) {
-    return <SplashLoader message="Checking system status..." submessage="Connecting to Hamara Editor platform" />;
+    return <SplashLoader />;
   }
 
   if (isBlocked) {
-    return <SplashLoader message="Redirecting to maintenance..." submessage="System offline for updates" />;
+    return <SplashLoader />;
   }
 
   return <>{children}</>;

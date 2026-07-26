@@ -11,6 +11,7 @@ import { useConfirm } from "../../components/ui/ConfirmProvider";
 import { useStatusBarStore } from '../../stores/useStatusBarStore';
 import { useNotificationStore } from '../../stores/useNotificationStore';
 import { useVersionStore } from '../../stores/useVersionStore';
+import { SudarshanaMandala } from '../ui/SplashLoader';
 import { RotateCcw } from 'lucide-react';
 
 interface MonacoWrapperProps {
@@ -312,7 +313,7 @@ export const MonacoWrapper: React.FC<MonacoWrapperProps> = ({ fileId, filename, 
           onMount={handleEditorMount}
           loading={
             <div className="flex items-center justify-center w-full h-full text-gray-400">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4 mx-auto" />
+              <SudarshanaMandala className="w-10 h-10 mb-4 mx-auto" color="purple" />
             </div>
           }
           options={{

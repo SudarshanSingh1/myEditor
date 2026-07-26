@@ -39,6 +39,7 @@ async def test_client():
     except Exception as e:
         print("WS Error:", e)
 
-threading.Thread(target=run_server, daemon=True).start()
-time.sleep(1)
-asyncio.run(test_client())
+if __name__ == "__main__":
+    threading.Thread(target=run_server, daemon=True).start()
+    time.sleep(1)
+    asyncio.run(test_client())

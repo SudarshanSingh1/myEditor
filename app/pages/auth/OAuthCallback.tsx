@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
 import { useSystemStore } from "../../stores/useSystemStore";
 import { fetchApi } from "../../lib/api";
-import { Loader2 } from "lucide-react";
+import { SudarshanaMandala } from "../../components/ui/SplashLoader";
 import { toast } from "sonner";
 
 export default function OAuthCallback() {
@@ -123,7 +123,7 @@ export default function OAuthCallback() {
   return (
     <div className="flex flex-col items-center justify-center p-8 text-white h-full">
       <div className="flex flex-col items-center gap-4 text-center">
-        <Loader2 className="h-10 w-10 animate-spin text-purple-500" />
+        <SudarshanaMandala className="w-16 h-16" color="purple" />
         <p className="text-lg font-medium text-zinc-300">Completing login with {provider}...</p>
         <p className="text-sm text-zinc-500">Please wait while we securely log you in.</p>
       </div>

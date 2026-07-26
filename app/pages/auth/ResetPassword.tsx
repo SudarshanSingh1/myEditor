@@ -6,7 +6,8 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { fetchApi } from "../../lib/api";
 import { PasswordStrength } from "../../components/auth/PasswordStrength";
-import { Loader2, Lock, ArrowLeft, CheckCircle2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Lock, ArrowLeft, CheckCircle2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { SudarshanaMandala } from "../../components/ui/SplashLoader";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ResetPassword() {
@@ -159,7 +160,7 @@ export default function ResetPassword() {
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <SudarshanaMandala className="mr-2 h-5 w-5" color="purple" />
                       Resetting...
                     </>
                   ) : (
@@ -195,7 +196,7 @@ export default function ResetPassword() {
             </div>
 
             <div className="w-full pt-4">
-              <Loader2 className="h-6 w-6 animate-spin text-purple-500 mx-auto" />
+              <SudarshanaMandala className="h-10 w-10 mx-auto" color="purple" />
             </div>
           </motion.div>
         )}

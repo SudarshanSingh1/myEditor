@@ -4,7 +4,8 @@ import React, { useEffect, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { workspaceApi } from '../../lib/api/workspace';
 const MonacoWrapper = React.lazy(() => import('./MonacoWrapper').then(m => ({ default: m.MonacoWrapper })));
-import { AlertCircle, FileX, Loader2 } from 'lucide-react';
+import { AlertCircle, FileX } from 'lucide-react';
+import { SudarshanaMandala } from '../ui/SplashLoader';
 import { useSaveStore } from '../../stores/useSaveStore';
 import { useEditorStore } from '../../stores/useEditorStore';
 
@@ -49,7 +50,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ fileId }) => {
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 bg-background">
-        <Loader2 className="animate-spin mb-4" size={32} />
+          <SudarshanaMandala className="w-12 h-12 mb-4" color="purple" />
         <p className="text-sm">Loading file content...</p>
       </div>
     );
@@ -73,7 +74,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ fileId }) => {
     <div className="flex-1 flex flex-col h-full bg-background">
       <Suspense fallback={
         <div className="flex-1 flex flex-col items-center justify-center text-gray-500 bg-background">
-          <Loader2 className="animate-spin mb-4" size={32} />
+            <SudarshanaMandala className="w-12 h-12 mb-4" color="purple" />
           <p className="text-sm">Loading editor...</p>
         </div>
       }>
