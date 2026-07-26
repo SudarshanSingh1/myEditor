@@ -9,7 +9,11 @@ import { useUserStore } from "../../stores/useUserStore";
 import { useSystemStore } from "../../stores/useSystemStore";
 import { Loader2, Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 
-export default function Login() {
+interface LoginProps {
+  isAdminPortal?: boolean;
+}
+
+export default function Login({ isAdminPortal = false }: LoginProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isExpired = searchParams.get("expired") === "true";
@@ -29,6 +33,15 @@ export default function Login() {
       const allowAdmin = useSystemStore.getState().allowAdmin;
       const perms: string[] = user.effective_permissions || [];
       const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
+      const isStaff = isSuperAdmin || isAdmin || isMod || canBypass;
+
+      if (isAdminPortal && !isStaff) {
+        fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        setError("Access Denied: Restricted to Administrators, Moderators, and Owners only.");
+        return;
+      }
 
       if (isMaint && !canBypass) {
         navigate("/maintenance", { replace: true });
@@ -91,6 +104,15 @@ export default function Login() {
                 const allowAdmin = useSystemStore.getState().allowAdmin;
                 const perms: string[] = profileResp.data.effective_permissions || [];
                 const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
+                const isStaff = isSuperAdmin || isAdmin || isMod || canBypass;
+
+                if (isAdminPortal && !isStaff) {
+                    await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
+                    localStorage.removeItem("access_token");
+                    localStorage.removeItem("refresh_token");
+                    setError("Access Denied: Restricted to Administrators, Moderators, and Owners only.");
+                    return;
+                }
 
                 if (isMaint && !canBypass) {
                     await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
@@ -148,6 +170,15 @@ export default function Login() {
           const allowAdmin = useSystemStore.getState().allowAdmin;
           const perms: string[] = profileResp.data.effective_permissions || [];
           const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
+          const isStaff = isSuperAdmin || isAdmin || isMod || canBypass;
+
+          if (isAdminPortal && !isStaff) {
+            await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            setError("Access Denied: Restricted to Administrators, Moderators, and Owners only.");
+            return;
+          }
 
           if (isMaint && !canBypass) {
             await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
@@ -196,9 +227,9 @@ export default function Login() {
   return (
     <div className="w-full space-y-8 p-8 sm:p-10 rounded-2xl bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{is2FA ? "Two-Factor Authentication" : "Welcome back"}</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{is2FA ? "Two-Factor Authentication" : isAdminPortal ? "Administrator Portal" : "Welcome back"}</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          {is2FA ? "Enter the 6-digit code from your authenticator app" : "Enter your credentials to access your workspace"}
+          {is2FA ? "Enter the 6-digit code from your authenticator app" : isAdminPortal ? "Secure console login restricted to Administrators & Owners" : "Enter your credentials to access your workspace"}
         </p>
       </div>
 
@@ -369,7 +400,10 @@ export default function Login() {
                 type="button"
                 variant="outline"
                 className="h-11 border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
-                onClick={() => window.location.href = '/api/v1/auth/oauth/github/authorize'}
+                onClick={() => {
+                  if (isAdminPortal) sessionStorage.setItem("admin_login_portal", "true");
+                  window.location.href = '/api/v1/auth/oauth/github/authorize';
+                }}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.6.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
@@ -380,7 +414,10 @@ export default function Login() {
                 type="button"
                 variant="outline"
                 className="h-11 border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
-                onClick={() => window.location.href = '/api/v1/auth/oauth/google/authorize'}
+                onClick={() => {
+                  if (isAdminPortal) sessionStorage.setItem("admin_login_portal", "true");
+                  window.location.href = '/api/v1/auth/oauth/google/authorize';
+                }}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -395,7 +432,7 @@ export default function Login() {
         )}
       </form>
 
-      {!is2FA && (
+      {!is2FA && !isAdminPortal && (
         <div className="text-center text-sm text-zinc-500 dark:text-zinc-400">
           Don't have an account?{" "}
           <Link to="/signup" className="font-medium text-zinc-900 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition-colors">

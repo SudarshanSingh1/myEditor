@@ -94,7 +94,9 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
                                 if user:
                                     if user.role == RoleEnum.OWNER:
                                         is_admin_allowed = True
-                                    elif user.effective_permissions and "system.maintenance.bypass" in user.effective_permissions:
+                                    elif user.role in (RoleEnum.ADMIN, RoleEnum.MODERATOR) and config.get("allow_admin", True):
+                                        is_admin_allowed = True
+                                    elif user.effective_permissions and ("system.maintenance.bypass" in user.effective_permissions or "*" in user.effective_permissions):
                                         is_admin_allowed = True
                         except JWTError:
                             pass

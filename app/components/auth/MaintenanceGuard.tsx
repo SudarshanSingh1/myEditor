@@ -4,7 +4,6 @@ import { useEffect, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSystemStore } from "../../stores/useSystemStore";
 import { useUserStore } from "../../stores/useUserStore";
-import { hasPermission } from "../../lib/rbac";
 
 export function MaintenanceGuard({ children }: { children: ReactNode }) {
   const {
@@ -48,11 +47,18 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     typeof window !== "undefined" &&
     sessionStorage.getItem("maintenance_preview") === "true";
 
-  const isAllowedToBypass = hasPermission("system.maintenance.bypass");
+  const { user, permissions } = useUserStore();
+  const { allowAdmin } = useSystemStore();
+  const role = user?.role || "";
+  const isSuperAdmin = role === "OWNER";
+  const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
+  const perms = user?.effective_permissions || permissions || [];
+  const isAllowedToBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || (isAdminOrMod && allowAdmin);
 
   const isAllowedPublicRoute =
     location.pathname.startsWith("/maintenance") ||
     location.pathname.startsWith("/login") ||
+    location.pathname.startsWith("/admin-login") ||
     location.pathname.startsWith("/oauth/callback");
 
   const isBlocked =
@@ -61,12 +67,13 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     !isPreview &&
     !isAllowedPublicRoute;
 
+  const isReady = maintenanceChecked && !userLoading;
 
   useEffect(() => {
-    if (isBlocked) {
+    if (isReady && isBlocked) {
       navigate("/maintenance", { replace: true, state: { from: location.pathname } });
     }
-  }, [isBlocked, navigate, location.pathname]);
+  }, [isReady, isBlocked, navigate, location.pathname]);
 
   // ─── Never block /maintenance route with spinners or checks ──────────────
   if (location.pathname.startsWith("/maintenance")) {
@@ -76,8 +83,6 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
   // ─── CRITICAL: Block rendering until BOTH checks complete ────────────────
   // If we render before either check is done, the defaults (isMaintenanceMode=false,
   // user=null) cause children to render and the maintenance redirect never fires.
-  const isReady = maintenanceChecked && !userLoading;
-
   if (!isReady) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">

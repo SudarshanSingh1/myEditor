@@ -53,6 +53,18 @@ export default function OAuthCallback() {
           const isAdminOrMod = role === "ADMIN" || role === "MODERATOR";
           const perms: string[] = userData.effective_permissions || [];
           const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdminOrMod) && allowAdmin);
+          const isStaff = isSuperAdmin || isAdminOrMod || canBypass;
+          const isAdminPortal = sessionStorage.getItem("admin_login_portal") === "true";
+          sessionStorage.removeItem("admin_login_portal");
+
+          if (isAdminPortal && !isStaff) {
+            await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            toast.error("Access Denied: Restricted to Administrators, Moderators, and Owners only.");
+            navigate("/admin-login", { replace: true });
+            return;
+          }
 
           if (isMaint && !canBypass) {
             await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});

@@ -230,7 +230,7 @@ export function MaintenancePage() {
     sessionStorage.clear();
     useUserStore.setState({ user: null, permissions: [], isAuthenticated: false, guestQuota: null, isLoading: false });
     useSystemStore.setState({ hasChecked: false, isChecking: true });
-    window.location.href = "/login";
+    window.location.href = "/admin-login";
   };
 
   // Countdown state
