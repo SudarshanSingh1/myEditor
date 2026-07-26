@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserStore } from '../../stores/useUserStore';
 import { useSystemStore } from '../../stores/useSystemStore';
+import { SplashLoader } from '../ui/SplashLoader';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -27,11 +28,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   // Always show a spinner — never render a black/blank screen
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <SplashLoader message="Verifying session..." submessage="Securing your cloud workspace" />;
   }
 
   return <>{children}</>;

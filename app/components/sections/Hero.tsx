@@ -117,7 +117,7 @@ export function Hero() {
   const current = codeSnippets[snippetIndex];
 
   return (
-    <section id="home" className="relative overflow-hidden bg-white dark:bg-[#050508] pt-32 pb-12 lg:pt-48 lg:pb-16 flex items-center border-b border-zinc-200 dark:border-white/5">
+    <section id="home" className="relative overflow-hidden bg-white dark:bg-[#050508] pt-24 pb-8 lg:pt-28 lg:pb-12 flex items-center border-b border-zinc-200 dark:border-white/5">
       {/* Background Effects */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-green-500/10 via-background to-transparent dark:from-green-500/20" />

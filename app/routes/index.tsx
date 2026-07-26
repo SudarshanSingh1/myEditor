@@ -77,22 +77,12 @@ const Forbidden = lazy(() => import("../pages/error/Forbidden"));
 // Maintenance Page
 import { MaintenancePage } from "../pages/MaintenancePage";
 import { MaintenanceGuard } from "../components/auth/MaintenanceGuard";
+import { SplashLoader } from "../components/ui/SplashLoader";
 
 // Fallback loader
-const PageLoader = () => (
-  <div className="flex min-h-screen items-center justify-center bg-background">
-    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-  </div>
-);
+const PageLoader = () => <SplashLoader message="Loading workspace..." submessage="Preparing your cloud coding environment" />;
 
-const AdminLoader = () => (
-  <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f]">
-    <div className="flex flex-col items-center gap-4">
-      <div className="h-10 w-10 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
-      <p className="text-sm text-gray-400">Loading...</p>
-    </div>
-  </div>
-);
+const AdminLoader = () => <SplashLoader variant="admin" message="Securing admin portal..." submessage="Verifying executive credentials" />;
 
 import { useUserStore } from "../stores/useUserStore";
 

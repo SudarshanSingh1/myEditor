@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
 import { createContext, useContext, type ReactNode } from "react";
+import { SplashLoader } from "../ui/SplashLoader";
 
 export type AdminRole = "MODERATOR" | "ADMIN" | "OWNER";
 
@@ -31,14 +32,7 @@ export function AdminAuthGuard({ children, requiredPermission }: AdminAuthGuardP
   const { user, permissions, isAuthenticated, isLoading } = useUserStore();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
-          <p className="text-sm text-gray-400">Loading admin portal...</p>
-        </div>
-      </div>
-    );
+    return <SplashLoader variant="admin" message="Loading admin console..." submessage="Securing executive access & permissions" />;
   }
 
   if (!isAuthenticated || !user) {

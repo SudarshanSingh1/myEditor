@@ -333,9 +333,6 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject.")
 
         user = db.query(User).filter(User.id == uid).first()
-        import logging
-        logging.info(f"get_current_user query result: {user}")
-        logging.info(f"All users in DB: {[u.id for u in db.query(User).all()]}")
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
 
