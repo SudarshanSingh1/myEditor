@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../../stores/useUserStore';
 import { fetchApi } from '../../lib/api';
 import { Input } from '../../components/ui/Input';
-import { Shield, KeyRound, ArrowRight, Loader2, Lock, Eye, EyeOff } from 'lucide-react';
+import { Shield, KeyRound, ArrowRight, Lock, Eye, EyeOff } from 'lucide-react';
+import { SudarshanaMandala } from '../../components/ui/SplashLoader';
 import { toast } from 'sonner';
 
 export default function ForceChangePassword() {
@@ -158,7 +159,7 @@ export default function ForceChangePassword() {
           disabled={loading}
           className="w-full mt-6 bg-violet-600 hover:bg-violet-500 text-white rounded-xl py-3 px-4 font-semibold shadow-[0_0_20px_rgba(124,58,237,0.2)] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group"
         >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+          {loading ? <SudarshanaMandala className="w-5 h-5" /> : (
             <>
               Secure Account
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

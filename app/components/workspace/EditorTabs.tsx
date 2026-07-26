@@ -9,7 +9,8 @@ import { useUserStore } from '../../stores/useUserStore';
 
 import { useParams } from 'react-router-dom';
 
-import { X, Circle, Play, Square, Loader2 } from 'lucide-react';
+import { X, Circle, Play, Square } from 'lucide-react';
+import { SudarshanaMandala } from '../ui/SplashLoader';
 
 import { cn } from '../../lib/utils';
 
@@ -214,7 +215,7 @@ const EditorActions: React.FC = () => {
         )}
         title="Run Code (Ctrl+Enter)"
       >
-        {isRunning && !isCancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+        {isRunning && !isCancelling ? <SudarshanaMandala className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         <span>{isRunning && !isCancelling ? 'Running...' : 'Run'}</span>
       </button>
 
@@ -230,7 +231,7 @@ const EditorActions: React.FC = () => {
           )}
           title="Stop Execution"
         >
-          {isCancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
+          {isCancelling ? <SudarshanaMandala className="w-4 h-4" /> : <Square className="w-4 h-4" />}
           <span>{isCancelling ? 'Stopping' : 'Stop'}</span>
         </button>
       )}

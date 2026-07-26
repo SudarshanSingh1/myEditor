@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { useSystemStore } from '../stores/useSystemStore';
 
 const API_BASE_URL = '/api/v1';
 
@@ -78,10 +79,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
       if (response.status === 503) {
         window.dispatchEvent(new Event('maintenance:active'));
         try {
-          const sysStore = require('../stores/useSystemStore').useSystemStore;
-          if (sysStore && sysStore.setState) {
-            sysStore.setState({ isMaintenanceMode: true, hasChecked: true, isChecking: false });
-          }
+          useSystemStore.setState({ isMaintenanceMode: true, hasChecked: true, isChecking: false });
         } catch {}
       } else if (response.status >= 500) {
         toast.error(`Server Error: ${errorMsg}`);

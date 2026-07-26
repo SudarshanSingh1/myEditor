@@ -154,10 +154,13 @@ class AuthService:
         maint_config = _get_maintenance_status(db)
         if maint_config.get("enabled"):
             is_allowed = False
-            if user.role in (RoleEnum.OWNER, RoleEnum.ADMIN, RoleEnum.MODERATOR):
+            if user.role == RoleEnum.OWNER:
                 is_allowed = True
-            elif user.effective_permissions and ("system.maintenance.bypass" in user.effective_permissions or "*" in user.effective_permissions):
-                is_allowed = True
+            elif maint_config.get("allow_admin", True):
+                if user.role in (RoleEnum.ADMIN, RoleEnum.MODERATOR):
+                    is_allowed = True
+                elif user.effective_permissions and ("system.maintenance.bypass" in user.effective_permissions or "*" in user.effective_permissions):
+                    is_allowed = True
             if not is_allowed:
                 logger.warning(f"Login failed: User {user.username} blocked by maintenance mode.")
                 raise HTTPException(

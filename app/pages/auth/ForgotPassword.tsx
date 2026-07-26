@@ -5,7 +5,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { fetchApi } from "../../lib/api";
-import { Loader2, Mail, ArrowLeft, AlertCircle, KeyRound } from "lucide-react";
+import { Mail, ArrowLeft, AlertCircle, KeyRound } from "lucide-react";
+import { SudarshanaMandala } from "../../components/ui/SplashLoader";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ForgotPassword() {
@@ -122,7 +123,7 @@ export default function ForgotPassword() {
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <SudarshanaMandala className="mr-2 h-4 w-4" />
                       Sending code...
                     </>
                   ) : (

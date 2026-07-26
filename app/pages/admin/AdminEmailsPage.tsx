@@ -6,7 +6,8 @@ import { fetchApi } from "../../lib/api";
 
 import { toast } from "sonner";
 
-import { Mail, RefreshCw, Search, Filter, AlertCircle, CheckCircle2, Clock, Send, ShieldAlert, Loader2 } from "lucide-react";
+import { Mail, RefreshCw, Search, Filter, AlertCircle, CheckCircle2, Clock, Send, ShieldAlert } from "lucide-react";
+import { SudarshanaMandala } from "../../components/ui/SplashLoader";
 
 import { format } from "date-fns";
 
@@ -145,7 +146,7 @@ export default function AdminEmailsPage() {
               {loading && emails.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-gray-500">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <SudarshanaMandala className="w-6 h-6 mx-auto mb-2" />
                     Loading emails...
                   </td>
                 </tr>

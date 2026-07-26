@@ -62,8 +62,8 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
   const isStaffRole = userRole === "OWNER" || userRole === "ADMIN" || userRole === "MODERATOR";
   const hasBypassPerm = permissions.includes("*") || permissions.includes("system.maintenance.bypass");
 
-  // Staff roles (Owner, Admin, Moderator) or users with bypass permission are always authorized to bypass maintenance
-  const canBypass = isStaffRole || hasBypassPerm || allowAdmin;
+  // Owner can always bypass. Other staff roles (Admin, Moderator) or users with bypass permission can bypass if allowAdmin is enabled.
+  const canBypass = userRole === "OWNER" || (allowAdmin && (isStaffRole || hasBypassPerm));
 
   // If we have a token but user hasn't loaded yet, don't prematurely redirect
   const isBlocked = isMaintenanceMode && !canBypass && !(token && !user);

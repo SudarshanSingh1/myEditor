@@ -10,7 +10,8 @@ import { useExecutionStore } from '../../stores/useExecutionStore';
 
 import { useUserStore } from '../../stores/useUserStore';
 
-import { CheckCircle2, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { SudarshanaMandala } from '../ui/SplashLoader';
 import { cn } from '../../lib/utils';
 
 export const StatusBar: React.FC = () => {
@@ -53,7 +54,7 @@ export const StatusBar: React.FC = () => {
       case 'saving':
         return (
           <div className="flex items-center text-blue-400">
-            <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+            <SudarshanaMandala className="w-3 h-3 mr-1.5" />
             <span>Saving...</span>
           </div>
         );
@@ -107,7 +108,7 @@ export const StatusBar: React.FC = () => {
       case 'Compiling':
       case 'Running':
       case 'Cancelling':
-        icon = <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />;
+        icon = <SudarshanaMandala className="w-3 h-3 mr-1.5" />;
         colorClass = "text-blue-300";
         break;
       case 'Completed':
@@ -148,7 +149,7 @@ export const StatusBar: React.FC = () => {
           {connectionStatus === 'Connected' ? (
             <CheckCircle2 className="w-3 h-3 mr-1.5" />
           ) : connectionStatus === 'Reconnecting' ? (
-            <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
+            <SudarshanaMandala className="w-3 h-3 mr-1.5" />
           ) : (
             <AlertCircle className="w-3 h-3 mr-1.5" />
           )}

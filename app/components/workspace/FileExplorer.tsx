@@ -10,7 +10,8 @@ import { FolderItem } from './FolderItem';
 
 import { FileItem } from './FileItem';
 
-import { FolderPlus, FilePlus, RefreshCw, Loader2, ChevronsUp } from 'lucide-react';
+import { FolderPlus, FilePlus, RefreshCw, ChevronsUp } from 'lucide-react';
+import { SudarshanaMandala } from '../ui/SplashLoader';
 import { useWorkspaceStore } from '../../stores/useWorkspaceStore';
 
 import { useEditorStore } from '../../stores/useEditorStore';
@@ -243,7 +244,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-32 text-gray-500">
-        <Loader2 className="animate-spin mr-2" size={20} />
+        <SudarshanaMandala className="w-5 h-5 mr-2" />
         <span className="text-sm">Loading workspace...</span>
       </div>
     );

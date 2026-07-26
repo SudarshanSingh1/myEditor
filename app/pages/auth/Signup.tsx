@@ -7,7 +7,8 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { fetchApi } from "../../lib/api";
 import { PasswordStrength } from "../../components/auth/PasswordStrength";
-import { Loader2, User, Mail, Lock, AlertCircle, ArrowRight, ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Lock, AlertCircle, ArrowRight, ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { SudarshanaMandala } from "../../components/ui/SplashLoader";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -324,7 +325,7 @@ export default function Signup() {
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <SudarshanaMandala className="mr-2 h-4 w-4" />
                         Creating...
                       </>
                     ) : (
