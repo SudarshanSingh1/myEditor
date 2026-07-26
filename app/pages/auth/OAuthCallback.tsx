@@ -43,9 +43,7 @@ export default function OAuthCallback() {
 
 
 
-          if (!useSystemStore.getState().hasChecked) {
-            await useSystemStore.getState().checkStatus();
-          }
+          await useSystemStore.getState().checkStatus(true);
           const isMaint = useSystemStore.getState().isMaintenanceMode;
           const allowAdmin = useSystemStore.getState().allowAdmin;
           const role = userData.role || "";
@@ -70,13 +68,16 @@ export default function OAuthCallback() {
             await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
             localStorage.removeItem("access_token");
             localStorage.removeItem("refresh_token");
+            toast.error("System is under maintenance. Only administrators can log in.");
             navigate("/maintenance", { replace: true });
             return;
           }
 
           login(userData);
           toast.success(`Successfully logged in with ${provider}`);
-          if (isSuperAdmin) {
+          if (redirectUrl && redirectUrl !== "/login" && redirectUrl !== "/admin-login") {
+            navigate(redirectUrl, { replace: true });
+          } else if (isAdminPortal) {
             navigate("/super-admin", { replace: true });
           } else if (isAdminOrMod) {
             navigate("/app/admin", { replace: true });
@@ -85,10 +86,13 @@ export default function OAuthCallback() {
           }
         }
       } catch (err: any) {
-
-
+        if (err?.status === 503 || err?.message?.toLowerCase().includes("maintenance") || err?.data?.detail?.toLowerCase().includes("maintenance")) {
+          toast.error("System is currently under maintenance. Only administrators can log in.");
+          navigate("/maintenance", { replace: true });
+          return;
+        }
         setError(err.message || "Failed to complete OAuth login");
-        toast.error("OAuth login failed");
+        toast.error(err.message || "OAuth login failed");
         setTimeout(() => navigate("/login"), 3000);
       }
     };

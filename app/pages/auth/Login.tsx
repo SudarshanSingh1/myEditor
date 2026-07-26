@@ -163,9 +163,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
           const isAdmin = role === "ADMIN";
           const isMod = role === "MODERATOR";
 
-          if (!useSystemStore.getState().hasChecked) {
-            await useSystemStore.getState().checkStatus();
-          }
+          await useSystemStore.getState().checkStatus(true);
           const isMaint = useSystemStore.getState().isMaintenanceMode;
           const allowAdmin = useSystemStore.getState().allowAdmin;
           const perms: string[] = profileResp.data.effective_permissions || [];
@@ -184,6 +182,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
             await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
             localStorage.removeItem("access_token");
             localStorage.removeItem("refresh_token");
+            toast.error("System is under maintenance. Only administrators can log in.");
             navigate("/maintenance", { replace: true });
             return;
           }
@@ -208,6 +207,11 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
       }
       
       const errorText = (err.message || "").toLowerCase();
+      if (err?.status === 503 || errorText.includes("maintenance") || err?.data?.detail?.toLowerCase().includes("maintenance")) {
+        toast.error("System is currently under maintenance. Only administrators can log in.");
+        navigate("/maintenance", { replace: true });
+        return;
+      }
       
       // Map generic backend errors to friendly messages
       if (errorText.includes("credentials") || errorText.includes("unauthorized")) {

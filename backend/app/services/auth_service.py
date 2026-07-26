@@ -149,6 +149,24 @@ class AuthService:
                 detail="Invalid email or password."
             )
             
+        # Check Maintenance Mode
+        from app.middleware.maintenance import _get_maintenance_status
+        maint_config = _get_maintenance_status(db)
+        if maint_config.get("enabled"):
+            is_allowed = False
+            if user.role == RoleEnum.OWNER:
+                is_allowed = True
+            elif user.role in (RoleEnum.ADMIN, RoleEnum.MODERATOR) and maint_config.get("allow_admin", True):
+                is_allowed = True
+            elif user.effective_permissions and ("system.maintenance.bypass" in user.effective_permissions or "*" in user.effective_permissions):
+                is_allowed = True
+            if not is_allowed:
+                logger.warning(f"Login failed: User {user.username} blocked by maintenance mode.")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="System is currently under maintenance. Only administrators can log in at this time."
+                )
+
         # Brute Force Check
         if user.account_locked_until and user.account_locked_until > datetime.now(timezone.utc):
             logger.warning(f"Login failed: Account locked for user {user.username}")

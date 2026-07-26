@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 from app.dependencies.database import get_db
-from app.models.user import User, StatusEnum
+from app.models.user import User, StatusEnum, RoleEnum
 from app.models.oauth_account import OAuthAccount
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token
@@ -254,12 +254,34 @@ def _create_session_response(
     provider_refresh_token: str | None,
 ) -> JSONResponse:
     """Upsert the local user, link the OAuth account, create a session, and return JWT cookies."""
+    from app.middleware.maintenance import _get_maintenance_status
+    maint_config = _get_maintenance_status(db)
 
     # 1. Look up existing OAuth account link
     oauth_acc = db.query(OAuthAccount).filter(
         OAuthAccount.provider == provider,
         OAuthAccount.provider_account_id == provider_id,
     ).first()
+
+    if maint_config.get("enabled"):
+        existing_user = oauth_acc.user if oauth_acc else db.query(User).filter(User.email == email).first()
+        if not existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="System is currently under maintenance. New account registration is disabled."
+            )
+        is_allowed = False
+        if existing_user.role == RoleEnum.OWNER:
+            is_allowed = True
+        elif existing_user.role in (RoleEnum.ADMIN, RoleEnum.MODERATOR) and maint_config.get("allow_admin", True):
+            is_allowed = True
+        elif existing_user.effective_permissions and ("system.maintenance.bypass" in existing_user.effective_permissions or "*" in existing_user.effective_permissions):
+            is_allowed = True
+        if not is_allowed:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="System is currently under maintenance. Only administrators can log in at this time."
+            )
 
     if oauth_acc:
         user: User = oauth_acc.user
