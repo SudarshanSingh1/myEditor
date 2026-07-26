@@ -170,6 +170,7 @@ Navigate to your GitHub Repository ──> **Settings** ──> **Secrets and va
 | Secret Name | Description | Example Value |
 | :--- | :--- | :--- |
 | `VPS_HOST` | Public IP or domain name of your VPS | `198.51.100.24` |
+| `VPS_PORT` | SSH port on your VPS (Optional, defaults to 22) | `22` (or `2222`) |
 | `VPS_USERNAME` | SSH username on your VPS | `root` (or `ubuntu`) |
 | `VPS_SSH_KEY` | Private SSH Key (`~/.ssh/id_rsa` or `id_ed25519`) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
 
