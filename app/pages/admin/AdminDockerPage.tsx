@@ -74,7 +74,7 @@ export default function AdminDockerPage() {
         subtitle="Monitor and manage active compiler container instances"
         icon={Container}
         actions={
-          <button onClick={fetchContainers} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
+          <button onClick={async () => { await fetchContainers(); toast.success("Docker containers refreshed"); }} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
             <RefreshCw size={12} /> Refresh
           </button>
         }

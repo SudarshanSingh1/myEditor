@@ -99,16 +99,16 @@ export function UserDetailsDrawer({ userId, onClose, onUpdate }: UserDetailsDraw
     >
       {loading || !data ? (
         <div className="space-y-4 animate-pulse">
-          <div className="h-24 bg-white/5 rounded-xl" />
-          <div className="h-32 bg-white/5 rounded-xl" />
-          <div className="h-32 bg-white/5 rounded-xl" />
+          <div className="h-24 bg-black/5 dark:bg-white/5 rounded-xl" />
+          <div className="h-32 bg-black/5 dark:bg-white/5 rounded-xl" />
+          <div className="h-32 bg-black/5 dark:bg-white/5 rounded-xl" />
         </div>
       ) : (
         <div className="space-y-6">
           {/* Status & Basic Info */}
-          <div className="p-4 rounded-xl border border-white/10 bg-white/5 space-y-3">
+          <div className="p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">Status</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                 data.status === "ACTIVE" ? "bg-emerald-500/20 text-emerald-400" :
                 data.status === "BANNED" ? "bg-red-500/20 text-red-400" :
@@ -116,15 +116,15 @@ export function UserDetailsDrawer({ userId, onClose, onUpdate }: UserDetailsDraw
               }`}>{data.status}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">Role</span>
-              <span className="text-sm text-white font-medium">{data.role}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Role</span>
+              <span className="text-sm text-gray-900 dark:text-white font-medium">{data.role}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">Email</span>
-              <span className="text-sm text-white">{data.email}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Email</span>
+              <span className="text-sm text-gray-900 dark:text-white">{data.email}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">User ID</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">User ID</span>
               <span className="text-xs text-gray-500 font-mono truncate max-w-[200px]">{data.id}</span>
             </div>
           </div>
@@ -151,15 +151,15 @@ export function UserDetailsDrawer({ userId, onClose, onUpdate }: UserDetailsDraw
               </button>
             )}
             
-            <button onClick={() => handleAction("force_logout", "Force Logout", "Invalidate all active sessions for this user?")} className="flex items-center gap-2 justify-center p-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm transition-colors border border-white/10">
+            <button onClick={() => handleAction("force_logout", "Force Logout", "Invalidate all active sessions for this user?")} className="flex items-center gap-2 justify-center p-2 rounded-lg bg-black/5 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-black/10 dark:bg-white/10 text-sm transition-colors border border-black/10 dark:border-white/10">
               <LogOut className="w-4 h-4" /> Force Logout
             </button>
             
-            <button onClick={handleResetPassword} className="flex items-center gap-2 justify-center p-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm transition-colors border border-white/10">
+            <button onClick={handleResetPassword} className="flex items-center gap-2 justify-center p-2 rounded-lg bg-black/5 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-black/10 dark:bg-white/10 text-sm transition-colors border border-black/10 dark:border-white/10">
               <Key className="w-4 h-4" /> Reset Password
             </button>
             
-            <button onClick={() => handleAction("reset_mfa", "Reset MFA", "Disable MFA and invalidate recovery codes?")} disabled={!data.totp_enabled} className={`flex items-center gap-2 justify-center p-2 rounded-lg text-sm transition-colors border ${data.totp_enabled ? "bg-white/5 text-gray-300 hover:bg-white/10 border-white/10" : "bg-white/5 text-gray-600 border-white/5 cursor-not-allowed"}`}>
+            <button onClick={() => handleAction("reset_mfa", "Reset MFA", "Disable MFA and invalidate recovery codes?")} disabled={!data.totp_enabled} className={`flex items-center gap-2 justify-center p-2 rounded-lg text-sm transition-colors border ${data.totp_enabled ? "bg-black/5 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-black/10 dark:bg-white/10 border-black/10 dark:border-white/10" : "bg-black/5 dark:bg-white/5 text-gray-600 border-black/5 dark:border-white/5 cursor-not-allowed"}`}>
               <Shield className="w-4 h-4" /> Reset MFA
             </button>
             
@@ -172,16 +172,16 @@ export function UserDetailsDrawer({ userId, onClose, onUpdate }: UserDetailsDraw
 
           {/* Stats & Info */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl border border-white/10 bg-white/5">
-              <div className="flex items-center gap-2 text-gray-400 mb-2">
+            <div className="p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
                 <HardDrive className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wider">Storage Used</span>
               </div>
-              <p className="text-xl font-bold text-white">{formatBytes(data.storage_used_bytes)}</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{formatBytes(data.storage_used_bytes)}</p>
             </div>
             
-            <div className="p-4 rounded-xl border border-white/10 bg-white/5">
-              <div className="flex items-center gap-2 text-gray-400 mb-2">
+            <div className="p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
                 <GitBranch className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wider">GitHub</span>
               </div>
@@ -191,26 +191,26 @@ export function UserDetailsDrawer({ userId, onClose, onUpdate }: UserDetailsDraw
             </div>
           </div>
           
-          <div className="p-4 rounded-xl border border-white/10 bg-white/5">
+          <div className="p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-gray-400">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 <ShieldAlert className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wider">Security</span>
               </div>
             </div>
-            <div className="flex justify-between items-center text-sm py-1 border-b border-white/5">
-              <span className="text-gray-400">MFA Enabled</span>
+            <div className="flex justify-between items-center text-sm py-1 border-b border-black/5 dark:border-white/5">
+              <span className="text-gray-600 dark:text-gray-400">MFA Enabled</span>
               <span className={data.totp_enabled ? "text-emerald-400" : "text-gray-500"}>{data.totp_enabled ? "Yes" : "No"}</span>
             </div>
             <div className="flex justify-between items-center text-sm py-1">
-              <span className="text-gray-400">Failed Logins</span>
-              <span className={data.failed_login_attempts > 0 ? "text-red-400 font-bold" : "text-gray-300"}>{data.failed_login_attempts}</span>
+              <span className="text-gray-600 dark:text-gray-400">Failed Logins</span>
+              <span className={data.failed_login_attempts > 0 ? "text-red-400 font-bold" : "text-gray-700 dark:text-gray-300"}>{data.failed_login_attempts}</span>
             </div>
           </div>
 
           {/* Active Sessions */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <MonitorSmartphone className="w-4 h-4 text-violet-400" /> Recent Sessions
             </h3>
             {data.sessions?.length === 0 ? (
@@ -218,9 +218,9 @@ export function UserDetailsDrawer({ userId, onClose, onUpdate }: UserDetailsDraw
             ) : (
               <div className="space-y-2">
                 {data.sessions?.map((s: any, idx: number) => (
-                  <div key={idx} className="p-3 rounded-lg border border-white/5 bg-[#111118] flex items-start justify-between">
+                  <div key={idx} className="p-3 rounded-lg border border-black/5 dark:border-white/5 bg-[#111118] flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-gray-300 font-medium">{s.os} • {s.browser}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">{s.os} • {s.browser}</p>
                       <p className="text-xs text-gray-500 font-mono mt-0.5">{s.ip_address}</p>
                     </div>
                     <div className="text-right">
@@ -239,7 +239,7 @@ export function UserDetailsDrawer({ userId, onClose, onUpdate }: UserDetailsDraw
 
           {/* Audit Logs */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <Clock className="w-4 h-4 text-violet-400" /> Recent Activity (Audit)
             </h3>
             {data.recent_audits?.length === 0 ? (
@@ -247,7 +247,7 @@ export function UserDetailsDrawer({ userId, onClose, onUpdate }: UserDetailsDraw
             ) : (
               <div className="space-y-2">
                 {data.recent_audits?.map((a: any, idx: number) => (
-                  <div key={idx} className="p-3 rounded-lg border border-white/5 bg-[#111118]">
+                  <div key={idx} className="p-3 rounded-lg border border-black/5 dark:border-white/5 bg-[#111118]">
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs font-mono font-medium text-amber-400">{a.action}</span>
                       <span className="text-[10px] text-gray-500">{new Date(a.created_at).toLocaleString()}</span>

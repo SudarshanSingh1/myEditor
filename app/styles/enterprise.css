@@ -76,85 +76,64 @@
 }
 
 /* ============================================================
-   TAILWIND DARK CLASS OVERRIDES
-   These override Tailwind's dark-mode classes so legacy pages
-   that use text-white / text-gray-* / bg-white/5 etc. are
-   visible on the new light background.
+   ENTERPRISE ADMIN DESIGN SYSTEM — DARK THEME TOKENS
+   These apply when .dark is present on the root element
    ============================================================ */
-.enterprise-layout .text-white           { color: #0f172a !important; }
-.enterprise-layout .text-gray-100        { color: #1e293b !important; }
-.enterprise-layout .text-gray-200        { color: #334155 !important; }
-.enterprise-layout .text-gray-300        { color: #475569 !important; }
-.enterprise-layout .text-gray-400        { color: #64748b !important; }
-.enterprise-layout .text-gray-500        { color: #94a3b8 !important; }
-.enterprise-layout .text-gray-600        { color: #94a3b8 !important; }
-.enterprise-layout .text-gray-700        { color: #cbd5e1 !important; }
+.dark {
+  /* Backgrounds */
+  --e-bg-base:       #020817;
+  --e-bg-surface:    #0f172a;
+  --e-bg-elevated:   #1e293b;
+  --e-bg-hover:      rgba(255,255,255,0.05);
+  --e-bg-active:     rgba(255,255,255,0.1);
 
-/* Semantic color text — keep bright on light bg */
-.enterprise-layout .text-emerald-400     { color: #16a34a !important; }
-.enterprise-layout .text-emerald-300     { color: #15803d !important; }
-.enterprise-layout .text-red-400         { color: #dc2626 !important; }
-.enterprise-layout .text-red-300         { color: #b91c1c !important; }
-.enterprise-layout .text-blue-400        { color: #2563eb !important; }
-.enterprise-layout .text-blue-300        { color: #1d4ed8 !important; }
-.enterprise-layout .text-violet-400      { color: #7c3aed !important; }
-.enterprise-layout .text-violet-300      { color: #6d28d9 !important; }
-.enterprise-layout .text-amber-400       { color: #d97706 !important; }
-.enterprise-layout .text-amber-300       { color: #b45309 !important; }
-.enterprise-layout .text-cyan-400        { color: #0891b2 !important; }
-.enterprise-layout .text-pink-400        { color: #db2777 !important; }
-.enterprise-layout .text-rose-400        { color: #e11d48 !important; }
-.enterprise-layout .text-indigo-400      { color: #4f46e5 !important; }
-.enterprise-layout .text-purple-400      { color: #9333ea !important; }
+  /* Borders */
+  --e-border:        #1e293b;
+  --e-border-strong: #334155;
+  --e-border-accent: rgba(99,102,241,0.5);
 
-/* Transparent-on-white → neutral backgrounds */
-.enterprise-layout .bg-white\/5,
-.enterprise-layout .bg-white\/3,
-.enterprise-layout .bg-white\/8,
-.enterprise-layout .bg-white\/10,
-.enterprise-layout .bg-white\/12        { background: var(--e-bg-elevated) !important; }
+  /* Brand Accent */
+  --e-accent:        #818cf8;
+  --e-accent-light:  #6366f1;
+  --e-accent-glow:   rgba(99,102,241,0.25);
 
-.enterprise-layout .hover\:bg-white\/5:hover,
-.enterprise-layout .hover\:bg-white\/10:hover,
-.enterprise-layout .hover\:bg-white\/12:hover,
-.enterprise-layout .hover\:bg-white\/3:hover { background: rgba(99,102,241,0.05) !important; }
+  /* Text */
+  --e-text-primary:  #f8fafc;
+  --e-text-secondary:#cbd5e1;
+  --e-text-muted:    #94a3b8;
+  --e-text-faint:    #64748b;
 
-/* Border overrides */
-.enterprise-layout .border-white\/5,
-.enterprise-layout .border-white\/8,
-.enterprise-layout .border-white\/10,
-.enterprise-layout .border-white\/15    { border-color: var(--e-border) !important; }
+  /* Semantic Status Colors */
+  --e-green:         #4ade80;
+  --e-green-bg:      rgba(74, 222, 128, 0.1);
+  --e-green-border:  rgba(74, 222, 128, 0.2);
 
-/* Active tabs / selected states */
-.enterprise-layout .bg-violet-500\/20   { background: rgba(99,102,241,0.10) !important; }
-.enterprise-layout .text-violet-300     { color: #4f46e5 !important; }
-.enterprise-layout .bg-violet-500\/15   { background: #f5f3ff !important; }
-.enterprise-layout .text-violet-300     { color: #7c3aed !important; }
+  --e-amber:         #fbbf24;
+  --e-amber-bg:      rgba(251, 191, 36, 0.1);
+  --e-amber-border:  rgba(251, 191, 36, 0.2);
 
-/* Dark card backgrounds → white (via bg-white/5 rule above) */
+  --e-red:           #f87171;
+  --e-red-bg:        rgba(248, 113, 113, 0.1);
+  --e-red-border:    rgba(248, 113, 113, 0.2);
 
-/* Divide colors */
-.enterprise-layout .divide-white\/5 > * + * { border-color: var(--e-border) !important; }
-.enterprise-layout .divide-y { border-top: 1px solid var(--e-border); }
+  --e-blue:          #60a5fa;
+  --e-blue-bg:       rgba(96, 165, 250, 0.1);
+  --e-blue-border:   rgba(96, 165, 250, 0.2);
 
-/* Input/select bg */
-.enterprise-layout input.bg-white\/5,
-.enterprise-layout select.bg-white\/5   {
-  background: var(--e-bg-elevated) !important;
-  color: var(--e-text-primary) !important;
-  border-color: var(--e-border) !important;
+  --e-purple:        #a78bfa;
+  --e-purple-bg:     rgba(167, 139, 250, 0.1);
+  --e-purple-border: rgba(167, 139, 250, 0.2);
+
+  --e-cyan:          #22d3ee;
+  --e-cyan-bg:       rgba(34, 211, 238, 0.1);
+  --e-cyan-border:   rgba(34, 211, 238, 0.2);
+
+  /* Shadows */
+  --e-shadow-sm:  0 1px 2px rgba(0,0,0,0.5);
+  --e-shadow-md:  0 4px 12px rgba(0,0,0,0.5);
+  --e-shadow-lg:  0 8px 24px rgba(0,0,0,0.6);
+  --e-shadow-accent: 0 0 16px rgba(99,102,241,0.25);
 }
-.enterprise-layout input::placeholder    { color: var(--e-text-faint) !important; }
-
-/* Animated pulse skeleton */
-.enterprise-layout .animate-pulse       { animation: e-shimmer 1.5s infinite !important; }
-
-/* Table rows hover */
-.enterprise-layout .hover\:bg-white\/3:hover { background: var(--e-bg-elevated) !important; }
-
-/* Black overlays → surface */
-.enterprise-layout .bg-black\/20        { background: var(--e-bg-elevated) !important; }
-.enterprise-layout .border-white\/5     { border-color: var(--e-border) !important; }
 
 /* --- Enterprise Layout Base --- */
 .enterprise-layout {

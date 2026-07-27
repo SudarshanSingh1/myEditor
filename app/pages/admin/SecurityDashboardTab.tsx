@@ -34,13 +34,13 @@ export function SecurityDashboardTab() {
         { label: "Failed API Requests", value: data.failed_api_requests, icon: Activity, color: "text-rose-400", bg: "bg-rose-500/10" },
         { label: "JWT Activity", value: data.jwt_activity, icon: Network, color: "text-emerald-400", bg: "bg-emerald-500/10" },
       ].map((stat, i) => (
-        <div key={i} className="p-4 rounded-xl border border-white/8 bg-white/3 flex items-center gap-4">
+        <div key={i} className="p-4 rounded-xl border border-black/10 dark:border-white/8 bg-black/5 dark:bg-white/3 flex items-center gap-4">
           <div className={`p-3 rounded-lg ${stat.bg}`}>
             <stat.icon className={`w-5 h-5 ${stat.color}`} />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-            <h3 className="text-xl font-bold text-white mt-1">{stat.value.toLocaleString()}</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mt-1">{stat.value.toLocaleString()}</h3>
           </div>
         </div>
       ))}

@@ -86,8 +86,14 @@ def resend_verification(req: ResendVerificationRequest, request: Request, db: Se
 @router.post("/login", response_model=SuccessResponse[TokenResponse])
 @limiter.limit("5/minute")
 def login(req: UserLoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
-    ip_address = request.client.host if request.client else None
-    user, access_token, refresh_token = AuthService.authenticate_user(db, req, ip_address)
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        ip_address = forwarded_for.split(",")[0].strip()
+    else:
+        ip_address = request.client.host if request.client else None
+        
+    user_agent = request.headers.get("user-agent", "")
+    user, access_token, refresh_token = AuthService.authenticate_user(db, req, ip_address, user_agent)
             
     # Prepare HTTPOnly cookies architecture
     # Currently also returning in JSON payload for flexible frontend integration

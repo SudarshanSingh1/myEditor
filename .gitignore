@@ -29,9 +29,12 @@ backend/.env
 .env.local
 .env.production
 
-# SQLite databases (may contain user data)
+# Database
 *.db
 *.sqlite
+*.sqlite3
+*.dump
+*.sql
 
 # Debug/test artifacts
 backend/fix_db.py

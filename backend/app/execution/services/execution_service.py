@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from fastapi import WebSocket
 import tempfile
 import os
+import time
 
 from app.execution.schemas.execution import ExecutionRequest, ExecutionResponse
 from app.execution.languages.base_runner import BaseRunner
@@ -187,6 +188,9 @@ class ExecutionService:
                 
                 from app.execution.docker.container_manager import DockerManager
                 logger.info(f"Creating container using image: {runner.image_name}")
+                
+                start_time = time.time()
+                
                 exit_code = await DockerManager.run_container_interactive(
                     image=runner.image_name,
                     command=f"sh -c '{raw_cmd}'",
@@ -195,10 +199,13 @@ class ExecutionService:
                     websocket=websocket
                 )
 
-                logger.info(f"Container execution finished with exit code: {exit_code}")
+                end_time = time.time()
+                runtime_ms = int((end_time - start_time) * 1000)
+
+                logger.info(f"Container execution finished with exit code: {exit_code} in {runtime_ms}ms")
 
                 if exit_code == 0:
-                    await websocket.send_text("\r\n\x1b[38;5;2m✓ Program finished (0)\x1b[0m\r\n")
+                    await websocket.send_text(f"\r\n\x1b[38;5;2m✓ Program finished in {runtime_ms}ms\x1b[0m\r\n")
                 else:
                     await websocket.send_text(f"\r\n\x1b[38;5;1m[Runtime Error] Exited with code {exit_code}\x1b[0m\r\n")
                 
@@ -212,7 +219,7 @@ class ExecutionService:
                         user_id=user_id,
                         language=ext.replace('.', '') if ext else 'unknown',
                         status=status_enum,
-                        execution_time_ms=0
+                        execution_time_ms=runtime_ms
                     )
                     self.db.add(el)
                     self.db.commit()

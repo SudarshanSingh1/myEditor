@@ -88,34 +88,34 @@ export function ProjectDetailsDrawer({ projectId, onClose, onUpdate }: ProjectDe
     >
       {loading || !data ? (
         <div className="space-y-4 animate-pulse">
-          <div className="h-24 bg-white/5 rounded-xl" />
-          <div className="h-32 bg-white/5 rounded-xl" />
-          <div className="h-32 bg-white/5 rounded-xl" />
+          <div className="h-24 bg-black/5 dark:bg-white/5 rounded-xl" />
+          <div className="h-32 bg-black/5 dark:bg-white/5 rounded-xl" />
+          <div className="h-32 bg-black/5 dark:bg-white/5 rounded-xl" />
         </div>
       ) : (
         <div className="space-y-6">
           {/* Status & Basic Info */}
-          <div className="p-4 rounded-xl border border-white/10 bg-white/5 space-y-3">
+          <div className="p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">Status</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                 data.is_archived ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"
               }`}>{data.is_archived ? "Archived" : "Active"}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">Owner</span>
-              <span className="text-sm text-white font-medium">{data.owner_username}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Owner</span>
+              <span className="text-sm text-gray-900 dark:text-white font-medium">{data.owner_username}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">Language</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Language</span>
               <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/20">{data.language || "—"}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">Visibility</span>
-              <span className="text-sm text-white font-medium capitalize">{data.visibility.toLowerCase()}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Visibility</span>
+              <span className="text-sm text-gray-900 dark:text-white font-medium capitalize">{data.visibility.toLowerCase()}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">Project ID</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Project ID</span>
               <span className="text-xs text-gray-500 font-mono truncate max-w-[150px]">{data.id}</span>
             </div>
           </div>
@@ -132,37 +132,37 @@ export function ProjectDetailsDrawer({ projectId, onClose, onUpdate }: ProjectDe
               </button>
             )}
             
-            <button onClick={() => handleAction("clone", "Clone Project", "Create an admin copy of this project?")} className="flex items-center gap-2 justify-center p-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm transition-colors border border-white/10">
+            <button onClick={() => handleAction("clone", "Clone Project", "Create an admin copy of this project?")} className="flex items-center gap-2 justify-center p-2 rounded-lg bg-black/5 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-black/10 dark:bg-white/10 text-sm transition-colors border border-black/10 dark:border-white/10">
               <Copy className="w-4 h-4" /> Clone
             </button>
             
-            <button onClick={handleDownload} className="flex items-center gap-2 justify-center p-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm transition-colors border border-white/10 col-span-2">
+            <button onClick={handleDownload} className="flex items-center gap-2 justify-center p-2 rounded-lg bg-black/5 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-black/10 dark:bg-white/10 text-sm transition-colors border border-black/10 dark:border-white/10 col-span-2">
               <Download className="w-4 h-4" /> Download ZIP
             </button>
           </div>
 
           {/* Stats & Info */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl border border-white/10 bg-white/5">
-              <div className="flex items-center gap-2 text-gray-400 mb-2">
+            <div className="p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
                 <HardDrive className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wider">Storage Used</span>
               </div>
-              <p className="text-xl font-bold text-white">{formatBytes(data.storage_used_bytes)}</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{formatBytes(data.storage_used_bytes)}</p>
             </div>
             
-            <div className="p-4 rounded-xl border border-white/10 bg-white/5">
-              <div className="flex items-center gap-2 text-gray-400 mb-2">
+            <div className="p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
                 <FileText className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wider">Total Files</span>
               </div>
-              <p className="text-xl font-bold text-white">{data.files?.length || 0}</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{data.files?.length || 0}</p>
             </div>
           </div>
 
           {/* Files List */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <Code className="w-4 h-4 text-violet-400" /> Files ({data.files?.length || 0})
             </h3>
             {data.files?.length === 0 ? (
@@ -170,8 +170,8 @@ export function ProjectDetailsDrawer({ projectId, onClose, onUpdate }: ProjectDe
             ) : (
               <div className="space-y-2 max-h-48 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                 {data.files?.map((f: any, idx: number) => (
-                  <div key={idx} className="p-2 rounded-lg border border-white/5 bg-[#111118] flex items-center justify-between">
-                    <span className="text-xs text-gray-300 truncate font-mono">{f.name}</span>
+                  <div key={idx} className="p-2 rounded-lg border border-black/5 dark:border-white/5 bg-[#111118] flex items-center justify-between">
+                    <span className="text-xs text-gray-700 dark:text-gray-300 truncate font-mono">{f.name}</span>
                     <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{formatBytes(f.size || 0)}</span>
                   </div>
                 ))}
@@ -181,7 +181,7 @@ export function ProjectDetailsDrawer({ projectId, onClose, onUpdate }: ProjectDe
 
           {/* Recent Executions */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <Play className="w-4 h-4 text-violet-400" /> Recent Executions
             </h3>
             {data.executions?.length === 0 ? (
@@ -189,14 +189,14 @@ export function ProjectDetailsDrawer({ projectId, onClose, onUpdate }: ProjectDe
             ) : (
               <div className="space-y-2">
                 {data.executions?.map((e: any, idx: number) => (
-                  <div key={idx} className="p-3 rounded-lg border border-white/5 bg-[#111118] flex flex-col gap-2">
+                  <div key={idx} className="p-3 rounded-lg border border-black/5 dark:border-white/5 bg-[#111118] flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${e.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400' : e.status === 'FAILED' ? 'bg-red-500/10 text-red-400' : 'bg-gray-500/10 text-gray-400'}`}>
+                      <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${e.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400' : e.status === 'FAILED' ? 'bg-red-500/10 text-red-400' : 'bg-gray-500/10 text-gray-600 dark:text-gray-400'}`}>
                         {e.status || 'UNKNOWN'}
                       </span>
                       <span className="text-xs text-gray-500">{new Date(e.created_at).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between items-center text-xs text-gray-400">
+                    <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400">
                       <span>Duration: {e.duration_ms}ms</span>
                       <span>Exit Code: {e.exit_code}</span>
                     </div>

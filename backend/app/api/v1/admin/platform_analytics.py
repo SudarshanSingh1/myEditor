@@ -44,7 +44,7 @@ router = APIRouter()
 
 @router.get("/analytics/compiler/charts", response_model=SuccessResponse)
 def get_compiler_analytics_charts(
-    db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))
+    db: Session = Depends(get_db), admin: User = Depends(require_permission('system.storage.view'))
 ):
     from app.models.execution_log import ExecutionLog
     
@@ -90,7 +90,7 @@ def get_compiler_analytics_charts(
 
 
 @router.get("/analytics/storage/dashboard", response_model=SuccessResponse)
-def get_storage_dashboard(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
+def get_storage_dashboard(db: Session = Depends(get_db), admin: User = Depends(require_permission('system.storage.view'))):
     from app.models.workspace import File, FileVersion
     total_file_size = db.query(func.sum(File.size)).scalar() or 0
     total_versions_size = db.query(func.sum(FileVersion.size)).scalar() or 0
@@ -114,7 +114,7 @@ def get_storage_dashboard(db: Session = Depends(get_db), admin: User = Depends(r
     return SuccessResponse(message="Storage dashboard retrieved", data=data)
 
 @router.get("/analytics/storage/charts", response_model=SuccessResponse)
-def get_storage_charts(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
+def get_storage_charts(db: Session = Depends(get_db), admin: User = Depends(require_permission('system.storage.view'))):
     from app.models.workspace import File
     
     since = datetime.now(timezone.utc) - timedelta(days=30)
@@ -142,7 +142,7 @@ def get_storage_charts(db: Session = Depends(get_db), admin: User = Depends(requ
     })
 
 @router.get("/analytics/storage/largest-projects", response_model=SuccessResponse)
-def get_storage_largest_projects(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
+def get_storage_largest_projects(db: Session = Depends(get_db), admin: User = Depends(require_permission('system.storage.view'))):
     from app.models.workspace import File
     rows = db.query(
         Project.name,
@@ -168,7 +168,7 @@ def get_storage_largest_projects(db: Session = Depends(get_db), admin: User = De
     return SuccessResponse(message="Largest projects retrieved", data={"items": items})
 
 @router.get("/analytics/storage/largest-users", response_model=SuccessResponse)
-def get_storage_largest_users(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
+def get_storage_largest_users(db: Session = Depends(get_db), admin: User = Depends(require_permission('system.storage.view'))):
     from app.models.workspace import File
     rows = db.query(
         User.username,
@@ -193,7 +193,7 @@ def get_storage_largest_users(db: Session = Depends(get_db), admin: User = Depen
     return SuccessResponse(message="Largest users retrieved", data={"items": items})
 
 @router.get("/analytics/export")
-def export_analytics(type: str = "compiler", format: str = "json", db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
+def export_analytics(type: str = "compiler", format: str = "json", db: Session = Depends(get_db), admin: User = Depends(require_permission('system.storage.view'))):
     import json
     
     if type == "compiler":
@@ -218,7 +218,7 @@ def export_analytics(type: str = "compiler", format: str = "json", db: Session =
         )
 
 @router.get("/database", response_model=SuccessResponse)
-def get_database_info(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))):
+def get_database_info(db: Session = Depends(get_db), admin: User = Depends(require_permission('database.backup'))):
     """Returns database size and table statistics."""
     try:
         # PostgreSQL database size

@@ -53,7 +53,7 @@ def test_restore_backup(client, db_session):
     db_session.commit()
     
     resp = client.post(f"/api/v1/admin/infrastructure/backups/{backup.id}/restore")
-    assert resp.status_code == 200
+    assert resp.status_code == 501
 
 def test_create_and_get_deployments(client, db_session):
     user, token = create_super_admin_and_token(db_session)

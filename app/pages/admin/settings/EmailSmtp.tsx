@@ -15,7 +15,7 @@ export default function EmailSmtp() {
   const { settings, set, testing, testSmtp, testStatus } = useOutletContext<ContextType>();
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/5 p-8 backdrop-blur-sm relative overflow-hidden">
+    <div className="rounded-2xl border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 p-8 backdrop-blur-sm relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/5 blur-[80px] rounded-full pointer-events-none" />
       
       <div className="flex items-center justify-between mb-6">
@@ -50,12 +50,12 @@ export default function EmailSmtp() {
         <TextInput value={settings.smtp_user} onChange={set("smtp_user")} label="SMTP Username" description="Username or email address for SMTP authentication." placeholder="user@example.com" icon={FileKey} />
         <TextInput value={settings.smtp_pass} onChange={set("smtp_pass")} type="password" label="SMTP Password" description="Password or app-specific password." placeholder="••••••••" icon={Shield} />
         
-        <div className="h-px w-full bg-white/5 my-4" />
+        <div className="h-px w-full bg-black/5 dark:bg-white/5 my-4" />
         
         <TextInput value={settings.smtp_from_name} onChange={set("smtp_from_name")} label="From Name" description="The name displayed as the sender." placeholder="Hamara Editor" />
         <TextInput value={settings.smtp_from_email} onChange={set("smtp_from_email")} label="From Email" description="The email address displayed as the sender." placeholder="noreply@example.com" />
         
-        <div className="h-px w-full bg-white/5 my-4" />
+        <div className="h-px w-full bg-black/5 dark:bg-white/5 my-4" />
         
         <Toggle checked={settings.smtp_tls} onChange={set("smtp_tls")} label="Use TLS" description="Enable STARTTLS encryption (port 587)." colorClass="bg-pink-500" />
         <Toggle checked={settings.smtp_ssl} onChange={set("smtp_ssl")} label="Use SSL" description="Enable SSL encryption (port 465)." colorClass="bg-pink-500" />

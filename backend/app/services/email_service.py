@@ -163,8 +163,10 @@ class EmailService:
     def send_test_email(user_id: str):
         """Send a test email synchronously. Raises on error."""
         db = SessionLocal()
+        import uuid
         try:
-            user = db.query(User).filter(User.id == user_id).first()
+            parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+            user = db.query(User).filter(User.id == parsed_id).first()
             if not user:
                 raise Exception("Admin user not found.")
             
@@ -187,8 +189,10 @@ class EmailService:
     def send_welcome_email(user_id: str, temp_password: str, login_url: str):
         """Send a welcome email with credentials."""
         db = SessionLocal()
+        import uuid
         try:
-            user = db.query(User).filter(User.id == user_id).first()
+            parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+            user = db.query(User).filter(User.id == parsed_id).first()
             if not user:
                 raise Exception("User not found.")
                 
@@ -283,8 +287,10 @@ class EmailService:
     def send_password_reset_email(user_id: str, otp: str):
         """Send a password reset email."""
         db = SessionLocal()
+        import uuid
         try:
-            user = db.query(User).filter(User.id == user_id).first()
+            parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+            user = db.query(User).filter(User.id == parsed_id).first()
             if not user:
                 raise Exception("User not found.")
                 
@@ -320,8 +326,10 @@ class EmailService:
     def send_custom_email(user_id: str, subject: str, message: str):
         """Send a custom manual email via SMTP."""
         db = SessionLocal()
+        import uuid
         try:
-            user = db.query(User).filter(User.id == user_id).first()
+            parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+            user = db.query(User).filter(User.id == parsed_id).first()
             if not user:
                 raise Exception("User not found.")
             
@@ -336,8 +344,10 @@ class EmailService:
     @staticmethod
     def send_new_login_alert(user_id: str, ip_address: str, device: str):
         db = SessionLocal()
+        import uuid
         try:
-            user = db.query(User).filter(User.id == user_id).first()
+            parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+            user = db.query(User).filter(User.id == parsed_id).first()
             if not user:
                 return
             

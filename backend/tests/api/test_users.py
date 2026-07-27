@@ -1,7 +1,7 @@
 import pytest
 from app.models.user import User, RoleEnum, StatusEnum
 from app.models.execution_log import ExecutionLog, ExecutionStatus
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta, datetime, timezone
 
 def create_test_user(db_session):
     user = User(
@@ -24,7 +24,7 @@ def test_activity_heatmap(client, db_session):
     user = create_test_user(db_session)
     app.dependency_overrides[get_current_user_dep] = lambda: user
     
-    today = datetime.utcnow()
+    today = datetime.now(timezone.utc)
     yesterday = today - timedelta(days=1)
     
     log1 = ExecutionLog(

@@ -31,7 +31,8 @@ export function Dropdown({
       {isOpen && (
         <div 
           className={cn(
-            "absolute z-50 w-56 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in-80 zoom-in-95",
+            "absolute z-50 w-56 rounded-md border shadow-md outline-none animate-in fade-in-80 zoom-in-95",
+            "bg-[#151620] border-white/10 text-gray-200",
             align === "right" ? "right-0" : "left-0",
             side === "bottom" ? "top-full mt-2" : "bottom-full mb-2"
           )}
@@ -57,7 +58,7 @@ export function DropdownItem({
   return (
     <div 
       onClick={onClick}
-      className={cn("relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50", className)}
+      className={cn("relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-white/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50", className)}
     >
       {children}
     </div>
@@ -65,5 +66,5 @@ export function DropdownItem({
 }
 
 export function DropdownSeparator() {
-  return <div className="-mx-1 my-1 h-px bg-muted" />;
+  return <div className="-mx-1 my-1 h-px bg-white/10" />;
 }

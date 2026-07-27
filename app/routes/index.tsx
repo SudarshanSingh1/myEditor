@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { ErrorBoundary } from "../components/ErrorBoundary";
@@ -69,6 +70,7 @@ const AdminFactoryResetPage = lazy(() => import("../pages/admin/AdminFactoryRese
 const AdminReportsPage = lazy(() => import("../pages/admin/AdminReportsPage"));
 const AdminDockerPage = lazy(() => import("../pages/admin/AdminDockerPage"));
 const AdminNotificationsPage = lazy(() => import("../pages/admin/AdminNotificationsPage"));
+const AdminLogsPage = lazy(() => import("../pages/admin/AdminLogsPage"));
 
 // Error Pages (Lazy)
 const NotFound = lazy(() => import("../pages/error/NotFound"));
@@ -102,7 +104,8 @@ export default function AppRouter() {
       <ThemeProvider>
         <Suspense fallback={<PageLoader />}>
         <MaintenanceGuard>
-        <Routes>
+        <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
           {/* Public Landing */}
           <Route path="/" element={<LandingPage />} />
 
@@ -165,6 +168,7 @@ export default function AppRouter() {
             <Route path="errors" element={<Suspense fallback={<AdminLoader />}><AdminErrorsPage /></Suspense>} />
             <Route path="reports" element={<Suspense fallback={<AdminLoader />}><AdminReportsPage /></Suspense>} />
             <Route path="notifications" element={<Suspense fallback={<AdminLoader />}><AdminNotificationsPage /></Suspense>} />
+            <Route path="logs" element={<Suspense fallback={<AdminLoader />}><AdminLogsPage /></Suspense>} />
           </Route>
 
           {/* Super Admin Direct Bypass Route */}
@@ -197,6 +201,7 @@ export default function AppRouter() {
             <Route path="server" element={<Suspense fallback={<AdminLoader />}><AdminServerPage /></Suspense>} />
             <Route path="docker" element={<Suspense fallback={<AdminLoader />}><AdminDockerPage /></Suspense>} />
             <Route path="database" element={<Suspense fallback={<AdminLoader />}><AdminDatabasePage /></Suspense>} />
+            <Route path="logs" element={<Suspense fallback={<AdminLoader />}><AdminLogsPage /></Suspense>} />
             <Route path="backups" element={<Suspense fallback={<AdminLoader />}><AdminBackupsPage /></Suspense>} />
             <Route path="deployments" element={<Suspense fallback={<AdminLoader />}><AdminDeploymentsPage /></Suspense>} />
             <Route path="emails" element={<Suspense fallback={<AdminLoader />}><AdminEmailsPage /></Suspense>} />
@@ -215,6 +220,7 @@ export default function AppRouter() {
           {/* 404 Catch All */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </AnimatePresence>
         </MaintenanceGuard>
         </Suspense>
       </ThemeProvider>

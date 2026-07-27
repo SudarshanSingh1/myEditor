@@ -110,7 +110,7 @@ export default function AdminEmailsPage() {
             placeholder="Search by email or subject..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
+            className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-violet-500 transition-colors"
           />
         </div>
         <div className="relative w-full sm:w-48">
@@ -118,7 +118,7 @@ export default function AdminEmailsPage() {
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="w-full bg-[#18181b] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500 appearance-none"
+            className="w-full bg-[#18181b] border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-violet-500 appearance-none"
           >
             <option value="">All Statuses</option>
             <option value="SENT">Sent</option>
@@ -129,17 +129,17 @@ export default function AdminEmailsPage() {
       </div>
 
       {/* Table container */}
-      <div className="rounded-2xl border border-white/5 bg-white/5 overflow-hidden backdrop-blur-sm">
+      <div className="rounded-2xl border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 overflow-hidden backdrop-blur-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Recipient</th>
-                <th className="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Subject</th>
-                <th className="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Provider</th>
-                <th className="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sent Time</th>
-                <th className="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+              <tr className="border-b border-black/5 dark:border-white/5 bg-white/[0.02]">
+                <th className="p-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Recipient</th>
+                <th className="p-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Subject</th>
+                <th className="p-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="p-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Provider</th>
+                <th className="p-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Sent Time</th>
+                <th className="p-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -160,13 +160,13 @@ export default function AdminEmailsPage() {
                 emails.map((email) => (
                   <tr key={email.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="p-4">
-                      <div className="font-medium text-sm text-white">{email.recipient}</div>
+                      <div className="font-medium text-sm text-gray-900 dark:text-white">{email.recipient}</div>
                       {email.user_role && (
                         <div className="text-xs text-gray-500 mt-1">{email.user_role}</div>
                       )}
                     </td>
                     <td className="p-4">
-                      <div className="text-sm text-gray-300 line-clamp-1">{email.subject}</div>
+                      <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-1">{email.subject}</div>
                       {email.error_message && (
                         <div className="text-xs text-red-400 mt-1 flex items-center gap-1">
                           <ShieldAlert className="w-3 h-3" /> {email.error_message}
@@ -180,19 +180,19 @@ export default function AdminEmailsPage() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="text-sm text-gray-400">{email.provider}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{email.provider}</div>
                       {email.retries > 0 && (
                         <div className="text-xs text-amber-500/80 mt-1">Retried {email.retries}x</div>
                       )}
                     </td>
-                    <td className="p-4 text-sm text-gray-400 whitespace-nowrap">
+                    <td className="p-4 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {email.sent_at ? format(new Date(email.sent_at), "MMM d, yyyy HH:mm") : "-"}
                     </td>
                     <td className="p-4 text-right">
                       {email.status === 'FAILED' && (
                         <button
                           onClick={() => handleRetry(email.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-xs font-medium transition-colors border border-white/5 hover:border-white/10"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:bg-white/10 text-gray-900 dark:text-white text-xs font-medium transition-colors border border-black/5 dark:border-white/5 hover:border-black/10 dark:border-white/10"
                         >
                           <Send className="w-3.5 h-3.5" /> Retry
                         </button>
@@ -216,14 +216,14 @@ export default function AdminEmailsPage() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white disabled:opacity-50 hover:bg-white/10 transition-colors text-sm font-medium"
+              className="px-4 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white disabled:opacity-50 hover:bg-black/10 dark:bg-white/10 transition-colors text-sm font-medium"
             >
               Previous
             </button>
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={page * limit >= total}
-              className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white disabled:opacity-50 hover:bg-white/10 transition-colors text-sm font-medium"
+              className="px-4 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white disabled:opacity-50 hover:bg-black/10 dark:bg-white/10 transition-colors text-sm font-medium"
             >
               Next
             </button>

@@ -30,19 +30,19 @@ const roleBadge = (role: string) => {
     OWNER: "bg-violet-500/20 text-violet-300 border-violet-500/30",
     ADMIN: "bg-blue-500/20 text-blue-300 border-blue-500/30",
     MODERATOR: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-    USER: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+    USER: "bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/30",
   };
-  return map[role] || "bg-gray-500/20 text-gray-400";
+  return map[role] || "bg-gray-500/20 text-gray-600 dark:text-gray-400";
 };
 
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
     ACTIVE: "bg-emerald-500/20 text-emerald-400",
-    INACTIVE: "bg-gray-500/20 text-gray-400",
+    INACTIVE: "bg-gray-500/20 text-gray-600 dark:text-gray-400",
     SUSPENDED: "bg-amber-500/20 text-amber-400",
     BANNED: "bg-red-500/20 text-red-400",
   };
-  return map[status] || "bg-gray-500/20 text-gray-400";
+  return map[status] || "bg-gray-500/20 text-gray-600 dark:text-gray-400";
 };
 
 function CreateAdminModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
@@ -92,19 +92,19 @@ function CreateAdminModal({ onClose, onSuccess }: { onClose: () => void; onSucce
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md bg-[#111118] border border-white/12 rounded-2xl shadow-2xl p-6 space-y-5">
         <div>
-          <h2 className="text-xl font-bold text-white">Create Admin User</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create Admin User</h2>
           <p className="text-sm text-gray-500 mt-1">Create a new admin or moderator account.</p>
         </div>
 
         <div className="space-y-4">
           {(["username", "email"] as const).map((field) => (
             <div key={field}>
-              <label className="block text-sm font-medium text-gray-400 mb-1 capitalize">{field}</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 capitalize">{field}</label>
               <input
                 type={field === "email" ? "email" : "text"}
                 value={form[field]}
                 onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-violet-500/50 focus:bg-white/8"
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-600 focus:outline-none focus:border-violet-500/50 focus:bg-white/8"
                 placeholder={field === "email" ? "admin@example.com" : "username"}
               />
               {errors[field] && <p className="text-xs text-red-400 mt-1">{errors[field]}</p>}
@@ -112,34 +112,34 @@ function CreateAdminModal({ onClose, onSuccess }: { onClose: () => void; onSucce
           ))}
 
           <div>
-            <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
               <input 
                 type="checkbox"
                 checked={form.send_email}
                 onChange={e => setForm(f => ({ ...f, send_email: e.target.checked }))}
-                className="w-4 h-4 rounded border-white/20 bg-white/5 text-violet-500 focus:ring-violet-500/50"
+                className="w-4 h-4 rounded border-white/20 bg-black/5 dark:bg-white/5 text-violet-500 focus:ring-violet-500/50"
               />
               Send credentials by email
             </label>
           </div>
 
           <div className="relative z-20">
-            <label className="block text-sm font-medium text-gray-400 mb-1">Role</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Role</label>
             <select
               value={form.role}
               onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-              className="w-full bg-[#111118] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/50 appearance-none"
+              className="w-full bg-[#111118] border border-black/10 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-violet-500/50 appearance-none"
             >
-              {availableRoles.map(r => <option key={r} value={r} className="bg-[#111118] text-white">{r.replace("_", " ")}</option>)}
+              {availableRoles.map(r => <option key={r} value={r} className="bg-[#111118] text-gray-900 dark:text-white">{r.replace("_", " ")}</option>)}
             </select>
           </div>
 
           {/* Permissions Preview */}
-          <div className="bg-white/3 rounded-lg p-3 border border-white/8">
+          <div className="bg-black/5 dark:bg-white/3 rounded-lg p-3 border border-black/10 dark:border-white/8">
             <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Permissions Preview</p>
             <ul className="space-y-1">
               {(permissionPreviews[form.role] || []).map(p => (
-                <li key={p} className="flex items-center gap-2 text-xs text-gray-400">
+                <li key={p} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                   <span className="text-emerald-500">✓</span> {p}
                 </li>
               ))}
@@ -148,13 +148,13 @@ function CreateAdminModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-white/10 text-sm text-gray-400 hover:bg-white/5 transition-colors">
+          <button onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-black/10 dark:border-white/10 text-sm text-gray-600 dark:text-gray-400 hover:bg-black/5 dark:bg-white/5 transition-colors">
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex-1 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-sm text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-sm text-gray-900 dark:text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? "Creating..." : "Create User"}
           </button>
@@ -196,38 +196,38 @@ function SendEmailModal({ user, onClose }: { user: UserItem; onClose: () => void
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md bg-[#111118] border border-white/12 rounded-2xl shadow-2xl p-6 space-y-5">
         <div>
-          <h2 className="text-xl font-bold text-white">Send Email to {user.username}</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Send Email to {user.username}</h2>
           <p className="text-sm text-gray-500 mt-1">{user.email}</p>
         </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Subject</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Subject</label>
             <input
               type="text"
               value={subject}
               onChange={e => setSubject(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/50"
+              className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-violet-500/50"
               placeholder="Important Update"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Message</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Message</label>
             <textarea
               value={message}
               onChange={e => setMessage(e.target.value)}
-              className="w-full h-32 resize-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500/50"
+              className="w-full h-32 resize-none bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-violet-500/50"
               placeholder="Write your message here..."
             />
           </div>
         </div>
         <div className="flex gap-3 pt-2">
-          <button onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-white/10 text-sm text-gray-400 hover:bg-white/5 transition-colors">
+          <button onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-black/10 dark:border-white/10 text-sm text-gray-600 dark:text-gray-400 hover:bg-black/5 dark:bg-white/5 transition-colors">
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading || !subject.trim() || !message.trim()}
-            className="flex-1 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-sm text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-sm text-gray-900 dark:text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? "Sending..." : "Send"}
           </button>
@@ -429,7 +429,7 @@ export default function AdminUsersPage() {
           <option value="" style={{ background: "#0d0e1a" }}>All Roles</option>
           {ROLES.map(r => <option key={r} value={r} style={{ background: "#0d0e1a" }}>{r.replace("_", " ")}</option>)}
         </select>
-        <button onClick={fetchUsers} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
+        <button onClick={async () => { await fetchUsers(); toast.success("Users refreshed"); }} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
           <RefreshCw size={12} />
           Refresh
         </button>
@@ -457,7 +457,7 @@ export default function AdminUsersPage() {
 
       {/* Table */}
       <div className="e-table-wrapper">
-        <div style={{ overflowX: "auto" }}>
+        <div style={{ overflowX: "auto" }} className="pb-32">
           <table className="e-table" style={{ minWidth: 700 }}>
             <thead>
               <tr>
@@ -583,7 +583,7 @@ export default function AdminUsersPage() {
                         </button>
                         <Dropdown
                           align="right"
-                          trigger={<button className="p-1.5 text-gray-500 hover:text-white rounded hover:bg-white/10 transition-colors"><MoreHorizontal className="w-4 h-4" /></button>}
+                          trigger={<button className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-white rounded hover:bg-black/10 dark:bg-white/10 transition-colors"><MoreHorizontal className="w-4 h-4" /></button>}
                         >
                           <DropdownItem onClick={() => setDetailsTarget(user.id)}>
                             View User Details

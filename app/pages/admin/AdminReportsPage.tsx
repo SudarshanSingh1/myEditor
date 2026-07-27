@@ -5,9 +5,9 @@ import { useState, useEffect } from "react";
 import { fetchApi } from "../../lib/api";
 
 import { toast } from "sonner";
-
-import { Flag, CheckCircle, XCircle, UserPlus } from "lucide-react";
+import { Flag, CheckCircle, XCircle, UserPlus, Trash2, RefreshCw } from "lucide-react";
 import { PageHeader } from "../../components/enterprise/PageHeader";
+import { useConfirm } from "../../components/ui/ConfirmProvider";
 
 interface Report {
   id: string;
@@ -21,6 +21,7 @@ interface Report {
 }
 
 export default function AdminReportsPage() {
+  const { confirm } = useConfirm();
   const [reports, setReports] = useState<Report[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -63,6 +64,22 @@ export default function AdminReportsPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (await confirm("Are you sure you want to delete this report?")) {
+      try {
+        const res = await fetchApi(`/admin/reports/${id}`, { method: "DELETE" });
+        if (res?.success) {
+          toast.success("Report deleted successfully");
+          fetchReports();
+        } else {
+          toast.error(res?.error || "Failed to delete report");
+        }
+      } catch (e: any) {
+        toast.error(e.message || "Failed to delete report");
+      }
+    }
+  };
+
   return (
     <div style={{ background: "var(--e-bg-base)", minHeight: "100%" }}>
       <PageHeader
@@ -82,22 +99,25 @@ export default function AdminReportsPage() {
                 {f.opts.map(([v, l]) => <option key={v} value={v} style={{ background: "#0d0e1a" }}>{l}</option>)}
               </select>
             ))}
+            <button onClick={async () => { await fetchReports(); toast.success("Reports refreshed"); }} className="e-btn e-btn-secondary" style={{ gap: 6, height: 30, padding: "0 12px" }}>
+              <RefreshCw size={12} /> Refresh
+            </button>
           </div>
         }
       />
       <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
 
-      <div className="rounded-xl border border-white/8 overflow-hidden bg-[#111118]">
+      <div className="rounded-xl border border-black/10 dark:border-white/8 overflow-hidden bg-[#111118]">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-white/3 border-b border-white/8">
-                <th className="px-4 py-3 text-left font-semibold text-gray-400">Target</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-400">Reporter</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-400">Reason</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-400">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-400">Assignee</th>
-                <th className="px-4 py-3 text-right font-semibold text-gray-400">Actions</th>
+              <tr className="bg-black/5 dark:bg-white/3 border-b border-black/10 dark:border-white/8">
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Target</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Reporter</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Reason</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">Assignee</th>
+                <th className="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-400">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -111,36 +131,39 @@ export default function AdminReportsPage() {
                   </td>
                 </tr>
               ) : reports.map(r => (
-                <tr key={r.id} className="hover:bg-white/5">
-                  <td className="px-4 py-3 text-white">
-                    <span className="text-xs bg-white/10 px-1.5 py-0.5 rounded text-gray-400 mr-2">{r.target_type}</span>
+                <tr key={r.id} className="hover:bg-black/5 dark:bg-white/5">
+                  <td className="px-4 py-3 text-gray-900 dark:text-white">
+                    <span className="text-xs bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-400 mr-2">{r.target_type}</span>
                     {r.target_id.slice(0,8)}...
                   </td>
-                  <td className="px-4 py-3 text-gray-300">{r.reporter?.username || "Unknown"}</td>
-                  <td className="px-4 py-3 text-gray-400 max-w-xs truncate">{r.reason}</td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{r.reporter?.username || "Unknown"}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-xs truncate">{r.reason}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full border ${r.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' : r.status === 'RESOLVED' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : r.status === 'REJECTED' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'}`}>
                       {r.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-400">{r.assignee?.username || "—"}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{r.assignee?.username || "—"}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       {r.status === "PENDING" && (
-                        <button onClick={() => handleAction(r.id, "assign")} className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-blue-400" title="Assign to me">
+                        <button onClick={() => handleAction(r.id, "assign")} className="p-1.5 hover:bg-black/10 dark:bg-white/10 rounded text-gray-600 dark:text-gray-400 hover:text-blue-400" title="Assign to me">
                           <UserPlus className="w-4 h-4" />
                         </button>
                       )}
                       {(r.status === "PENDING" || r.status === "IN_PROGRESS") && (
                         <>
-                          <button onClick={() => handleAction(r.id, "resolve")} className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-emerald-400" title="Resolve">
+                          <button onClick={() => handleAction(r.id, "resolve")} className="p-1.5 hover:bg-black/10 dark:bg-white/10 rounded text-gray-600 dark:text-gray-400 hover:text-emerald-400" title="Resolve">
                             <CheckCircle className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleAction(r.id, "reject")} className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400" title="Reject">
+                          <button onClick={() => handleAction(r.id, "reject")} className="p-1.5 hover:bg-black/10 dark:bg-white/10 rounded text-gray-600 dark:text-gray-400 hover:text-red-400" title="Reject">
                             <XCircle className="w-4 h-4" />
                           </button>
                         </>
                       )}
+                      <button onClick={() => handleDelete(r.id)} className="p-1.5 hover:bg-black/10 dark:bg-white/10 rounded text-gray-600 dark:text-gray-400 hover:text-red-500" title="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>

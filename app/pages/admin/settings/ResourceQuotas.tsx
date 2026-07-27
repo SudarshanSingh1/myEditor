@@ -12,7 +12,7 @@ export default function ResourceQuotas() {
   const { settings, set } = useOutletContext<ContextType>();
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/5 p-8 backdrop-blur-sm relative overflow-hidden">
+    <div className="rounded-2xl border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 p-8 backdrop-blur-sm relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] rounded-full pointer-events-none" />
       <h2 className="text-sm font-bold text-blue-400 uppercase tracking-widest mb-6 flex items-center gap-2">
         <Zap className="w-4 h-4" /> Resource & Quotas

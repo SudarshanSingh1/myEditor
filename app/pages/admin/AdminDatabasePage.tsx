@@ -89,14 +89,12 @@ export default function AdminDatabasePage() {
         icon={Database}
         iconColor="#16a34a"
         actions={
-          <button onClick={fetchData} style={{
-            display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
-            background: "var(--e-bg-surface)", border: "1px solid var(--e-border)",
-            borderRadius: 10, fontSize: 12, fontWeight: 600,
-            color: "var(--e-text-secondary)", cursor: "pointer",
+          <button onClick={async () => { await fetchData(); toast.success("Database metrics refreshed"); }} style={{
+            background: "var(--e-bg-elevated)", border: "1px solid var(--e-border)",
+            color: "var(--e-text-primary)", padding: "6px 12px", borderRadius: 8,
+            fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer"
           }}>
-            <RefreshCw size={13} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
-            Refresh
+            <RefreshCw size={12} /> Refresh
           </button>
         }
       />
@@ -112,8 +110,8 @@ export default function AdminDatabasePage() {
         ) : !data ? (
           <div style={{ ...card, textAlign: "center", padding: "48px 16px", color: "var(--e-text-faint)" }}>
             Failed to load database info.{" "}
-            <button onClick={fetchData} style={{ color: "var(--e-accent)", fontWeight: 600, cursor: "pointer", background: "none", border: "none" }}>
-              Retry
+            <button onClick={async () => { await fetchData(); toast.success("Database metrics refreshed"); }} style={{ color: "var(--e-accent)", fontWeight: 600, cursor: "pointer", background: "none", border: "none" }}>
+              Force Update
             </button>
           </div>
         ) : (

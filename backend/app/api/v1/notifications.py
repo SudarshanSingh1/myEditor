@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
@@ -7,11 +7,12 @@ from app.dependencies.database import get_db
 from app.models.user import User
 from app.models.notification import Notification, NotificationType, UserNotificationSettings
 from app.dependencies.auth import get_current_user
-from app.dependencies.auth import require_permission
+from app.dependencies.auth import require_admin
 from app.services.admin_audit_service import AdminAuditService
 
 router = APIRouter()
 
+@router.get("")
 @router.get("/")
 def get_user_notifications(
     db: Session = Depends(get_db),
@@ -67,16 +68,22 @@ def mark_all_read(
     db.commit()
     return {"success": True}
 
-@router.post("/broadcast", dependencies=[Depends(require_permission("users.manage"))])
+from app.models.notification import Notification, NotificationType
+
+@router.post("/broadcast", dependencies=[Depends(require_admin)])
 def broadcast_notification(
     title: str,
     message: str,
-    type: str = "BROADCAST",
+    background_tasks: BackgroundTasks,
+    type: NotificationType = NotificationType.BROADCAST,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     users = db.query(User).all()
     notifications = []
+    
+    from app.services.email_service import EmailService
+    
     for u in users:
         notifications.append(
             Notification(
@@ -86,6 +93,9 @@ def broadcast_notification(
                 message=message
             )
         )
+        # Send an email notification for the broadcast
+        background_tasks.add_task(EmailService.send_custom_email, str(u.id), f"Broadcast: {title}", message)
+        
     db.add_all(notifications)
     db.commit()
     
@@ -93,7 +103,7 @@ def broadcast_notification(
         db=db,
         actor_id=current_user.id,
         action="BROADCAST_NOTIFICATION",
-        metadata_json={"title": title, "type": type, "target_type": "SYSTEM", "target_id": "ALL_USERS"}
+        metadata_json={"title": title, "type": type.value, "target_type": "SYSTEM", "target_id": "ALL_USERS"}
     )
     
     return {"success": True, "message": f"Broadcast sent to {len(users)} users"}

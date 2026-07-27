@@ -2,7 +2,7 @@ import pytest
 from app.models.user import User, RoleEnum, StatusEnum
 from app.models.user_session import UserSession
 from app.core.security import create_access_token
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 def create_test_user_and_token(db_session):
     user = User(
@@ -32,8 +32,8 @@ def test_get_sessions(client, db_session):
         browser="Chrome",
         os="Mac",
         is_active=True,
-        last_active_at=datetime.utcnow(),
-        expires_at=datetime.utcnow() + timedelta(days=30)
+        last_active_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30)
     )
     s2 = UserSession(
         user_id=user.id,
@@ -43,8 +43,8 @@ def test_get_sessions(client, db_session):
         browser="Safari",
         os="iOS",
         is_active=False,
-        last_active_at=datetime.utcnow() - timedelta(days=1),
-        expires_at=datetime.utcnow() + timedelta(days=30)
+        last_active_at=datetime.now(timezone.utc) - timedelta(days=1),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30)
     )
     db_session.add_all([s1, s2])
     db_session.commit()
@@ -65,7 +65,7 @@ def test_revoke_session(client, db_session):
         user_id=user.id,
         session_token_jti="ref1",
         is_active=True,
-        expires_at=datetime.utcnow() + timedelta(days=30)
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30)
     )
     db_session.add(s1)
     db_session.commit()
@@ -85,8 +85,8 @@ def test_revoke_all_sessions(client, db_session):
     user, token = create_test_user_and_token(db_session)
     headers = {"Authorization": f"Bearer {token}"}
     
-    s1 = UserSession(user_id=user.id, session_token_jti="ref1", is_active=True, expires_at=datetime.utcnow() + timedelta(days=30))
-    s2 = UserSession(user_id=user.id, session_token_jti="ref2", is_active=True, expires_at=datetime.utcnow() + timedelta(days=30))
+    s1 = UserSession(user_id=user.id, session_token_jti="ref1", is_active=True, expires_at=datetime.now(timezone.utc) + timedelta(days=30))
+    s2 = UserSession(user_id=user.id, session_token_jti="ref2", is_active=True, expires_at=datetime.now(timezone.utc) + timedelta(days=30))
     db_session.add_all([s1, s2])
     db_session.commit()
     

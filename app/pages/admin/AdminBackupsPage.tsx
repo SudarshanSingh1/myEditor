@@ -139,7 +139,7 @@ export default function AdminBackupsPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setShowRestore(false)}>Cancel</Button>
-            <Button onClick={executeRestore} disabled={confirmText !== "RESTORE"} className="bg-rose-600 hover:bg-rose-500 text-white">
+            <Button onClick={executeRestore} disabled={confirmText !== "RESTORE"} className="bg-rose-600 hover:bg-rose-500 text-gray-900 dark:text-white">
               Execute Restore
             </Button>
           </>

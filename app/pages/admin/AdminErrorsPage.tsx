@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
-import { Bug, RefreshCw } from "lucide-react";
+import { Bug, RefreshCw, Trash2 } from "lucide-react";
 import { PageHeader } from "../../components/enterprise/PageHeader";
+import { useConfirm } from "../../components/ui/ConfirmProvider";
 
 export default function AdminErrorsPage() {
+  const { confirm } = useConfirm();
   const [items, setItems] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,22 @@ export default function AdminErrorsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const handleDelete = async (id: string) => {
+    if (await confirm("Are you sure you want to delete this error log?")) {
+      try {
+        const res = await fetchApi(`/admin/errors/${id}`, { method: "DELETE" });
+        if (res?.success) {
+          toast.success("Error deleted successfully");
+          fetchData();
+        } else {
+          toast.error(res?.error || "Failed to delete error");
+        }
+      } catch (e: any) {
+        toast.error(e.message || "Failed to delete error");
+      }
+    }
+  };
+
   return (
     <div style={{ background: "var(--e-bg-base)", minHeight: "100%" }}>
       <PageHeader
@@ -31,7 +49,7 @@ export default function AdminErrorsPage() {
         icon={Bug}
         iconColor="var(--e-red)"
         actions={
-          <button onClick={fetchData} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
+          <button onClick={async () => { await fetchData(); toast.success("Errors refreshed"); }} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
             <RefreshCw size={12} /> Refresh
           </button>
         }
@@ -48,9 +66,9 @@ export default function AdminErrorsPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="rounded-xl border border-white/8 bg-white/3 p-12 text-center">
+        <div className="rounded-xl border border-black/10 dark:border-white/8 bg-black/5 dark:bg-white/3 p-12 text-center">
           <p className="text-4xl mb-3">✅</p>
-          <p className="text-gray-400 font-medium">No system errors logged.</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">No system errors logged.</p>
           <p className="text-gray-600 text-sm mt-1">System is running cleanly.</p>
         </div>
       ) : (
@@ -71,10 +89,15 @@ export default function AdminErrorsPage() {
                   <p className="text-sm text-red-200 mt-1.5 line-clamp-1">{e.message || "Unknown error"}</p>
                   <p className="text-xs text-gray-600 mt-1">{new Date(e.created_at).toLocaleString()}{e.user_id && ` · User: ${e.user_id}`}</p>
                 </div>
-                <span className="text-gray-600 ml-3">{expanded === e.id ? "▲" : "▼"}</span>
+                <div className="flex gap-2 items-center">
+                  <span className="text-gray-600 ml-3">{expanded === e.id ? "▲" : "▼"}</span>
+                  <button onClick={(ev) => { ev.stopPropagation(); handleDelete(e.id); }} className="text-red-500 hover:text-red-400 p-1" title="Delete error">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </button>
               {expanded === e.id && e.stack_trace && (
-                <div className="border-t border-red-500/10 bg-black/20 p-4">
+                <div className="border-t border-red-500/10 bg-black/5 dark:bg-black/20 p-4">
                   <pre className="text-xs text-red-300/70 font-mono whitespace-pre-wrap overflow-x-auto max-h-64">{e.stack_trace}</pre>
                 </div>
               )}

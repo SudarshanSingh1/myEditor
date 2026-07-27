@@ -36,7 +36,7 @@ def get_backups(db: Session = Depends(get_db), current_user: User = Depends(requ
 
 @router.post("/backups")
 def create_backup(req: BackupRequest, db: Session = Depends(get_db), current_user: User = Depends(require_super_admin)):
-    filename = f"backup_{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.dump"
+    filename = f"backup_{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d_%H%M%S')}.dump"
     new_backup = BackupLog(
         filename=filename,
         size_bytes=0,
@@ -57,8 +57,10 @@ def restore_backup(backup_id: str, db: Session = Depends(get_db), current_user: 
     if not backup:
         raise HTTPException(status_code=404, detail="Backup not found")
         
-    AuditService.log_action(db, current_user.id, "RESTORE_BACKUP", details={"backup_id": backup.id})
-    return {"success": True, "message": "Restore initiated (mock)"}
+    raise HTTPException(
+        status_code=501, 
+        detail="Automated database restores are not implemented. Please use pg_restore manually."
+    )
 
 @router.get("/deployments")
 def get_deployments(db: Session = Depends(get_db), current_user: User = Depends(require_super_admin)):

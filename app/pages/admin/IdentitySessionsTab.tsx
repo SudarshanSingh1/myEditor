@@ -71,13 +71,13 @@ export function IdentitySessionsTab() {
           { label: "MFA Enabled", value: dashboard?.mfa_enabled || 0, icon: ShieldCheck, color: "text-amber-400", bg: "bg-amber-500/10" },
           { label: "OAuth Connected", value: dashboard?.oauth_connected || 0, icon: Fingerprint, color: "text-indigo-400", bg: "bg-indigo-500/10" },
         ].map((stat, i) => (
-          <div key={i} className="p-4 rounded-xl border border-white/8 bg-white/3 flex items-center gap-4">
+          <div key={i} className="p-4 rounded-xl border border-black/10 dark:border-white/8 bg-black/5 dark:bg-white/3 flex items-center gap-4">
             <div className={`p-3 rounded-lg ${stat.bg}`}>
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-              <h3 className="text-xl font-bold text-white mt-1">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mt-1">
                 {loading ? "..." : stat.value.toLocaleString()}
               </h3>
             </div>
@@ -86,9 +86,9 @@ export function IdentitySessionsTab() {
       </div>
 
       {/* Sessions Table */}
-      <div className="rounded-xl border border-white/8 overflow-hidden bg-white/3">
-        <div className="p-4 border-b border-white/8 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-white">Active Sessions</h2>
+      <div className="rounded-xl border border-black/10 dark:border-white/8 overflow-hidden bg-black/5 dark:bg-white/3">
+        <div className="p-4 border-b border-black/10 dark:border-white/8 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Active Sessions</h2>
           {isSuperAdmin && (
             <button
               onClick={() => handleAction("revoke-all")}
@@ -98,10 +98,10 @@ export function IdentitySessionsTab() {
             </button>
           )}
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto pb-32">
           <table className="w-full text-sm min-w-[900px]">
             <thead>
-              <tr className="bg-white/3 border-b border-white/8">
+              <tr className="bg-black/5 dark:bg-white/3 border-b border-black/10 dark:border-white/8">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">User</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Device</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Browser/OS</th>
@@ -116,14 +116,14 @@ export function IdentitySessionsTab() {
               ) : sessions.length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">No active sessions</td></tr>
               ) : sessions.map(session => (
-                <tr key={session.id} className="hover:bg-white/5 transition-colors">
-                  <td className="px-4 py-3 font-medium text-white">{session.user}</td>
-                  <td className="px-4 py-3 text-gray-400 capitalize">{session.device}</td>
-                  <td className="px-4 py-3 text-gray-400">
+                <tr key={session.id} className="hover:bg-black/5 dark:bg-white/5 transition-colors">
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{session.user}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400 capitalize">{session.device}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                     <div>{session.browser}</div>
                     <div className="text-xs text-gray-500">{session.os}</div>
                   </td>
-                  <td className="px-4 py-3 text-gray-400">
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                     <div>{session.ip_address}</div>
                     <div className="text-xs text-gray-500">{session.country}</div>
                   </td>
@@ -134,7 +134,7 @@ export function IdentitySessionsTab() {
                   <td className="px-4 py-3 text-right">
                     <Dropdown
                       align="right"
-                      trigger={<button className="p-1.5 text-gray-500 hover:text-white rounded hover:bg-white/10 transition-colors"><MoreHorizontal className="w-4 h-4" /></button>}
+                      trigger={<button className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-white rounded hover:bg-black/10 dark:bg-white/10 transition-colors"><MoreHorizontal className="w-4 h-4" /></button>}
                     >
                       <DropdownItem onClick={() => handleAction("revoke", session.id)} className="text-red-400 hover:text-red-400">
                         Revoke Session

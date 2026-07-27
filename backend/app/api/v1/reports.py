@@ -8,12 +8,12 @@ from app.dependencies.database import get_db
 from app.models.user import User
 from app.models.report import Report, ReportStatus, ReportTargetType
 from app.dependencies.auth import get_current_user
-from app.dependencies.auth import require_permission
+from app.dependencies.auth import require_admin
 from app.services.admin_audit_service import AdminAuditService
 
 router = APIRouter()
 
-@router.get("/", dependencies=[Depends(require_permission("users.view"))])
+@router.get("", dependencies=[Depends(require_admin)])
 def list_reports(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -57,7 +57,7 @@ def list_reports(
         }
     }
 
-@router.get("/analytics", dependencies=[Depends(require_permission("system.analytics.view"))])
+@router.get("/analytics", dependencies=[Depends(require_admin)])
 def get_report_analytics(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -77,7 +77,7 @@ def get_report_analytics(
         }
     }
 
-@router.post("/{report_id}/assign", dependencies=[Depends(require_permission("users.manage"))])
+@router.post("/{report_id}/assign", dependencies=[Depends(require_admin)])
 def assign_report(
     report_id: str,
     db: Session = Depends(get_db),
@@ -100,7 +100,7 @@ def assign_report(
     
     return {"success": True, "message": "Report assigned successfully"}
 
-@router.post("/{report_id}/resolve", dependencies=[Depends(require_permission("users.manage"))])
+@router.post("/{report_id}/resolve", dependencies=[Depends(require_admin)])
 def resolve_report(
     report_id: str,
     db: Session = Depends(get_db),
@@ -122,7 +122,7 @@ def resolve_report(
     
     return {"success": True, "message": "Report resolved"}
 
-@router.post("/{report_id}/reject", dependencies=[Depends(require_permission("users.manage"))])
+@router.post("/{report_id}/reject", dependencies=[Depends(require_admin)])
 def reject_report(
     report_id: str,
     db: Session = Depends(get_db),
@@ -143,3 +143,26 @@ def reject_report(
     )
     
     return {"success": True, "message": "Report rejected"}
+
+@router.delete("/{report_id}")
+def delete_report(
+    report_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    db.delete(report)
+    db.commit()
+    
+    AdminAuditService.log_action(
+        db=db,
+        actor_id=current_user.id,
+        action="DELETE_REPORT",
+        metadata_json={"report_id": report.id, "target_type": "REPORT", "target_id": report.id}
+    )
+    
+    return {"success": True, "message": "Report deleted successfully"}
+

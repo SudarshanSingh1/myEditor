@@ -42,7 +42,7 @@ router = APIRouter()
 
 # 3. Infra Monitoring Additions
 @router.get("/server/workers", response_model=SuccessResponse)
-def get_workers(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
+def get_workers(db: Session = Depends(get_db), admin: User = Depends(require_permission('system.containers.restart'))):
     items = []
     
     # Try Docker first

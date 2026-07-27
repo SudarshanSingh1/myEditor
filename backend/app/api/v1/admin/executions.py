@@ -68,12 +68,12 @@ def get_executions_dashboard(db: Session = Depends(get_db), admin: User = Depend
         "completed_executions": completed,
         "cancelled_executions": cancelled,
         "live_queue_status": "Operational",
-        "running_workers": min(running + 2, 10),
+        "running_workers": running,
         "average_runtime_ms": round(avg_runtime),
         "queue_length": queued,
         "failure_rate": round(failure_rate, 1),
         "success_rate": round(success_rate, 1),
-        "active_containers": active_containers
+        "active_containers": running
     }
     return SuccessResponse(message="Dashboard retrieved", data=data)
 
@@ -222,4 +222,21 @@ def download_execution_logs(
         media_type="text/plain",
         headers={"Content-Disposition": f'attachment; filename="execution_{execution_id}.log"'}
     )
+
+@router.delete("/executions/{execution_id}", response_model=SuccessResponse)
+def delete_execution(
+    execution_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_permission("projects.delete"))
+):
+    ex = db.query(ExecutionLog).filter(ExecutionLog.id == execution_id).first()
+    if not ex:
+        raise HTTPException(status_code=404, detail="Execution not found")
+    
+    db.delete(ex)
+    db.commit()
+    
+    AuditService.log_action(db, admin.id, "DELETE_EXECUTION", request.client.host, request.headers.get("user-agent"), {"execution_id": execution_id})
+    return SuccessResponse(message="Execution deleted successfully")
 

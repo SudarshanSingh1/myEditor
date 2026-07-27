@@ -11,6 +11,7 @@ from .security import router as security_router
 from .server import router as server_router
 from .system import router as system_router
 from .users import router as users_router
+from .logs import router as logs_router
 
 admin_router = APIRouter()
 
@@ -25,3 +26,4 @@ admin_router.include_router(identity_router)
 admin_router.include_router(security_router)
 admin_router.include_router(server_router)
 admin_router.include_router(github_router)
+admin_router.include_router(logs_router, prefix="/logs", tags=["admin-logs"])

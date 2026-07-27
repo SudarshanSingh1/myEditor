@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { LandingNavbar } from "../components/layout/LandingNavbar";
 import { Hero } from "../components/sections/Hero";
+import { PageTransition } from "../components/ui/PageTransition";
 
 // Lazy load below-the-fold components to reduce initial bundle size
 const Features = lazy(() => import("../components/sections/Features").then(m => ({ default: m.Features })));
@@ -10,19 +11,21 @@ const LandingFooter = lazy(() => import("../components/layout/LandingFooter").th
 
 export function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <LandingNavbar />
-      <main className="flex-1 flex flex-col">
-        <Hero />
-        <Suspense fallback={<div className="min-h-screen bg-[#0a0a0f]" />}>
-          <Features />
-          <ActivityShowcase />
-          <FAQ />
+    <PageTransition>
+      <div className="flex min-h-screen flex-col">
+        <LandingNavbar />
+        <main className="flex-1 flex flex-col">
+          <Hero />
+          <Suspense fallback={<div className="min-h-screen bg-[#0a0a0f]" />}>
+            <Features />
+            <ActivityShowcase />
+            <FAQ />
+          </Suspense>
+        </main>
+        <Suspense fallback={null}>
+          <LandingFooter />
         </Suspense>
-      </main>
-      <Suspense fallback={null}>
-        <LandingFooter />
-      </Suspense>
-    </div>
+      </div>
+    </PageTransition>
   );
 }

@@ -16,7 +16,7 @@ from app.database.base import Base
 import app.models
 
 # Setup database for testing (use env var if present, fallback to sqlite)
-SQLALCHEMY_DATABASE_URL = os.getenv("TEST_DATABASE_URL", os.getenv("DATABASE_URL", "sqlite:///:memory:"))
+SQLALCHEMY_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "sqlite:///./test.db")
 
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
@@ -62,7 +62,9 @@ def client(db_session):
     from unittest.mock import patch
     with patch('app.services.email_service.EmailService.send_verification_email'), \
          patch('app.services.email_service.EmailService.send_new_login_alert'), \
-         patch('app.services.email_service.EmailService.send_password_reset_email'):
+         patch('app.services.email_service.EmailService.send_password_reset_email'), \
+         patch('app.services.email_service.EmailService.send_custom_email'), \
+         patch('app.services.email_service.EmailService.send_welcome_email'):
         with TestClient(fastapi_app) as test_client:
             yield test_client
             

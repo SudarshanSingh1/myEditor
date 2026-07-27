@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 import logging
 
@@ -20,6 +20,7 @@ router = APIRouter()
 @router.post("/run", response_model=SuccessResponse[ExecutionResponse])
 def run_code(
     request: ExecutionRequest,
+    req: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
@@ -40,9 +41,25 @@ def run_code(
             else:
                 activity = UserActivity(user_id=current_user.id, activity_date=today, count=1)
                 db.add(activity)
+            
+            # Record audit log
+            from app.services.audit_service import AuditService
+            ip_address = req.headers.get("x-forwarded-for", req.client.host if req.client else None)
+            if ip_address:
+                ip_address = ip_address.split(",")[0].strip()
+            user_agent = req.headers.get("user-agent", "Unknown")
+            AuditService.log_action(
+                db, 
+                current_user.id, 
+                "EXECUTION_RUN", 
+                ip_address, 
+                user_agent, 
+                {"project_id": str(request.project_id), "file_id": str(request.file_id), "language": request.language}
+            )
+            
             db.commit()
         except Exception as act_err:
-            logger.error(f"Failed to record activity: {act_err}")
+            logger.error(f"Failed to record activity or audit: {act_err}")
             
         return SuccessResponse(message="Execution complete", data=result)
     except ValueError as e:

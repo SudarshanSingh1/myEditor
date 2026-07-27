@@ -42,7 +42,7 @@ router = APIRouter()
 
 # --- System Settings ---
 @router.get("/system-settings", response_model=SuccessResponse)
-def get_system_settings(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))):
+def get_system_settings(db: Session = Depends(get_db), admin: User = Depends(require_permission('system.maintenance.toggle'))):
     settings_row = db.query(SystemSettings).first()
     if not settings_row:
         settings_row = SystemSettings()
@@ -99,7 +99,7 @@ def get_system_settings(db: Session = Depends(get_db), admin: User = Depends(req
     return SuccessResponse(message="Settings retrieved.", data=data)
 
 @router.put("/system-settings", response_model=SuccessResponse)
-def update_system_settings(req: SystemSettingsUpdate, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))):
+def update_system_settings(req: SystemSettingsUpdate, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('system.maintenance.toggle'))):
     settings_row = db.query(SystemSettings).first()
     if not settings_row:
         settings_row = SystemSettings()
@@ -271,6 +271,23 @@ def update_feedback_status(
     AuditService.log_action(db, admin.id, "UPDATE_FEEDBACK_STATUS", request.client.host, request.headers.get("user-agent"), {"feedback_id": str(feedback_id), "old_status": old_status, "new_status": req.status})
     return SuccessResponse(message="Status updated")
 
+@router.delete("/feedback/{feedback_id}", response_model=SuccessResponse)
+def delete_feedback(
+    feedback_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_permission("system.settings"))
+):
+    fb = db.query(Feedback).filter(Feedback.id == feedback_id).first()
+    if not fb:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    
+    db.delete(fb)
+    db.commit()
+    
+    AuditService.log_action(db, admin.id, "DELETE_FEEDBACK", request.client.host, request.headers.get("user-agent"), {"feedback_id": feedback_id})
+    return SuccessResponse(message="Feedback deleted successfully")
+
 # --- Errors ---
 @router.get("/errors", response_model=SuccessResponse)
 def get_errors(
@@ -295,11 +312,29 @@ def get_errors(
     
     return SuccessResponse(message="Errors retrieved", data={"items": items, "total": total})
 
+@router.delete("/errors/{error_id}", response_model=SuccessResponse)
+def delete_system_error(
+    error_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_permission("system.settings"))
+):
+    err = db.query(SystemError).filter(SystemError.id == error_id).first()
+    if not err:
+        raise HTTPException(status_code=404, detail="Error not found")
+    
+    db.delete(err)
+    db.commit()
+    
+    AuditService.log_action(db, admin.id, "DELETE_SYSTEM_ERROR", request.client.host, request.headers.get("user-agent"), {"error_id": error_id})
+    return SuccessResponse(message="System error deleted successfully")
+
+
 # --- Emails ---
 @router.get("/emails", response_model=SuccessResponse)
 def get_email_logs(
     skip: int = 0, limit: int = 50,
-    db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))
+    db: Session = Depends(get_db), admin: User = Depends(require_permission('system.maintenance.toggle'))
 ):
     total = db.query(EmailLog).count()
     logs = db.query(EmailLog).order_by(EmailLog.created_at.desc()).offset(skip).limit(limit).all()
@@ -323,24 +358,20 @@ def get_email_logs(
 def retry_email_log(
     log_id: str,
     db: Session = Depends(get_db), 
-    admin: User = Depends(require_permission('users.delete'))
+    admin: User = Depends(require_permission('system.maintenance.toggle'))
 ):
     log = db.query(EmailLog).filter(EmailLog.id == log_id).first()
     if not log:
         raise HTTPException(status_code=404, detail="Email log not found")
         
-    # In a real system, we'd trigger a background Celery task here to resend the email
-    # For now, we mock the success response to fulfill the frontend endpoint
-    log.status = EmailStatus.PENDING
-    log.retries = (log.retries or 0) + 1
-    log.error_message = None
-    db.commit()
-    
-    return SuccessResponse(message="Email queued for retry", data={"id": str(log.id)})
+    raise HTTPException(
+        status_code=501, 
+        detail="Automatic email retries require payload storage, which is currently not implemented."
+    )
 
 # --- Maintenance ---
 @router.get("/maintenance", response_model=SuccessResponse)
-def get_maintenance_config(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))):
+def get_maintenance_config(db: Session = Depends(get_db), admin: User = Depends(require_permission('system.maintenance.toggle'))):
     settings_row = db.query(SystemSettings).first()
     if not settings_row:
         settings_row = SystemSettings()
@@ -395,7 +426,7 @@ def update_maintenance_config(
 @router.post("/emails/test", response_model=SuccessResponse)
 def send_test_email(
     request: Request,
-    db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))
+    db: Session = Depends(get_db), admin: User = Depends(require_permission('system.maintenance.toggle'))
 ):
     try:
         from app.services.email_service import EmailService

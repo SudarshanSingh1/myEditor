@@ -62,12 +62,12 @@ def get_admin_github_repositories(db: Session = Depends(get_db), admin: User = D
     ]})
 
 @router.post("/github/repositories/{repo_id}/sync", response_model=SuccessResponse)
-def sync_admin_github_repository(repo_id: str, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.update'))):
+def sync_admin_github_repository(repo_id: str, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.edit.self'))):
     AuditService.log_action(db, admin.id, "SYNC_GITHUB_REPO", request.client.host, request.headers.get("user-agent"), {"repo_id": repo_id})
     return SuccessResponse(message="Sync initiated")
 
 @router.post("/github/repositories/{repo_id}/disconnect", response_model=SuccessResponse)
-def disconnect_admin_github_repository(repo_id: str, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))):
+def disconnect_admin_github_repository(repo_id: str, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.delete.any'))):
     AuditService.log_action(db, admin.id, "DISCONNECT_GITHUB_REPO", request.client.host, request.headers.get("user-agent"), {"repo_id": repo_id})
     return SuccessResponse(message="Repository disconnected")
 

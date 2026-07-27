@@ -88,7 +88,7 @@ def get_identity_sessions(db: Session = Depends(get_db), admin: User = Depends(r
     return SuccessResponse(message="Sessions retrieved", data={"items": items})
 
 @router.post("/identity/sessions/{session_id}/revoke", response_model=SuccessResponse)
-def revoke_session(session_id: str, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.update'))):
+def revoke_session(session_id: str, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.suspend'))):
     from app.models.user_session import UserSession
     session = db.query(UserSession).filter(UserSession.id == session_id).first()
     if session:
@@ -98,7 +98,7 @@ def revoke_session(session_id: str, request: Request, db: Session = Depends(get_
     return SuccessResponse(message="Session revoked")
 
 @router.post("/identity/sessions/revoke-all", response_model=SuccessResponse)
-def revoke_all_sessions(request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.update'))):
+def revoke_all_sessions(request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.suspend'))):
     from app.models.user_session import UserSession
     db.query(UserSession).delete()
     db.commit()

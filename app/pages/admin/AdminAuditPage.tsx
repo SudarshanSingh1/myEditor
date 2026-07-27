@@ -63,9 +63,8 @@ export default function AdminAuditPage() {
         icon={ClipboardList}
         badge={<EBadge color="indigo">OWNER ONLY</EBadge>}
         actions={
-          <button onClick={fetchData} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
-            <RefreshCw size={12} />
-            Refresh
+          <button onClick={async () => { await fetchData(); toast.success("Audit logs refreshed"); }} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
+            <RefreshCw size={12} /> Refresh
           </button>
         }
       />

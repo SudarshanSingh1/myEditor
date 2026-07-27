@@ -103,15 +103,15 @@ export default function SystemMaintenance() {
             onChange={(v) => set("maintenance_message")(v)}
           />
           
-          <div className="flex flex-col py-5 border-b border-white/5 last:border-0 group transition-colors rounded-xl px-4 -mx-4 gap-4">
+          <div className="flex flex-col py-5 border-b border-black/5 dark:border-white/5 last:border-0 group transition-colors rounded-xl px-4 -mx-4 gap-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-6">
               <div className="flex items-start gap-4 flex-1">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-400 border border-indigo-500/20 shrink-0">
                   <Clock className="w-6 h-6" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <p className="text-base font-semibold text-white tracking-wide">Maintenance Duration</p>
-                  <p className="text-sm text-gray-400 mt-1">Set the estimated end time. The system will automatically recover when this time passes.</p>
+                  <p className="text-base font-semibold text-gray-900 dark:text-white tracking-wide">Maintenance Duration</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Set the estimated end time. The system will automatically recover when this time passes.</p>
                 </div>
               </div>
             </div>

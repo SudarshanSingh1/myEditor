@@ -122,7 +122,7 @@ def get_project_details(
 @router.post("/projects/{project_id}/actions", response_model=SuccessResponse)
 def perform_project_action(
     project_id: uuid.UUID, req: ProjectActionRequest, request: Request,
-    db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))
+    db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.delete.any'))
 ):
     proj = db.query(Project).filter(Project.id == project_id).first()
     if not proj:
@@ -181,7 +181,7 @@ def perform_project_action(
 @router.post("/projects/bulk-actions", response_model=SuccessResponse)
 def perform_bulk_project_action(
     req: BulkProjectActionRequest, request: Request,
-    db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))
+    db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.delete.any'))
 ):
     projects = db.query(Project).filter(Project.id.in_(req.project_ids)).all()
     if not projects:
@@ -217,7 +217,7 @@ def perform_bulk_project_action(
 @router.get("/projects/{project_id}/download")
 def download_project_zip(
     project_id: uuid.UUID, request: Request,
-    db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))
+    db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.delete.any'))
 ):
     proj = db.query(Project).filter(Project.id == project_id).first()
     if not proj:
@@ -259,7 +259,7 @@ def download_project_zip(
 @router.delete("/projects/{project_id}", response_model=SuccessResponse)
 def delete_project(
     project_id: uuid.UUID, request: Request,
-    db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))
+    db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.delete.any'))
 ):
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:

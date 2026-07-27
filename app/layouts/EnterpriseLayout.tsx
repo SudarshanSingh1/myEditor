@@ -42,6 +42,7 @@ const adminNavGroups = [
       { icon: Users,           label: "Users",        to: "/app/admin/users" },
       { icon: FolderOpen,      label: "Projects",     to: "/app/admin/projects" },
       { icon: PlaySquare,      label: "Executions",   to: "/app/admin/executions" },
+      { icon: TerminalSquare,  label: "Live Logs",    to: "/app/admin/logs" },
     ],
   },
   {
@@ -72,6 +73,7 @@ const ownerNavGroups = [
       { icon: GitBranch,       label: "GitHub",       to: "/super-admin/github" },
       { icon: Mail,            label: "Emails",       to: "/super-admin/emails" },
       { icon: ClipboardList,   label: "Audit Logs",   to: "/super-admin/audit" },
+      { icon: TerminalSquare,  label: "Live Logs",    to: "/super-admin/logs" },
       { icon: Settings,        label: "Settings",     to: "/super-admin/settings" },
       { icon: AlertOctagon,    label: "Factory Reset",to: "/super-admin/factory-reset" },
     ],

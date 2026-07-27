@@ -8,7 +8,8 @@ import { ExecutionDetailsDrawer } from "./ExecutionDetailsDrawer";
 
 import { Modal } from "../../components/ui/Modal";
 
-import { Settings, Play, Server, Clock, Activity, AlertTriangle, CheckCircle, Database, Maximize2 } from "lucide-react";
+import { Settings, Play, Server, Clock, Activity, AlertTriangle, CheckCircle, Database, Maximize2, Trash2 } from "lucide-react";
+import { useConfirm } from "../../components/ui/ConfirmProvider";
 function useDebounceValue<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
@@ -87,6 +88,7 @@ function StatusChipExec({ raw }: { raw: string }) {
 }
 
 export default function AdminExecutionsPage() {
+  const { confirm } = useConfirm();
   const [activeTab, setActiveTab] = useState<'executions' | 'audit'>('executions');
   const [dashboardStats, setDashboardStats] = useState<any>(null);
 
@@ -151,6 +153,22 @@ export default function AdminExecutionsPage() {
     const interval = setInterval(fetchDashboard, 15000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleDelete = async (id: string) => {
+    if (await confirm("Are you sure you want to delete this execution log?")) {
+      try {
+        const res = await fetchApi(`/admin/executions/${id}`, { method: "DELETE" });
+        if (res?.success) {
+          toast.success("Execution deleted successfully");
+          fetchExecutions();
+        } else {
+          toast.error(res?.error || "Failed to delete execution");
+        }
+      } catch (e: any) {
+        toast.error(e.message || "Failed to delete execution");
+      }
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'executions') fetchExecutions();
@@ -275,7 +293,7 @@ export default function AdminExecutionsPage() {
               <option value="c++">C++</option>
               <option value="java">Java</option>
             </select>
-            <button onClick={() => fetchExecutions()} style={{
+            <button onClick={async () => { await fetchExecutions(); toast.success("Executions refreshed"); }} style={{
               ...inputStyle, cursor: "pointer", fontWeight: 600, color: "var(--e-text-secondary)", flexShrink: 0,
             }}>Refresh</button>
           </div>
@@ -333,7 +351,7 @@ export default function AdminExecutionsPage() {
                       <td style={{ ...tdBase, color: "var(--e-text-muted)", fontSize: 11, fontVariantNumeric: "tabular-nums" }}>
                         {item.duration_ms ? `${item.duration_ms}ms` : "—"}
                       </td>
-                      <td style={tdBase}>
+                      <td style={{ ...tdBase, display: "flex", gap: 8 }}>
                         <button onClick={() => setSelectedExecutionId(item.id)} style={{
                           display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600,
                           padding: "4px 10px", borderRadius: 7, cursor: "pointer",
@@ -341,6 +359,14 @@ export default function AdminExecutionsPage() {
                           border: "1px solid var(--e-border)", transition: "all 150ms",
                         }}>
                           <Settings size={12} /> Details
+                        </button>
+                        <button onClick={() => handleDelete(item.id)} style={{
+                          display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600,
+                          padding: "4px 10px", borderRadius: 7, cursor: "pointer",
+                          background: "rgba(220,38,38,0.1)", color: "#dc2626",
+                          border: "1px solid rgba(220,38,38,0.2)", transition: "all 150ms",
+                        }}>
+                          <Trash2 size={12} />
                         </button>
                       </td>
                     </tr>
@@ -370,7 +396,7 @@ export default function AdminExecutionsPage() {
               onChange={e => { setAuditSearch(e.target.value); setAuditPage(0); }}
               style={{ ...inputStyle, flex: "1 1 220px", maxWidth: 320 }}
             />
-            <button onClick={() => fetchAudit()} style={{ ...inputStyle, cursor: "pointer", fontWeight: 600, color: "var(--e-text-secondary)", flexShrink: 0 }}>Refresh</button>
+            <button onClick={async () => { await fetchAudit(); toast.success("Audit logs refreshed"); }} style={{ ...inputStyle, cursor: "pointer", fontWeight: 600, color: "var(--e-text-secondary)", flexShrink: 0 }}>Refresh</button>
           </div>
 
           <div style={{ background: "var(--e-bg-surface)", border: "1px solid var(--e-border)", borderRadius: 12, overflow: "hidden" }}>

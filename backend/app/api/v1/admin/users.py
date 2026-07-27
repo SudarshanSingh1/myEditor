@@ -405,7 +405,7 @@ def update_user_status(
 @router.delete("/users/{user_id}", response_model=SuccessResponse)
 def delete_user(
     user_id: uuid.UUID, request: Request,
-    db: Session = Depends(get_db), admin: User = Depends(require_permission('system.maintenance.toggle'))
+    db: Session = Depends(get_db), admin: User = Depends(require_permission('users.delete'))
 ):
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete your own account.")

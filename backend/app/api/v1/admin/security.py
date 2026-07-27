@@ -79,7 +79,7 @@ def get_blocked_ips(db: Session = Depends(get_db), admin: User = Depends(require
     return SuccessResponse(message="Blocked IPs", data={"items": items})
 
 @router.post("/security/blocked-ips", response_model=SuccessResponse)
-def block_ip(req: dict, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.update'))):
+def block_ip(req: dict, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.suspend'))):
     from app.models.blocked_ip import BlockedIP
     ip = req.get("ip_address")
     if not ip: raise HTTPException(status_code=400, detail="IP address required")
@@ -97,7 +97,7 @@ def block_ip(req: dict, request: Request, db: Session = Depends(get_db), admin: 
     return SuccessResponse(message="IP Blocked")
 
 @router.post("/security/blocked-ips/{id}/unblock", response_model=SuccessResponse)
-def unblock_ip(id: str, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.update'))):
+def unblock_ip(id: str, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_permission('users.suspend'))):
     from app.models.blocked_ip import BlockedIP
     block = db.query(BlockedIP).filter(BlockedIP.id == id).first()
     if block:

@@ -13,7 +13,7 @@ interface EditorPaneProps {
   fileId: string;
 }
 
-export const EditorPane: React.FC<EditorPaneProps> = ({ fileId }) => {
+export const EditorPane: React.FC<EditorPaneProps> = React.memo(({ fileId }) => {
   const projectId = useEditorStore(state => state.projectId);
   const tabName = useEditorStore(state => state.tabs.find(t => t.id === fileId)?.name);
   const localContent = useEditorStore(state => state.localContents[fileId]);
@@ -86,4 +86,4 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ fileId }) => {
       </Suspense>
     </div>
   );
-};
+});

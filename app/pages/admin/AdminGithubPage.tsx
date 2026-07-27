@@ -64,7 +64,7 @@ export default function AdminGithubPage() {
         subtitle="Manage global GitHub OAuth, repositories, and synchronization"
         icon={GitBranch}
         actions={
-          <button onClick={fetchData} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
+          <button onClick={async () => { await fetchData(); toast.success("GitHub metrics refreshed"); }} className="e-btn e-btn-secondary" style={{ gap: 6 }}>
             <RefreshCw size={12} /> Refresh
           </button>
         }
@@ -78,14 +78,14 @@ export default function AdminGithubPage() {
         <MetricCard label="OAuth Health"          value={loading ? "—" : (dashboard?.oauth_health || "Unknown")}   icon={GitBranch}    iconColor="var(--e-amber)"  iconBg="var(--e-amber-bg)" />
       </div>
 
-      <div className="rounded-xl border border-white/8 overflow-hidden bg-white/3">
-        <div className="p-4 border-b border-white/8">
-          <h2 className="text-lg font-bold text-white">Connected Repositories</h2>
+      <div className="rounded-xl border border-black/10 dark:border-white/8 overflow-hidden bg-black/5 dark:bg-white/3">
+        <div className="p-4 border-b border-black/10 dark:border-white/8">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Connected Repositories</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[800px]">
             <thead>
-              <tr className="bg-white/3 border-b border-white/8">
+              <tr className="bg-black/5 dark:bg-white/3 border-b border-black/10 dark:border-white/8">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Repository</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Owner</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Branch</th>
@@ -100,13 +100,13 @@ export default function AdminGithubPage() {
               ) : repos.length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">No repositories found.</td></tr>
               ) : repos.map(repo => (
-                <tr key={repo.id} className="hover:bg-white/5 transition-colors">
-                  <td className="px-4 py-3 font-medium text-white flex items-center gap-2">
-                    <GitBranch className="w-4 h-4 text-gray-400" />
+                <tr key={repo.id} className="hover:bg-black/5 dark:bg-white/5 transition-colors">
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                    <GitBranch className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     {repo.repository}
                   </td>
-                  <td className="px-4 py-3 text-gray-400">{repo.owner}</td>
-                  <td className="px-4 py-3 text-gray-400 font-mono text-xs">{repo.branch}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{repo.owner}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400 font-mono text-xs">{repo.branch}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
                     {new Date(repo.last_sync).toLocaleString()}
                   </td>
@@ -124,7 +124,7 @@ export default function AdminGithubPage() {
                   <td className="px-4 py-3 text-right">
                     <Dropdown
                       align="right"
-                      trigger={<button className="p-1.5 text-gray-500 hover:text-white rounded hover:bg-white/10 transition-colors"><MoreHorizontal className="w-4 h-4" /></button>}
+                      trigger={<button className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-white rounded hover:bg-black/10 dark:bg-white/10 transition-colors"><MoreHorizontal className="w-4 h-4" /></button>}
                     >
                       <DropdownItem onClick={() => handleSync(repo.id)} disabled={syncing[repo.id]}>
                         <RefreshCw className="w-4 h-4 mr-2" /> {syncing[repo.id] ? "Syncing..." : "Force Sync"}
