@@ -61,6 +61,7 @@ def verify_email(req: VerifyEmailRequest, request: Request, response: Response, 
         httponly=True,
         secure=True,
         samesite="strict",
+        path="/",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
     response.set_cookie(
@@ -69,6 +70,7 @@ def verify_email(req: VerifyEmailRequest, request: Request, response: Response, 
         httponly=True,
         secure=True,
         samesite="strict",
+        path="/",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
     )
     
@@ -103,6 +105,7 @@ def login(req: UserLoginRequest, request: Request, response: Response, db: Sessi
         httponly=True,
         secure=True,
         samesite="strict",
+        path="/",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
     response.set_cookie(
@@ -111,6 +114,7 @@ def login(req: UserLoginRequest, request: Request, response: Response, db: Sessi
         httponly=True,
         secure=True,
         samesite="strict",
+        path="/",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
     )
     
@@ -178,6 +182,7 @@ def refresh(response: Response, refresh_token: str | None = Cookie(default=None)
         httponly=True,
         secure=True,
         samesite="strict",
+        path="/",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
     

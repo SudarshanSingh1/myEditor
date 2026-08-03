@@ -11,7 +11,8 @@ router = APIRouter()
 async def get_current_user_ws(token: str, db: Session) -> User:
     try:
         return AuthService.get_current_user(db, token)
-    except Exception:
+    except Exception as e:
+        logger.exception("WebSocket authentication failed")
         return None
 
 @router.websocket("/ws")
@@ -23,8 +24,8 @@ async def websocket_logs(
 ):
     await websocket.accept()
     
-    # Authenticate via query token or cookie for WebSockets
-    actual_token = token or access_token
+    # Extract token from query or raw websocket cookies reliably
+    actual_token = token or websocket.cookies.get("access_token")
     user = await get_current_user_ws(actual_token, db)
     if not user:
         await websocket.send_text("ERROR: Authentication failed. Invalid token.")
