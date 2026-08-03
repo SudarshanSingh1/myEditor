@@ -1,56 +1,116 @@
-import { useEffect, useRef, useState } from "react";
-import { TerminalSquare, RefreshCw, XCircle, Play, Pause } from "lucide-react";
-import { useUserStore } from "../../stores/useUserStore";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { TerminalSquare, RefreshCw, XCircle, Play, Pause, AlertCircle } from "lucide-react";
 import { PageHeader } from "../../components/enterprise/PageHeader";
 import "../../styles/enterprise.css";
 
 export default function AdminLogsPage() {
   const [logs, setLogs] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  
   const ws = useRef<WebSocket | null>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
+  const reconnectAttempts = useRef(0);
+  
+  const isPausedRef = useRef(isPaused);
+  const pauseBufferRef = useRef<string[]>([]);
+  
+  // Keep ref in sync
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+    // Flush buffer on unpause
+    if (!isPaused && pauseBufferRef.current.length > 0) {
+      setLogs(prev => [...prev, ...pauseBufferRef.current].slice(-1000));
+      pauseBufferRef.current = [];
+    }
+  }, [isPaused]);
 
-  const connect = () => {
+  const connect = useCallback(() => {
     if (ws.current) return;
     
-    // Connect to WebSocket — auth is handled via httpOnly cookie automatically for same-origin.
-    // For cross-origin (e.g., VITE_API_URL differs from window.location.host) we pass nothing
-    // since cookies are httpOnly and can't be read by JS. The backend accepts cookie OR query param.
+    setIsReconnecting(reconnectAttempts.current > 0);
+    
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = import.meta.env.VITE_API_URL 
       ? new URL(import.meta.env.VITE_API_URL).host 
       : window.location.host;
       
-    ws.current = new WebSocket(`${protocol}//${host}/api/v1/admin/logs/ws`);
+    const socket = new WebSocket(`${protocol}//${host}/api/v1/admin/logs/ws`);
+    ws.current = socket;
     
-    ws.current.onopen = () => setIsConnected(true);
-    ws.current.onclose = () => {
-      setIsConnected(false);
-      ws.current = null;
-    };
-    ws.current.onerror = () => setIsConnected(false);
-    
-    ws.current.onmessage = (e) => {
-      if (!isPaused) {
-        setLogs(prev => [...prev.slice(-999), e.data]);
+    socket.onopen = () => {
+      setIsConnected(true);
+      setIsReconnecting(false);
+      reconnectAttempts.current = 0;
+      if (reconnectTimeoutRef.current) {
+        window.clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
     };
-  };
+    
+    socket.onclose = () => {
+      setIsConnected(false);
+      ws.current = null;
+      
+      // Auto-reconnect with exponential backoff
+      const backoff = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
+      reconnectAttempts.current += 1;
+      setIsReconnecting(true);
+      
+      reconnectTimeoutRef.current = window.setTimeout(() => {
+        connect();
+      }, backoff);
+    };
+    
+    socket.onerror = () => {
+      // close event will trigger reconnect
+      socket.close();
+    };
+    
+    socket.onmessage = (e) => {
+      // Add timestamp if missing
+      let logLine = e.data;
+      if (!/^\[\d{4}-\d{2}-\d{2}/.test(logLine) && !/^\d{4}-\d{2}-\d{2}/.test(logLine)) {
+        const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        logLine = `[${ts}] ${logLine}`;
+      }
+      
+      if (isPausedRef.current) {
+        pauseBufferRef.current.push(logLine);
+        if (pauseBufferRef.current.length > 1000) {
+          pauseBufferRef.current = pauseBufferRef.current.slice(-1000);
+        }
+      } else {
+        setLogs(prev => [...prev, logLine].slice(-1000));
+      }
+    };
+  }, []);
 
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      window.clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    reconnectAttempts.current = 0;
+    setIsReconnecting(false);
+    
     if (ws.current) {
+      // Override onclose so it doesn't trigger reconnect when manually disconnected
+      ws.current.onclose = () => {
+        setIsConnected(false);
+        ws.current = null;
+      };
       ws.current.close();
       ws.current = null;
     }
-  };
+  }, []);
 
-  // Connect once on mount, clean up on unmount
   useEffect(() => {
     connect();
     return () => disconnect();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [connect, disconnect]);
 
   useEffect(() => {
     if (terminalRef.current && !isPaused) {
@@ -66,31 +126,40 @@ export default function AdminLogsPage() {
         icon={TerminalSquare} 
       />
 
-      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 20, alignItems: "center" }}>
         <button 
           className={isConnected ? "e-btn e-btn-danger" : "e-btn e-btn-primary"} 
           onClick={isConnected ? disconnect : connect}
+          disabled={isReconnecting}
         >
-          {isConnected ? <XCircle size={14} /> : <RefreshCw size={14} />}
-          {isConnected ? "Disconnect" : "Connect"}
+          {isConnected ? <XCircle size={14} /> : <RefreshCw size={14} className={isReconnecting ? "spin" : ""} />}
+          {isConnected ? "Disconnect" : isReconnecting ? `Reconnecting (${reconnectAttempts.current})...` : "Connect"}
         </button>
         
         <button 
           className="e-btn e-btn-secondary" 
-
           onClick={() => setIsPaused(!isPaused)}
           disabled={!isConnected}
         >
           {isPaused ? <Play size={14} /> : <Pause size={14} />}
-          {isPaused ? "Resume" : "Pause"}
+          {isPaused ? `Resume (${pauseBufferRef.current.length} buffered)` : "Pause"}
         </button>
 
         <button 
           className="e-btn e-btn-secondary" 
-          onClick={() => setLogs([])}
+          onClick={() => {
+            setLogs([]);
+            pauseBufferRef.current = [];
+          }}
         >
           Clear Terminal
         </button>
+        
+        {isReconnecting && (
+          <span style={{ fontSize: 13, color: "#f59e0b", display: "flex", alignItems: "center", gap: 6, marginLeft: 10 }}>
+            <AlertCircle size={14} /> Connection lost. Retrying...
+          </span>
+        )}
       </div>
 
       <div 

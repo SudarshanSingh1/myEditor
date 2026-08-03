@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 import zipfile
 import io
@@ -149,6 +149,76 @@ def get_server_status(db: Session = Depends(get_db), admin: User = Depends(requi
         "uptime_seconds": uptime,
         "process_count": len(psutil.pids()),
     })
+
+import asyncio
+
+@router.websocket("/telemetry/ws")
+async def telemetry_websocket(websocket: WebSocket):
+    # TODO: Add authentication checking here using token or cookies
+    await websocket.accept()
+    try:
+        while True:
+            cpu = psutil.cpu_percent(interval=0)
+            mem = psutil.virtual_memory()
+            disk = psutil.disk_usage('/')
+            
+            try:
+                net = psutil.net_io_counters()
+                net_sent = round(net.bytes_sent / (1024**2), 2)
+                net_recv = round(net.bytes_recv / (1024**2), 2)
+            except:
+                net_sent, net_recv = 0, 0
+                
+            payload = {
+                "cpu_percent": cpu,
+                "ram_percent": mem.percent,
+                "ram_used_gb": round(mem.used / (1024**3), 2),
+                "disk_percent": disk.percent,
+                "network_sent_mb": net_sent,
+                "network_recv_mb": net_recv,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            await websocket.send_json(payload)
+            # Send at 1Hz (ping/pong handles heartbeat, this is just data)
+            await asyncio.sleep(1)
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        from app.core.logger import logger
+        logger.error(f"Telemetry websocket error: {e}")
+        try:
+            await websocket.close()
+        except:
+            pass
+
+@router.websocket("/alerts/ws")
+async def alerts_websocket(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            # Simulate a push alert based on thresholds
+            alerts = []
+            cpu = psutil.cpu_percent(interval=0)
+            mem = psutil.virtual_memory()
+            
+            if cpu > 85:
+                alerts.append({"type": "warning", "message": f"High CPU Usage: {cpu}%", "source": "System"})
+            
+            if mem.percent > 90:
+                alerts.append({"type": "critical", "message": f"Memory Exhaustion Warning: {mem.percent}% used", "source": "System"})
+            
+            if alerts:
+                await websocket.send_json({"alerts": alerts, "timestamp": datetime.now(timezone.utc).isoformat()})
+                
+            # Check every 10 seconds
+            await asyncio.sleep(10)
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        try:
+            await websocket.close()
+        except:
+            pass
 
 @router.get("/server/health", response_model=SuccessResponse)
 def get_server_health(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):

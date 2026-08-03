@@ -1,5 +1,6 @@
 import { toast } from 'sonner';
 import { useSystemStore } from '../stores/useSystemStore';
+import { useUserStore } from '../stores/useUserStore';
 
 const API_BASE_URL = '/api/v1';
 
@@ -32,7 +33,11 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     let response = await fetch(url, config);
 
     // Basic 401 interceptor logic: if unauthorized, maybe token expired
-    if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/refresh') {
+    if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/refresh' && endpoint !== '/auth/logout') {
+      const isLoggingOut = useUserStore.getState().isLoggingOut;
+      if (isLoggingOut) {
+        throw new Error('Session terminated.');
+      }
       if (!refreshPromise) {
         refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
           method: 'POST',

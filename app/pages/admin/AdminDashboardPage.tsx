@@ -128,28 +128,67 @@ export default function AdminDashboardPage() {
       .catch(() => {});
   }, []);
 
-  // Poll server metrics
-  const pollServer = async () => {
-    try {
-      const resp = await fetchApi("/admin/server");
-      if (resp?.success) {
-        const d = resp.data as ServerData;
-        setServer(d);
-        const t = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        setNetHistory(prev => [...prev.slice(-29), { t, read: d.network_recv_mb, write: d.network_sent_mb }]);
-        setCpuHistory(prev => [...prev.slice(-29), { t, v: d.cpu_percent }]);
-        setRamHistory(prev => [...prev.slice(-29), { t, v: d.ram_used_gb }]);
-        setDiskHistory(prev => [...prev.slice(-29), { t, v: d.disk_percent }]);
-      }
-    } catch { /* silent */ }
-  };
-
+  // Connect to Telemetry WebSocket
   useEffect(() => {
-    if (!isModerator) {
-      pollServer();
-      const id = setInterval(pollServer, 10000);
-      return () => clearInterval(id);
-    }
+    if (isModerator) return;
+    
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: number;
+    let attempts = 0;
+    let isMounted = true;
+
+    const connect = () => {
+      if (!isMounted) return;
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const host = import.meta.env.VITE_API_URL 
+        ? new URL(import.meta.env.VITE_API_URL).host 
+        : window.location.host;
+        
+      ws = new WebSocket(`${protocol}//${host}/api/v1/admin/telemetry/ws`);
+      
+      ws.onopen = () => {
+        attempts = 0;
+      };
+      
+      ws.onmessage = (e) => {
+        if (!isMounted) return;
+        try {
+          const d = JSON.parse(e.data);
+          setServer(prev => ({ ...prev, ...d })); // preserve things like uptime_seconds if they don't stream
+          
+          const t = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+          setNetHistory(prev => [...prev.slice(-29), { t, read: d.network_recv_mb, write: d.network_sent_mb }]);
+          setCpuHistory(prev => [...prev.slice(-29), { t, v: d.cpu_percent }]);
+          setRamHistory(prev => [...prev.slice(-29), { t, v: d.ram_used_gb }]);
+          setDiskHistory(prev => [...prev.slice(-29), { t, v: d.disk_percent }]);
+        } catch {}
+      };
+
+      ws.onclose = () => {
+        if (!isMounted) return;
+        const backoff = Math.min(1000 * Math.pow(2, attempts++), 10000);
+        reconnectTimeout = window.setTimeout(connect, backoff);
+      };
+    };
+
+    connect();
+
+    // Still fetch the static data once for things the WS doesn't send
+    fetchApi("/admin/server")
+      .then(resp => {
+        if (resp?.success && isMounted) {
+          setServer(resp.data as ServerData);
+        }
+      }).catch(() => {});
+
+    return () => {
+      isMounted = false;
+      clearTimeout(reconnectTimeout);
+      if (ws) {
+        ws.onclose = null;
+        ws.close();
+      }
+    };
   }, [isModerator]);
 
   const now = new Date();

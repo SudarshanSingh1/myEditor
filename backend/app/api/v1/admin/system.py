@@ -220,22 +220,111 @@ def update_system_settings(req: SystemSettingsUpdate, request: Request, db: Sess
     return SuccessResponse(message="Settings updated.", data=changes)
 
 # --- Audit Logs ---
+from fastapi import Response
+from typing import Optional
+import csv
+import io
+from datetime import datetime
+
 @router.get("/audit", response_model=SuccessResponse)
 def get_audit_logs(
     skip: int = 0, limit: int = 50,
+    action: Optional[str] = None,
+    username: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     db: Session = Depends(get_db), admin: User = Depends(require_permission('system.maintenance.toggle'))
 ):
-    total = db.query(AuditLog).count()
-    logs = db.query(AuditLog, User.username).outerjoin(User, AuditLog.user_id == User.id).order_by(AuditLog.created_at.desc()).offset(skip).limit(limit).all()
+    query = db.query(AuditLog, User.username).outerjoin(User, AuditLog.user_id == User.id)
+    
+    if action:
+        query = query.filter(AuditLog.action.ilike(f"%{action}%"))
+    if username:
+        query = query.filter(User.username.ilike(f"%{username}%"))
+    if ip_address:
+        query = query.filter(AuditLog.ip_address.ilike(f"%{ip_address}%"))
+    if start_date:
+        try:
+            query = query.filter(AuditLog.created_at >= datetime.fromisoformat(start_date))
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            query = query.filter(AuditLog.created_at <= datetime.fromisoformat(end_date))
+        except ValueError:
+            pass
+
+    total = query.count()
+    logs = query.order_by(AuditLog.created_at.desc()).offset(skip).limit(limit).all()
     
     log_list = []
-    for log, username in logs:
+    for log, un in logs:
         log_list.append({
-            "id": str(log.id), "action": log.action, "username": username or "Unknown",
+            "id": str(log.id), "action": log.action, "username": un or "Unknown",
             "ip_address": log.ip_address, "details": log.details, "created_at": log.created_at
         })
         
     return SuccessResponse(message="Audit logs retrieved", data={"items": log_list, "total": total})
+
+@router.get("/audit/export")
+def export_audit_logs(
+    format: str = "csv",
+    action: Optional[str] = None,
+    username: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db), admin: User = Depends(require_permission('system.maintenance.toggle'))
+):
+    query = db.query(AuditLog, User.username).outerjoin(User, AuditLog.user_id == User.id)
+    
+    if action:
+        query = query.filter(AuditLog.action.ilike(f"%{action}%"))
+    if username:
+        query = query.filter(User.username.ilike(f"%{username}%"))
+    if ip_address:
+        query = query.filter(AuditLog.ip_address.ilike(f"%{ip_address}%"))
+    if start_date:
+        try:
+            query = query.filter(AuditLog.created_at >= datetime.fromisoformat(start_date))
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            query = query.filter(AuditLog.created_at <= datetime.fromisoformat(end_date))
+        except ValueError:
+            pass
+
+    logs = query.order_by(AuditLog.created_at.desc()).limit(10000).all() # Cap at 10k for safety
+
+    if format == "json":
+        log_list = []
+        for log, un in logs:
+            log_list.append({
+                "id": str(log.id), "action": log.action, "username": un or "Unknown",
+                "ip_address": log.ip_address, "details": log.details, "created_at": log.created_at.isoformat() if log.created_at else None
+            })
+        return log_list
+    else:
+        # Default to CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["ID", "Timestamp", "Action", "Username", "IP Address", "Details"])
+        for log, un in logs:
+            writer.writerow([
+                str(log.id), 
+                log.created_at.isoformat() if log.created_at else "", 
+                log.action, 
+                un or "Unknown", 
+                log.ip_address or "", 
+                str(log.details)
+            ])
+        
+        headers = {
+            "Content-Disposition": "attachment; filename=audit_export.csv"
+        }
+        return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
 
 # --- Feedback Management ---
 @router.get("/feedback", response_model=SuccessResponse)

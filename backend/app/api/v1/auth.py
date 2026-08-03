@@ -46,7 +46,7 @@ def register(req: UserRegisterRequest, request: Request, db: Session = Depends(g
         data=UserRegisterResponse(user=UserProfileResponse.model_validate(user), verification_token=verification_token)
     )
 
-@router.post("/verify-email", response_model=SuccessResponse[TokenResponse])
+@router.post("/verify-email", response_model=SuccessResponse)
 @limiter.limit("5/minute")
 def verify_email(req: VerifyEmailRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     ip_address = request.client.host if request.client else None
@@ -74,7 +74,7 @@ def verify_email(req: VerifyEmailRequest, request: Request, response: Response, 
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
     )
     
-    return SuccessResponse(message="Email verified successfully.", data=TokenResponse(access_token=access_token, refresh_token=refresh_token))
+    return SuccessResponse(message="Email verified successfully.")
 
 @router.post("/resend-verification", response_model=SuccessResponse[ResendVerificationResponse])
 @limiter.limit("3/minute")
@@ -85,7 +85,7 @@ def resend_verification(req: ResendVerificationRequest, request: Request, db: Se
         data=ResendVerificationResponse(verification_token=verification_token)
     )
 
-@router.post("/login", response_model=SuccessResponse[TokenResponse])
+@router.post("/login", response_model=SuccessResponse)
 @limiter.limit("5/minute")
 def login(req: UserLoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     forwarded_for = request.headers.get("x-forwarded-for")
@@ -118,7 +118,7 @@ def login(req: UserLoginRequest, request: Request, response: Response, db: Sessi
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
     )
     
-    return SuccessResponse(message="Login successful.", data=TokenResponse(access_token=access_token, refresh_token=refresh_token))
+    return SuccessResponse(message="Login successful.")
 
 @router.post("/logout", response_model=SuccessResponse)
 def logout(
@@ -170,7 +170,7 @@ def logout(
     return SuccessResponse(message="Logout successful.")
 
 
-@router.post("/refresh", response_model=SuccessResponse[TokenResponse])
+@router.post("/refresh", response_model=SuccessResponse)
 def refresh(response: Response, refresh_token: str | None = Cookie(default=None), db: Session = Depends(get_db)):
     if not refresh_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token missing")
@@ -186,7 +186,7 @@ def refresh(response: Response, refresh_token: str | None = Cookie(default=None)
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
     
-    return SuccessResponse(message="Token refreshed.", data=TokenResponse(access_token=access_token, refresh_token=refresh_token))
+    return SuccessResponse(message="Token refreshed.")
 
 @router.get("/me", response_model=SuccessResponse[UserProfileResponse])
 def get_me(current_user = Depends(get_current_user_dep)):

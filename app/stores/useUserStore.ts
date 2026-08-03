@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { fetchApi } from '../lib/api';
 import { useSystemStore } from './useSystemStore';
+import { queryClient } from '../lib/queryClient';
 
 // Share the exact same promise for concurrent callers
 let _authPromise: Promise<void> | null = null;
@@ -33,6 +34,7 @@ interface UserState {
   permissions: string[];
   isAuthenticated: boolean;
   isLoading: boolean;
+  isLoggingOut: boolean;
   checkAuth: () => Promise<void>;
   initGuest: () => Promise<void>;
   incrementGuestQuota: () => void;
@@ -51,11 +53,13 @@ export const useUserStore = create<UserState>()(
       permissions: [],
       isAuthenticated: false,
       isLoading: true,
+      isLoggingOut: false,
       
       checkAuth: async () => {
         if (_authPromise) return _authPromise;
+        if (get().isLoggingOut) return;
 
-        _authPromise = (async () => {
+        const executeAuth = async () => {
           const { checkStatus, hasChecked } = useSystemStore.getState();
           if (!hasChecked) {
             await checkStatus();
@@ -90,11 +94,15 @@ export const useUserStore = create<UserState>()(
             }
           } finally {
             set({ isLoading: false });
-            _authPromise = null;
           }
-        })();
+        };
 
-        return _authPromise;
+        _authPromise = executeAuth();
+        try {
+          await _authPromise;
+        } finally {
+          _authPromise = null;
+        }
       },
       
       initGuest: async () => {
@@ -156,12 +164,25 @@ export const useUserStore = create<UserState>()(
       },
       
       logout: async () => {
+        // Cancel active queries and clear stale data immediately
+        queryClient.cancelQueries();
+        queryClient.clear();
+        
+        // Sync reset state so UI navigates in one render cycle
+        set({ 
+          user: null, 
+          permissions: [], 
+          isAuthenticated: false, 
+          isLoggingOut: true,
+          guestQuota: null
+        });
+        
         try {
           await fetchApi('/auth/logout', { method: 'POST' });
         } catch (error) {
           console.error("Logout failed:", error);
         } finally {
-          set({ user: null, permissions: [], isAuthenticated: false });
+          set({ isLoggingOut: false });
         }
       },
       

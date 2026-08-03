@@ -20,7 +20,7 @@ import { Button } from '../ui/Button';
 
 import { FileIcon } from './FileIcon';
 
-export const EditorTabs: React.FC = () => {
+export const EditorTabs: React.FC = React.memo(() => {
   const tabs = useEditorStore(state => state.tabs);
   const activeFileId = useEditorStore(state => state.activeFileId);
   const dirtyFiles = useEditorStore(state => state.dirtyFiles);
@@ -142,9 +142,9 @@ export const EditorTabs: React.FC = () => {
       </Modal>
     </div>
   );
-};
+});
 
-const EditorActions: React.FC = () => {
+const EditorActions: React.FC = React.memo(() => {
   const activeFileId = useEditorStore(state => state.activeFileId);
   const projectLanguage = useEditorStore(state => state.projectLanguage);
   const tabs = useEditorStore(state => state.tabs);
@@ -238,4 +238,4 @@ const EditorActions: React.FC = () => {
 
     </div>
   );
-};
+});

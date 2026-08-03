@@ -65,7 +65,7 @@ def get_current_user_optional(access_token: str | None = Cookie(default=None), d
         return None
     try:
         return AuthService.get_current_user(db, access_token)
-    except Exception:
+    except HTTPException:
         return None
 
 get_current_user_dep_optional = get_current_user_optional

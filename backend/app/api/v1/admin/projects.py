@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 import zipfile
 import io
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, text
 import uuid
@@ -93,11 +93,11 @@ def get_project_details(
     project_id: uuid.UUID,
     db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))
 ):
-    proj = db.query(Project).filter(Project.id == project_id).first()
+    proj = db.query(Project).options(joinedload(Project.owner)).filter(Project.id == project_id).first()
     if not proj:
         raise HTTPException(status_code=404, detail="Project not found")
         
-    owner = db.query(User).filter(User.id == proj.owner_id).first()
+    owner = proj.owner
     files = db.query(File).filter(File.project_id == proj.id).all()
     storage_used = sum((f.size or 0) for f in files)
     
@@ -124,7 +124,7 @@ def perform_project_action(
     project_id: uuid.UUID, req: ProjectActionRequest, request: Request,
     db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.delete.any'))
 ):
-    proj = db.query(Project).filter(Project.id == project_id).first()
+    proj = db.query(Project).options(joinedload(Project.owner)).filter(Project.id == project_id).first()
     if not proj:
         raise HTTPException(status_code=404, detail="Project not found")
         
@@ -183,7 +183,7 @@ def perform_bulk_project_action(
     req: BulkProjectActionRequest, request: Request,
     db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.delete.any'))
 ):
-    projects = db.query(Project).filter(Project.id.in_(req.project_ids)).all()
+    projects = db.query(Project).options(joinedload(Project.owner)).filter(Project.id.in_(req.project_ids)).all()
     if not projects:
         raise HTTPException(status_code=404, detail="No projects found")
         
@@ -219,7 +219,7 @@ def download_project_zip(
     project_id: uuid.UUID, request: Request,
     db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.delete.any'))
 ):
-    proj = db.query(Project).filter(Project.id == project_id).first()
+    proj = db.query(Project).options(joinedload(Project.owner)).filter(Project.id == project_id).first()
     if not proj:
         raise HTTPException(status_code=404, detail="Project not found")
         
@@ -261,7 +261,7 @@ def delete_project(
     project_id: uuid.UUID, request: Request,
     db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.delete.any'))
 ):
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).options(joinedload(Project.owner)).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     

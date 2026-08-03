@@ -4,6 +4,7 @@ from .analytics import router as analytics_router
 from .dashboard import router as dashboard_router
 from .executions import router as executions_router
 from .github import router as github_router
+from .docker import router as docker_router
 from .identity import router as identity_router
 from .platform_analytics import router as platform_analytics_router
 from .projects import router as projects_router
@@ -26,3 +27,4 @@ admin_router.include_router(identity_router)
 admin_router.include_router(security_router)
 admin_router.include_router(server_router)
 admin_router.include_router(github_router)
+admin_router.include_router(docker_router, prefix="/docker")

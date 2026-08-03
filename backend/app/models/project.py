@@ -14,7 +14,7 @@ class Project(Base):
     __tablename__ = "projects"
 
     id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    owner_id = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    owner_id = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     
     name = Column(String(100), index=True, nullable=False)
     description = Column(String(500), nullable=True)

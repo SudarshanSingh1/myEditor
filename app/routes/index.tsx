@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
+
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { ErrorBoundary } from "../components/ErrorBoundary";
@@ -108,7 +108,6 @@ export default function AppRouter() {
       <ThemeProvider>
         <Suspense fallback={<PageLoader />}>
         <MaintenanceGuard>
-        <AnimatePresence mode="sync">
         <Routes location={location}>
           {/* Public Landing */}
           <Route path="/" element={<LandingPage />} />
@@ -224,7 +223,6 @@ export default function AppRouter() {
           {/* 404 Catch All */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        </AnimatePresence>
         </MaintenanceGuard>
         </Suspense>
       </ThemeProvider>

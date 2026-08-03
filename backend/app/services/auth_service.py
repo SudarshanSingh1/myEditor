@@ -324,7 +324,10 @@ class AuthService:
                 from app.models.user_session import UserSession
                 session = db.query(UserSession).filter(UserSession.session_token_jti == jti).first()
                 if not session or not session.is_active:
-                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session revoked or expired.")
+                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session revoked or inactive.")
+                
+                if session.expires_at and session.expires_at < datetime.now(timezone.utc):
+                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired.")
                 
                 # Update last active
                 session.last_active_at = datetime.now(timezone.utc)

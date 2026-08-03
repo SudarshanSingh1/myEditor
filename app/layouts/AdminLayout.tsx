@@ -10,6 +10,7 @@ import {
   ClipboardList, Mail, LogOut, GitBranch, Flag, Bell, TerminalSquare,
   HardDriveUpload, Rocket, AlertOctagon
 } from "lucide-react";
+import { NotificationCenter } from "../components/enterprise/NotificationCenter";
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/app/admin", exact: true },
@@ -233,6 +234,7 @@ export function AdminLayout({ isSuperAdminLayout = false }: { isSuperAdminLayout
 
           {/* Right side */}
           <div className="flex items-center gap-3">
+            <NotificationCenter />
             <ServerStatusDot />
             <a
               href="/app/dashboard"

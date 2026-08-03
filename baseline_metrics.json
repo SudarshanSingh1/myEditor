@@ -1,0 +1,24 @@
+{
+  "api_latency": [
+    {
+      "endpoint": "/api/v1/health",
+      "status": 403,
+      "latency_ms": 6.67
+    },
+    {
+      "endpoint": "/api/v1/admin/dashboard",
+      "status": 403,
+      "latency_ms": 3.53
+    },
+    {
+      "endpoint": "/api/v1/admin/analytics/audit",
+      "status": 403,
+      "latency_ms": 3.35
+    },
+    {
+      "endpoint": "/api/v1/users/me",
+      "status": 403,
+      "latency_ms": 3.22
+    }
+  ]
+}

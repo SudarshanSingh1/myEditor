@@ -14,7 +14,7 @@ import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { SudarshanaMandala } from '../ui/SplashLoader';
 import { cn } from '../../lib/utils';
 
-export const StatusBar: React.FC = () => {
+export const StatusBar: React.FC = React.memo(() => {
   const { 
     language, encoding, lineEnding, cursorLine, cursorColumn, 
     spacesOrTabs, tabSize, connectionStatus 
@@ -193,4 +193,4 @@ export const StatusBar: React.FC = () => {
       </div>
     </div>
   );
-};
+});

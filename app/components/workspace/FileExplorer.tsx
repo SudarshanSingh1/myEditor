@@ -21,6 +21,26 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 
 import { Input } from '../ui/Input';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useMemo, useRef } from 'react';
+
+type FlatNode = 
+  | { type: 'folder'; folder: FolderTree; level: number }
+  | { type: 'file'; file: FileNode; level: number };
+
+const flattenTree = (folders: FolderTree[], files: FileNode[], level: number, expandedState: Record<string, boolean>): FlatNode[] => {
+  const result: FlatNode[] = [];
+  for (const folder of folders) {
+    result.push({ type: 'folder', folder, level });
+    if (expandedState[folder.id]) {
+      result.push(...flattenTree(folder.children || [], folder.files || [], level + 1, expandedState));
+    }
+  }
+  for (const file of files) {
+    result.push({ type: 'file', file, level });
+  }
+  return result;
+};
 
 type DialogState = {
   isOpen: boolean;
@@ -48,6 +68,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     value: '',
     targetId: null,
   });
+
+  const expandedFolders = useWorkspaceStore(state => state.expandedFolders);
+  const parentRef = useRef<HTMLDivElement>(null);
   
   const { data: tree, isLoading, isError, error } = useQuery({
     queryKey: ['workspace', projectId],
@@ -123,6 +146,18 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       }
     }
   }, [tree, tabs.length, activeFileId, openTab]);
+
+  const flatNodes = useMemo(() => {
+    if (!tree) return [];
+    return flattenTree(tree.folders, tree.files, 0, expandedFolders);
+  }, [tree, expandedFolders]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: flatNodes.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 28,
+    overscan: 10,
+  });
 
   // Mutations
   const createFolderMut = useMutation({
@@ -299,6 +334,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       </div>
 
       <div 
+        ref={parentRef}
         className="flex-1 overflow-y-auto py-2"
         onClick={() => setActiveFolder(null)}
         onDragOver={(e) => {
@@ -333,31 +369,51 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
             </div>
           </div>
         ) : (
-          <div className="pb-4">
-            {tree?.folders?.map((folder) => (
-              <FolderItem onDropItem={handleDropItem}
-                key={folder.id}
-                folder={folder}
-                level={0}
-                onRenameFolder={handleRenameFolder}
-                onDeleteFolder={handleDeleteFolder}
-                onCreateFile={handleCreateFile}
-                onCreateFolder={handleCreateFolder}
-                onRenameFile={handleRenameFile}
-                onDeleteFile={handleDeleteFile}
-                onDuplicateFile={handleDuplicateFile}
-              />
-            ))}
-            {tree?.files?.map((file) => (
-              <FileItem onDropItem={handleDropItem}
-                key={file.id}
-                file={file}
-                level={0}
-                onRename={handleRenameFile}
-                onDelete={handleDeleteFile}
-                onDuplicate={handleDuplicateFile}
-              />
-            ))}
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const node = flatNodes[virtualRow.index];
+              return (
+                <div
+                  key={node.type === 'folder' ? `folder-${node.folder.id}` : `file-${node.file.id}`}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  {node.type === 'folder' ? (
+                    <FolderItem onDropItem={handleDropItem}
+                      folder={{...node.folder, children: [], files: []}} // Prevent recursive render
+                      level={node.level}
+                      onRenameFolder={handleRenameFolder}
+                      onDeleteFolder={handleDeleteFolder}
+                      onCreateFile={handleCreateFile}
+                      onCreateFolder={handleCreateFolder}
+                      onRenameFile={handleRenameFile}
+                      onDeleteFile={handleDeleteFile}
+                      onDuplicateFile={handleDuplicateFile}
+                    />
+                  ) : (
+                    <FileItem onDropItem={handleDropItem}
+                      file={node.file}
+                      level={node.level}
+                      onRename={handleRenameFile}
+                      onDelete={handleDeleteFile}
+                      onDuplicate={handleDuplicateFile}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
