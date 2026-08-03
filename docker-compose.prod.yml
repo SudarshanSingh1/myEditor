@@ -19,6 +19,9 @@ services:
     cap_add:
       - SETUID   # needed for gosu to drop to appuser
       - SETGID
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
     logging:
       driver: "json-file"
       options:

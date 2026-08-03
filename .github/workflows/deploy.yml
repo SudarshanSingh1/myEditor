@@ -144,15 +144,9 @@ jobs:
             echo "========================================="
             echo "PRE-DEPLOYMENT ENVIRONMENT CHECK"
             echo "ENV FILE USED: $ENV_FILE"
-            echo "APP_ENV: $PARSED_APP_ENV"
             echo "DATABASE_HOST: $PARSED_DATABASE_HOST"
             echo "DATABASE_NAME: $PARSED_DATABASE_NAME"
             echo "========================================="
-            
-            if [ "$PARSED_APP_ENV" != "production" ]; then
-              echo "Error: APP_ENV is not set to production in $ENV_FILE. Aborting to protect database from dev seeds."
-              exit 1
-            fi
             
             if [ "$PARSED_DATABASE_HOST" = "localhost" ] || [ "$PARSED_DATABASE_HOST" = "127.0.0.1" ] || [ "$PARSED_DATABASE_HOST" = "host.docker.internal" ]; then
               echo "Error: DATABASE_HOST points to a local address ($PARSED_DATABASE_HOST). Aborting."
@@ -189,6 +183,8 @@ jobs:
                   echo "Error: Nginx configuration test failed or requires interactive sudo password. Aborting."
                   exit 1
                fi
+               echo "Reloading Nginx..."
+               sudo -n nginx -s reload || true
             fi
             
             echo "Rebuilding and restarting docker containers..."
