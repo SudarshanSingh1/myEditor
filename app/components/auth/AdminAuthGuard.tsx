@@ -43,7 +43,7 @@ export function AdminAuthGuard({ children, requiredPermission }: AdminAuthGuardP
   const isSuperAdmin = role === "OWNER";
   const isAdmin = role === "ADMIN" || isSuperAdmin;
   const isModerator = role === "MODERATOR";
-  const hasAccess = isAdmin || isModerator || permissions.includes('*') || permissions.includes('users.read.basic');
+  const hasAccess = isAdmin || isModerator || permissions.includes('*');
 
   if (!hasAccess) {
     return <Navigate to="/403" replace />;

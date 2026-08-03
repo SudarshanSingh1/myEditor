@@ -97,15 +97,29 @@ def get_storage_dashboard(db: Session = Depends(get_db), admin: User = Depends(r
     
     used_storage = total_file_size + total_versions_size
     
-    db_size = 1024 * 1024 * 50 # 50MB Mock
-    logs_storage = 1024 * 1024 * 200 # 200MB Mock
-    backups_storage = 1024 * 1024 * 1024 * 5 # 5GB Mock
-    total_capacity = 1024 * 1024 * 1024 * 100 # 100GB
-    
+    # Real database size via PostgreSQL system function
+    try:
+        db_size_row = db.execute(text("SELECT pg_database_size(current_database())")).fetchone()
+        db_size = db_size_row[0] if db_size_row else None
+    except Exception:
+        db_size = None
+
+    # Real disk capacity from the host via psutil
+    try:
+        disk = psutil.disk_usage('/')
+        total_capacity = disk.total
+    except Exception:
+        total_capacity = None
+
+    # No log rotation tracking system exists — do not fabricate a value
+    logs_storage = None
+    # No backup system is integrated — do not fabricate a value
+    backups_storage = None
+
     data = {
         "used_storage_bytes": used_storage,
         "total_storage_bytes": total_capacity,
-        "available_storage_bytes": total_capacity - used_storage,
+        "available_storage_bytes": (total_capacity - used_storage) if total_capacity is not None else None,
         "database_size_bytes": db_size,
         "object_storage_bytes": used_storage,
         "logs_storage_bytes": logs_storage,
@@ -188,7 +202,7 @@ def get_storage_largest_users(db: Session = Depends(get_db), admin: User = Depen
             "projects": r.project_count,
             "storage_bytes": r.total_size or 0,
             "uploads": r.file_count,
-            "downloads": r.file_count * 2
+            "downloads": None  # No download tracking system — not fabricated
         })
     return SuccessResponse(message="Largest users retrieved", data={"items": items})
 
@@ -233,9 +247,21 @@ def get_database_info(db: Session = Depends(get_db), admin: User = Depends(requi
             active_conn_res = db.execute(text("SELECT count(*) FROM pg_stat_activity")).fetchone()
             active_connections = active_conn_res[0] if active_conn_res else 1
             
-            # Simulated Pool & Migration info since neon uses pgbouncer, pg_stat_activity covers basics
-            pool_status = "Healthy"
-            migration_status = "Up to date"
+            # Check real connection pool status via pg_stat_activity
+            try:
+                active_conn_res = db.execute(text("SELECT count(*) FROM pg_stat_activity WHERE state = 'active'")).fetchone()
+                max_conn_res = db.execute(text("SELECT setting::int FROM pg_settings WHERE name = 'max_connections'")).fetchone()
+                active_count = active_conn_res[0] if active_conn_res else 0
+                max_count = max_conn_res[0] if max_conn_res else 100
+                if active_count / max(max_count, 1) > 0.9:
+                    pool_status = "Warning"
+                else:
+                    pool_status = "Healthy"
+            except Exception:
+                pool_status = "Unknown"
+
+            # Migration status cannot be safely queried at runtime without running alembic CLI
+            migration_status = "Unavailable"
         except:
             db_version = "Unknown"
             active_connections = 1

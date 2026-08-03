@@ -297,7 +297,7 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ action })
       });
       toast.success(`Action '${action}' successful`);
-      fetchUsers();
+      await fetchUsers();  // await so list reloads AFTER backend commits
     } catch (e: any) {
       toast.error(e.message || `Failed to perform ${action}`);
     }
@@ -331,7 +331,7 @@ export default function AdminUsersPage() {
     try {
       await fetchApi(`/admin/users/${userId}/role`, { method: "PATCH", body: JSON.stringify({ role: newRole }) });
       toast.success("Role updated");
-      fetchUsers();
+      await fetchUsers();  // await so list reloads AFTER backend commits
     } catch (e: any) { toast.error(e.message || "Failed to update role"); }
   };
 
@@ -339,7 +339,7 @@ export default function AdminUsersPage() {
     try {
       await fetchApi(`/admin/users/${userId}/status`, { method: "PATCH", body: JSON.stringify({ status: newStatus }) });
       toast.success("Status updated");
-      fetchUsers();
+      await fetchUsers();  // await so list reloads AFTER backend commits
     } catch (e: any) { toast.error(e.message || "Failed to update status"); }
   };
 
@@ -609,7 +609,8 @@ export default function AdminUsersPage() {
                                   Ban User
                                 </DropdownItem>
                               ) : (
-                                <DropdownItem onClick={() => handleAction(user.id, "unban")} className="text-emerald-400 hover:text-emerald-400">
+                                // Backend action for reversing a ban is "unsuspend" (sets status back to ACTIVE)
+                                <DropdownItem onClick={() => handleAction(user.id, "unsuspend")} className="text-emerald-400 hover:text-emerald-400">
                                   Unban User
                                 </DropdownItem>
                               )}

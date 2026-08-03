@@ -5,7 +5,6 @@ import { PageHeader } from "../../components/enterprise/PageHeader";
 import "../../styles/enterprise.css";
 
 export default function AdminLogsPage() {
-  const { token } = useUserStore();
   const [logs, setLogs] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -15,7 +14,9 @@ export default function AdminLogsPage() {
   const connect = () => {
     if (ws.current) return;
     
-    // Connect to WebSocket using cookies for auth
+    // Connect to WebSocket — auth is handled via httpOnly cookie automatically for same-origin.
+    // For cross-origin (e.g., VITE_API_URL differs from window.location.host) we pass nothing
+    // since cookies are httpOnly and can't be read by JS. The backend accepts cookie OR query param.
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = import.meta.env.VITE_API_URL 
       ? new URL(import.meta.env.VITE_API_URL).host 
@@ -44,11 +45,12 @@ export default function AdminLogsPage() {
     }
   };
 
+  // Connect once on mount, clean up on unmount
   useEffect(() => {
     connect();
     return () => disconnect();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     if (terminalRef.current && !isPaused) {

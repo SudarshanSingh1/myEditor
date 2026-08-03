@@ -117,10 +117,54 @@ def login(req: UserLoginRequest, request: Request, response: Response, db: Sessi
     return SuccessResponse(message="Login successful.", data=TokenResponse(access_token=access_token, refresh_token=refresh_token))
 
 @router.post("/logout", response_model=SuccessResponse)
-def logout(response: Response):
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+def logout(
+    response: Response,
+    db: Session = Depends(get_db),
+    refresh_token: str | None = Cookie(default=None),
+):
+    # Always delete cookies regardless of whether session revocation succeeds.
+    # This ensures the browser session is always cleared.
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        path="/"
+    )
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        path="/"
+    )
+
+    # Revoke the server-side session by marking is_active=False.
+    # A stolen refresh token will now be rejected by /auth/refresh.
+    if refresh_token:
+        try:
+            from jose import jwt, JWTError
+            from app.models.user_session import UserSession
+            payload = jwt.decode(
+                refresh_token,
+                settings.SECRET_KEY,
+                algorithms=[settings.JWT_ALGORITHM],
+                options={"verify_exp": False},  # allow revoking already-expired tokens too
+            )
+            jti = payload.get("jti")
+            if jti:
+                session = db.query(UserSession).filter(
+                    UserSession.session_token_jti == jti
+                ).first()
+                if session:
+                    session.is_active = False
+                    db.commit()
+        except Exception:
+            # Never block logout on revocation failure — cookies are already cleared above
+            pass
+
     return SuccessResponse(message="Logout successful.")
+
 
 @router.post("/refresh", response_model=SuccessResponse[TokenResponse])
 def refresh(response: Response, refresh_token: str | None = Cookie(default=None), db: Session = Depends(get_db)):

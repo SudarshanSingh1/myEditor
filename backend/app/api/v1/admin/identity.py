@@ -73,17 +73,22 @@ def get_identity_sessions(db: Session = Depends(get_db), admin: User = Depends(r
     
     items = []
     for s, un in sessions:
+        def _clean(val: str) -> str:
+            """Safety-net: map user-agents library's 'Other' placeholder to 'Unknown'.
+            Real values (Desktop, Chrome, Windows, etc.) pass through unchanged."""
+            return val if val and val.lower() not in ("other", "", "none") else "Unknown"
+
         items.append({
             "id": str(s.id),
             "user": un,
-            "device": getattr(s, "device_type", "Unknown"),
-            "browser": getattr(s, "browser", "Unknown"),
-            "os": getattr(s, "os", "Unknown"),
+            "device": _clean(getattr(s, "device_type", None) or ""),
+            "browser": _clean(getattr(s, "browser", None) or ""),
+            "os": _clean(getattr(s, "os", None) or ""),
             "ip_address": s.ip_address,
             "country": "Unknown",
             "login_time": s.created_at,
-            "last_activity": getattr(s, "updated_at", s.created_at) if hasattr(s, "updated_at") else s.created_at,
-            "status": "Active"
+            "last_activity": s.last_active_at,
+            "status": "Active" if s.is_active else "Revoked"
         })
     return SuccessResponse(message="Sessions retrieved", data={"items": items})
 

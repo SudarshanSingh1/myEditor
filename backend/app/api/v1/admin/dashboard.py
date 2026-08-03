@@ -87,6 +87,9 @@ def get_statistics(db: Session = Depends(get_db), admin: User = Depends(require_
     
     result = db.execute(query, {"today": today}).fetchone()
     
+    # Real storage: sum all file sizes actually stored in the DB
+    storage_bytes = db.query(func.sum(File.size)).scalar() or 0
+
     return SuccessResponse(message="Stats retrieved", data={
         "total_users": result.total_users,
         "active_users": result.active_users,
@@ -95,11 +98,11 @@ def get_statistics(db: Session = Depends(get_db), admin: User = Depends(require_
         "files": result.files,
         "feedback_count": result.feedback,
         "errors_today": result.errors_today,
-        "storage_used_bytes": result.files * 1024
+        "storage_used_bytes": storage_bytes
     })
 
 @router.get("/server", response_model=SuccessResponse)
-def get_server_status(admin: User = Depends(require_permission('users.delete'))):
+def get_server_status(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     cpu = psutil.cpu_percent(interval=0.5)
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
@@ -145,8 +148,6 @@ def get_server_status(admin: User = Depends(require_permission('users.delete')))
         "network_recv_mb": net_recv,
         "uptime_seconds": uptime,
         "process_count": len(psutil.pids()),
-        "service_health": "Healthy",
-        "worker_health": "Healthy"
     })
 
 @router.get("/server/health", response_model=SuccessResponse)
@@ -176,14 +177,45 @@ def get_server_health(db: Session = Depends(get_db), admin: User = Depends(requi
         docker_status = "offline"
     items.append({"label": "Docker Engine", "status": docker_status, "latency": f"{int((time.time()-start)*1000)}ms"})
     
-    # Check Queue Worker (Placeholder)
-    items.append({"label": "Queue Worker", "status": "online", "latency": "5ms"})
-    
-    # Check SMTP (Placeholder)
-    items.append({"label": "SMTP Relay", "status": "online", "latency": "45ms"})
-    
-    # Check Auth Service
-    items.append({"label": "Auth Service", "status": "online", "latency": "1ms"})
-    
+    # Check Queue Worker — look for a real uvicorn/worker process
+    worker_status = "offline"
+    worker_latency = "N/A"
+    try:
+        for p in psutil.process_iter(['name', 'cmdline']):
+            try:
+                cmd = " ".join(p.info.get('cmdline', []) or [])
+                if 'uvicorn' in cmd or 'gunicorn' in cmd:
+                    worker_status = "online"
+                    worker_latency = "<1ms"
+                    break
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+    except Exception:
+        worker_status = "unavailable"
+    items.append({"label": "Queue Worker", "status": worker_status, "latency": worker_latency})
+
+    # Check SMTP — real TCP connection test
+    smtp_status = "offline"
+    smtp_latency = "N/A"
+    smtp_host = getattr(settings, 'SMTP_HOST', None)
+    smtp_port = getattr(settings, 'SMTP_PORT', 587)
+    if not smtp_host:
+        smtp_status = "not_configured"
+        smtp_latency = "N/A"
+    else:
+        try:
+            start = time.time()
+            with smtplib.SMTP(smtp_host, int(smtp_port), timeout=3) as s:
+                s.noop()
+            smtp_latency = f"{int((time.time() - start) * 1000)}ms"
+            smtp_status = "online"
+        except Exception:
+            smtp_status = "offline"
+
+    items.append({"label": "SMTP Relay", "status": smtp_status, "latency": smtp_latency})
+
+    # Auth Service — if this endpoint is responding, auth is online
+    items.append({"label": "Auth Service", "status": "online", "latency": "<1ms"})
+
     return SuccessResponse(message="Server health retrieved", data={"items": items})
 

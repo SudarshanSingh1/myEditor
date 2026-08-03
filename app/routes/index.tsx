@@ -96,16 +96,20 @@ export default function AppRouter() {
     if (location.pathname.startsWith("/maintenance")) {
       return;
     }
+    // Only check auth ONCE on app mount — not on every route change.
+    // Calling checkAuth() on every pathname change sets isLoading=true which causes
+    // AdminAuthGuard to flash the SplashLoader on every single admin nav click.
     checkAuth();
-  }, [checkAuth, location.pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <ErrorBoundary>
       <ThemeProvider>
         <Suspense fallback={<PageLoader />}>
         <MaintenanceGuard>
-        <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
+        <AnimatePresence mode="sync">
+        <Routes location={location}>
           {/* Public Landing */}
           <Route path="/" element={<LandingPage />} />
 
@@ -159,16 +163,16 @@ export default function AppRouter() {
               </AuthGuard>
             }
           >
-            <Route index element={<Suspense fallback={<AdminLoader />}><AdminDashboardPage /></Suspense>} />
-            <Route path="analytics" element={<Suspense fallback={<AdminLoader />}><AdminAnalyticsPage /></Suspense>} />
-            <Route path="users" element={<Suspense fallback={<AdminLoader />}><AdminUsersPage /></Suspense>} />
-            <Route path="projects" element={<Suspense fallback={<AdminLoader />}><AdminProjectsPage /></Suspense>} />
-            <Route path="executions" element={<Suspense fallback={<AdminLoader />}><AdminExecutionsPage /></Suspense>} />
-            <Route path="feedback" element={<Suspense fallback={<AdminLoader />}><AdminFeedbackPage /></Suspense>} />
-            <Route path="errors" element={<Suspense fallback={<AdminLoader />}><AdminErrorsPage /></Suspense>} />
-            <Route path="reports" element={<Suspense fallback={<AdminLoader />}><AdminReportsPage /></Suspense>} />
-            <Route path="notifications" element={<Suspense fallback={<AdminLoader />}><AdminNotificationsPage /></Suspense>} />
-            <Route path="logs" element={<Suspense fallback={<AdminLoader />}><AdminLogsPage /></Suspense>} />
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="analytics" element={<AdminAnalyticsPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="projects" element={<AdminProjectsPage />} />
+            <Route path="executions" element={<AdminExecutionsPage />} />
+            <Route path="feedback" element={<AdminFeedbackPage />} />
+            <Route path="errors" element={<AdminErrorsPage />} />
+            <Route path="reports" element={<AdminReportsPage />} />
+            <Route path="notifications" element={<AdminNotificationsPage />} />
+            <Route path="logs" element={<AdminLogsPage />} />
           </Route>
 
           {/* Super Admin Direct Bypass Route */}
@@ -185,28 +189,28 @@ export default function AppRouter() {
             }
           >
             <Route index element={<Navigate to="/super-admin/server" replace />} />
-            <Route path="audit" element={<Suspense fallback={<AdminLoader />}><AdminAuditPage /></Suspense>} />
-            <Route path="settings" element={<Suspense fallback={<AdminLoader />}><AdminSettingsPage /></Suspense>}>
+            <Route path="audit" element={<AdminAuditPage />} />
+            <Route path="settings" element={<AdminSettingsPage />}>
               <Route index element={<Navigate to="general" replace />} />
-              <Route path="general" element={<Suspense fallback={<AdminLoader />}><GeneralSettings /></Suspense>} />
-              <Route path="oauth" element={<Suspense fallback={<AdminLoader />}><OAuthSettings /></Suspense>} />
-              <Route path="feature-flags" element={<Suspense fallback={<AdminLoader />}><FeatureFlagsTab /></Suspense>} />
-              <Route path="api-keys" element={<Suspense fallback={<AdminLoader />}><ApiKeysTab /></Suspense>} />
-              <Route path="secrets" element={<Suspense fallback={<AdminLoader />}><SecretsTab /></Suspense>} />
-              <Route path="security" element={<Suspense fallback={<AdminLoader />}><PlatformSecurity /></Suspense>} />
-              <Route path="resources" element={<Suspense fallback={<AdminLoader />}><ResourceQuotas /></Suspense>} />
-              <Route path="email" element={<Suspense fallback={<AdminLoader />}><EmailSmtp /></Suspense>} />
-              <Route path="maintenance" element={<Suspense fallback={<AdminLoader />}><SystemMaintenance /></Suspense>} />
+              <Route path="general" element={<GeneralSettings />} />
+              <Route path="oauth" element={<OAuthSettings />} />
+              <Route path="feature-flags" element={<FeatureFlagsTab />} />
+              <Route path="api-keys" element={<ApiKeysTab />} />
+              <Route path="secrets" element={<SecretsTab />} />
+              <Route path="security" element={<PlatformSecurity />} />
+              <Route path="resources" element={<ResourceQuotas />} />
+              <Route path="email" element={<EmailSmtp />} />
+              <Route path="maintenance" element={<SystemMaintenance />} />
             </Route>
-            <Route path="server" element={<Suspense fallback={<AdminLoader />}><AdminServerPage /></Suspense>} />
-            <Route path="docker" element={<Suspense fallback={<AdminLoader />}><AdminDockerPage /></Suspense>} />
-            <Route path="database" element={<Suspense fallback={<AdminLoader />}><AdminDatabasePage /></Suspense>} />
-            <Route path="logs" element={<Suspense fallback={<AdminLoader />}><AdminLogsPage /></Suspense>} />
-            <Route path="backups" element={<Suspense fallback={<AdminLoader />}><AdminBackupsPage /></Suspense>} />
-            <Route path="deployments" element={<Suspense fallback={<AdminLoader />}><AdminDeploymentsPage /></Suspense>} />
-            <Route path="emails" element={<Suspense fallback={<AdminLoader />}><AdminEmailsPage /></Suspense>} />
-            <Route path="github" element={<Suspense fallback={<AdminLoader />}><AdminGithubPage /></Suspense>} />
-            <Route path="factory-reset" element={<Suspense fallback={<AdminLoader />}><AdminFactoryResetPage /></Suspense>} />
+            <Route path="server" element={<AdminServerPage />} />
+            <Route path="docker" element={<AdminDockerPage />} />
+            <Route path="database" element={<AdminDatabasePage />} />
+            <Route path="logs" element={<AdminLogsPage />} />
+            <Route path="backups" element={<AdminBackupsPage />} />
+            <Route path="deployments" element={<AdminDeploymentsPage />} />
+            <Route path="emails" element={<AdminEmailsPage />} />
+            <Route path="github" element={<AdminGithubPage />} />
+            <Route path="factory-reset" element={<AdminFactoryResetPage />} />
           </Route>
 
           {/* Error Routes */}

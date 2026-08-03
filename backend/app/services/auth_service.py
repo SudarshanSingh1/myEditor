@@ -244,14 +244,35 @@ class AuthService:
         session_token_jti = str(uuid.uuid4())
         ua = parse(user_agent_string or "")
         
+        def _ua_clean(val: str) -> str:
+            """Normalize 'Other' (user-agents library generic) to a meaningful label."""
+            return val if val and val.lower() not in ("other", "", "none") else None
+        
+        # Desktop browsers have device.family == "Other" — detect them correctly
+        raw_device = ua.device.family if hasattr(ua, 'device') else "Other"
+        if raw_device == "Other":
+            if ua.is_mobile:
+                device_type = "Mobile"
+            elif ua.is_tablet:
+                device_type = "Tablet"
+            elif ua.is_bot:
+                device_type = "Bot"
+            else:
+                device_type = "Desktop"  # default for real browser sessions
+        else:
+            device_type = raw_device
+        
+        browser = _ua_clean(ua.browser.family if hasattr(ua, 'browser') else "") or "Unknown"
+        os_name = _ua_clean(ua.os.family if hasattr(ua, 'os') else "") or "Unknown"
+        
         new_session = UserSession(
             user_id=user.id,
             session_token_jti=session_token_jti,
             ip_address=ip_address,
             user_agent=user_agent_string or "Unknown",
-            device_type=ua.device.family if hasattr(ua, 'device') else "Unknown",
-            browser=ua.browser.family if hasattr(ua, 'browser') else "Unknown",
-            os=ua.os.family if hasattr(ua, 'os') else "Unknown",
+            device_type=device_type,
+            browser=browser,
+            os=os_name,
             expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         )
         db.add(new_session)
@@ -267,7 +288,6 @@ class AuthService:
         log = AuditLog(user_id=user.id, action="LOGIN", ip_address=ip_address)
         db.add(log)
         db.commit()
-        logging.info(f"After login commit, users in DB: {[u.id for u in db.query(User).all()]}")
 
         # Notification
         try:
