@@ -16,4 +16,4 @@
 ### Fixed
 - Stabilized database migrations (resolved duplicate keys in `file_versions`).
 - Eliminated console errors and React runtime errors.
-- Improved error handling in `api.ts`.
+- Improved error handling in `api.ts`  .
