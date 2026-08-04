@@ -37,6 +37,7 @@ from pydantic import BaseModel, EmailStr
 
 
 from .schemas import *
+from app.services.lifecycle_service import ProjectLifecycle
 
 router = APIRouter()
 
@@ -256,43 +257,34 @@ def download_project_zip(
     )
 
 
+@router.get("/projects/{project_id}/dependencies", response_model=SuccessResponse)
+def get_project_dependencies(
+    project_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_permission('projects.delete.any'))
+):
+    """
+    Returns a structured dependency report for a project before permanent deletion.
+    """
+    deps = ProjectLifecycle.get_dependencies(project_id, db)
+    return SuccessResponse(message="Dependency report retrieved", data=deps)
+
+
 @router.delete("/projects/{project_id}", response_model=SuccessResponse)
 def delete_project(
     project_id: uuid.UUID, request: Request,
     db: Session = Depends(get_db), admin: User = Depends(require_permission('projects.delete.any'))
 ):
-    project = db.query(Project).options(joinedload(Project.owner)).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    project_name = project.name
-    try:
-        from app.models.execution_log import ExecutionLog
-        from app.models.workspace import File, Folder, FileVersion
-        from sqlalchemy import delete, select
-        
-        # 1. Delete Execution Logs
-        db.execute(delete(ExecutionLog).where(ExecutionLog.project_id == project_id))
-        
-        # 2. Delete File Versions
-        file_ids_subquery = select(File.id).where(File.project_id == project_id)
-        db.execute(delete(FileVersion).where(FileVersion.file_id.in_(file_ids_subquery)))
-        
-        # 3. Delete Files
-        db.execute(delete(File).where(File.project_id == project_id))
-        
-        # 4. Delete Folders
-        db.execute(delete(Folder).where(Folder.project_id == project_id))
-        
-        # 5. Delete Project
-        db.delete(project)
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        from app.core.logger import logger
-        logger.error(f"Failed to delete project: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to delete project")
-    
-    AuditService.log_action(db, admin.id, "DELETE_PROJECT", request.client.host, request.headers.get("user-agent"), {"project_id": str(project_id), "name": project_name})
-    return SuccessResponse(message="Project deleted")
-
+    """
+    Permanently deletes a project and all its contents (files, file versions, execution logs).
+    All audit/execution history is cleaned up via the LifecycleService.
+    """
+    result = ProjectLifecycle.permanent_delete(
+        project_id=project_id,
+        actor=admin,
+        reason="Admin delete",
+        db=db,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+    return SuccessResponse(message="Project deleted", data=result)

@@ -14,4 +14,5 @@ class DeploymentLog(Base):
     status = Column(String, default="SUCCESS")
     
     deployed_at = Column(DateTime(timezone=True), server_default=func.now())
-    deployed_by_id = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    deployed_by_id = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+

@@ -1,7 +1,7 @@
 import uuid
 import enum
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Boolean, DateTime, Enum, Uuid, Integer
+from sqlalchemy import Column, String, Boolean, DateTime, Enum, Uuid, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database.base import Base
 
@@ -39,6 +39,10 @@ class User(Base):
     
     email_verified = Column(Boolean, nullable=False, default=False, server_default="false")
     is_deleted = Column(Boolean, nullable=False, default=False, server_default="false")
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    restored_at = Column(DateTime(timezone=True), nullable=True)
+    restored_by = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     must_change_password = Column(Boolean, nullable=False, default=False, server_default="false")
     temp_password_expires_at = Column(DateTime(timezone=True), nullable=True)
     

@@ -21,9 +21,20 @@ from app.schemas.responses import SuccessResponse
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup logic
+    # Startup: launch database cleanup background task
+    import asyncio
+    from app.services.cleanup_service import cleanup_loop
+    cleanup_task = asyncio.create_task(cleanup_loop())
+
     yield
-    # Shutdown logic
+
+    # Shutdown: cancel cleanup task gracefully
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except asyncio.CancelledError:
+        pass
+
 
 app = FastAPI(
     title=settings.APP_NAME,
