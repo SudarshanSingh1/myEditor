@@ -90,10 +90,11 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
         
         if (response.success) {
             resetUnauthorizedFlag();
-            // Get profile and login (this should be adapted if verify-2fa returns the same struct as login)
-            const profileResp = await fetchApi("/auth/me");
-            if (profileResp.success && profileResp.data) {
-                const role: string = (profileResp.data.role || "").toUpperCase();
+            // Get profile and login
+            await useUserStore.getState().bootstrapAuth(true);
+            const userState = useUserStore.getState().user;
+            if (userState) {
+                const role: string = (userState.role || "").toUpperCase();
                 const isSuperAdmin = role === "OWNER";
                 const isAdmin = role === "ADMIN";
                 const isMod = role === "MODERATOR";
@@ -103,7 +104,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
                 }
                 const isMaint = useSystemStore.getState().isMaintenanceMode;
                 const allowAdmin = useSystemStore.getState().allowAdmin;
-                const perms: string[] = profileResp.data.effective_permissions || useUserStore.getState().permissions || [];
+                const perms: string[] = userState.effective_permissions || useUserStore.getState().permissions || [];
                 const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
                 const isStaff = isSuperAdmin || isAdmin || isMod || canBypass;
 
@@ -122,9 +123,6 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
                     navigate("/maintenance", { replace: true });
                     return;
                 }
-
-                await login(profileResp.data);
-
                 if (isSuperAdmin) {
                     navigate("/super-admin", { replace: true });
                 } else if (isAdmin || isMod) {
@@ -157,9 +155,11 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
       });
       
       if (response.success) {
-        const profileResp = await fetchApi("/auth/me");
-        if (profileResp.success && profileResp.data) {
-          const role: string = (profileResp.data.role || "").toUpperCase();
+        await useUserStore.getState().bootstrapAuth(true);
+        const userState = useUserStore.getState().user;
+        
+        if (userState) {
+          const role: string = (userState.role || "").toUpperCase();
           const isSuperAdmin = role === "OWNER";
           const isAdmin = role === "ADMIN";
           const isMod = role === "MODERATOR";
@@ -167,7 +167,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
           await useSystemStore.getState().checkStatus(true);
           const isMaint = useSystemStore.getState().isMaintenanceMode;
           const allowAdmin = useSystemStore.getState().allowAdmin;
-          const perms: string[] = profileResp.data.effective_permissions || useUserStore.getState().permissions || [];
+          const perms: string[] = userState.effective_permissions || useUserStore.getState().permissions || [];
           const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
           const isStaff = isSuperAdmin || isAdmin || isMod || canBypass;
 
@@ -189,7 +189,6 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
           }
 
           resetUnauthorizedFlag();
-          await login(profileResp.data);
 
           if (isSuperAdmin) {
             navigate("/super-admin", { replace: true });

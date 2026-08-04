@@ -90,7 +90,7 @@ const AdminLoader = () => <SplashLoader variant="admin" message="Securing admin 
 import { useUserStore } from "../stores/useUserStore";
 
 export default function AppRouter() {
-  const checkAuth = useUserStore((state) => state.checkAuth);
+  const bootstrapAuth = useUserStore((state) => state.bootstrapAuth);
   const location = useLocation();
 
   useEffect(() => {
@@ -98,9 +98,7 @@ export default function AppRouter() {
       return;
     }
     // Only check auth ONCE on app mount — not on every route change.
-    // Calling checkAuth() on every pathname change sets isLoading=true which causes
-    // AdminAuthGuard to flash the SplashLoader on every single admin nav click.
-    checkAuth();
+    bootstrapAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

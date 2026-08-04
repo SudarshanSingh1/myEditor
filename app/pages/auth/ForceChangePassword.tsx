@@ -45,9 +45,8 @@ export default function ForceChangePassword() {
       if (resp?.success) {
         success = true;
         toast.success('Password changed successfully.');
-        const profileResp = await fetchApi('/auth/me');
-        if (profileResp?.success && profileResp.data) {
-          useUserStore.getState().login(profileResp.data);
+        const authSuccess = await useUserStore.getState().bootstrapAuth(true);
+        if (authSuccess) {
           navigate('/app/dashboard', { replace: true });
         } else {
           await logout();

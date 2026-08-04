@@ -47,6 +47,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
       }
       
       if (!refreshPromise) {
+        console.log("[AUTH] REFRESH_REQUEST started");
         refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
@@ -54,8 +55,12 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
         }).finally(() => {
           if (!useUserStore.getState().authInvalid) {
             refreshPromise = null;
+          } else {
+            console.log("[AUTH] REFRESH_SKIPPED / Locked due to authInvalid");
           }
         });
+      } else {
+        console.log("[AUTH] REFRESH_REQUEST already in progress, awaiting");
       }
 
       const refreshResp = await refreshPromise;
@@ -68,6 +73,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
         useUserStore.getState().setAuthInvalid(true);
         if (!hasDispatchedUnauthorized) {
           hasDispatchedUnauthorized = true;
+          console.log("[AUTH] REFRESH FAILED (401/403/429) - Halting auth cycle");
           
           // Clear auth state and Zustand store
           useUserStore.setState({ 
@@ -75,18 +81,29 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
             permissions: [], 
             isAuthenticated: false, 
             isLoading: false, 
-            guestQuota: null 
+            guestQuota: null,
+            authBootstrapComplete: true // Ensure bootstrap is marked complete
           });
           
           // Clear cookies
           document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
           document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
           
-          // Clear React Query cache
+          // Clear React Query cache and disable future refetches
           try {
             const { queryClient } = await import('./queryClient');
             queryClient.cancelQueries();
             queryClient.clear();
+            // Completely disable refetching to prevent zombies
+            queryClient.setDefaultOptions({
+              queries: {
+                enabled: false,
+                refetchOnWindowFocus: false,
+                refetchOnReconnect: false,
+                refetchOnMount: false,
+                retry: false
+              }
+            });
           } catch (e) {
             // queryClient import might fail if not available, fallback to global window if needed
           }

@@ -5,7 +5,7 @@ import { useSystemStore } from './useSystemStore';
 import { queryClient } from '../lib/queryClient';
 
 // Share the exact same promise for concurrent callers
-let _authPromise: Promise<void> | null = null;
+let _bootstrapPromise: Promise<boolean> | null = null;
 let _guestPromise: Promise<void> | null = null;
 
 interface User {
@@ -37,8 +37,9 @@ interface UserState {
   isLoading: boolean;
   isLoggingOut: boolean;
   authInvalid: boolean;
+  authBootstrapComplete: boolean;
   setAuthInvalid: (invalid: boolean) => void;
-  checkAuth: () => Promise<void>;
+  bootstrapAuth: (force?: boolean) => Promise<boolean>;
   initGuest: () => Promise<void>;
   incrementGuestQuota: () => void;
   guestQuota: GuestQuota | null;
@@ -58,13 +59,22 @@ export const useUserStore = create<UserState>()(
       isLoading: true,
       isLoggingOut: false,
       authInvalid: false,
+      authBootstrapComplete: false,
       setAuthInvalid: (invalid) => set({ authInvalid: invalid }),
       
-      checkAuth: async () => {
-        if (_authPromise) return _authPromise;
-        if (get().isLoggingOut || get().authInvalid) return;
+      bootstrapAuth: async (force = false) => {
+        if (_bootstrapPromise && !force) return _bootstrapPromise;
+        if (get().isLoggingOut || get().authInvalid) {
+          console.log("[AUTH] AUTH_INVALID_ALREADY_SET or logging out, skipping bootstrap");
+          return false;
+        }
+
+        if (get().authBootstrapComplete && !force) {
+          return get().isAuthenticated;
+        }
 
         const executeAuth = async () => {
+          console.log("[AUTH] AUTH_BOOTSTRAP_START");
           const { checkStatus, hasChecked } = useSystemStore.getState();
           if (!hasChecked) {
             await checkStatus();
@@ -72,6 +82,7 @@ export const useUserStore = create<UserState>()(
 
           set({ isLoading: true });
           try {
+            console.log("[AUTH] AUTH_ME_REQUEST");
             const response = await fetchApi('/auth/me');
             if (response.success && response.data) {
               let perms: string[] = response.data.effective_permissions || [];
@@ -84,46 +95,55 @@ export const useUserStore = create<UserState>()(
                 console.error("Failed to fetch permissions", e);
               }
               const userWithPerms = { ...response.data, effective_permissions: perms };
-              set({ user: userWithPerms, permissions: perms, isAuthenticated: true });
+              set({ user: userWithPerms, permissions: perms, isAuthenticated: true, authBootstrapComplete: true });
+              console.log("[AUTH] AUTH_BOOTSTRAP_END (Success)");
+              return true;
             } else {
-              set({ user: null, permissions: [], isAuthenticated: false });
+              set({ user: null, permissions: [], isAuthenticated: false, authBootstrapComplete: true });
               // If not auth, we initialize guest
               if (!useSystemStore.getState().isMaintenanceMode) {
                 await get().initGuest();
               }
+              console.log("[AUTH] AUTH_BOOTSTRAP_END (Failure)");
+              return false;
             }
           } catch {
-            set({ user: null, permissions: [], isAuthenticated: false });
+            set({ user: null, permissions: [], isAuthenticated: false, authBootstrapComplete: true });
             if (!useSystemStore.getState().isMaintenanceMode) {
               await get().initGuest();
             }
+            console.log("[AUTH] AUTH_BOOTSTRAP_END (Exception)");
+            return false;
           } finally {
             set({ isLoading: false });
           }
         };
 
-        _authPromise = executeAuth();
+        _bootstrapPromise = executeAuth();
         try {
-          await _authPromise;
+          return await _bootstrapPromise;
         } finally {
-          _authPromise = null;
+          _bootstrapPromise = null;
         }
       },
       
       initGuest: async () => {
         if (useSystemStore.getState().isMaintenanceMode) {
+          console.log("[AUTH] GUEST_INIT_SKIPPED (Maintenance Mode)");
           return;
         }
 
         // If we already have a quota that isn't expired, don't re-init
         const quota = get().guestQuota;
         if (quota && new Date(quota.expires_at).getTime() > Date.now()) {
+          console.log("[AUTH] GUEST_INIT_SKIPPED (Quota exists)");
           return;
         }
 
         if (_guestPromise) return _guestPromise;
 
         _guestPromise = (async () => {
+          console.log("[AUTH] GUEST_INIT_START");
           try {
             const response = await fetchApi('/guest/init', { method: 'POST' });
             if (response && response.access_token) {
@@ -134,6 +154,7 @@ export const useUserStore = create<UserState>()(
                   expires_at: response.expires_at
                 }
               });
+              console.log("[AUTH] GUEST_INIT_DONE");
             }
           } catch (error) {
             console.error("Failed to init guest:", error);

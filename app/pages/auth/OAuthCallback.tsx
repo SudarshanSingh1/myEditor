@@ -31,14 +31,13 @@ export default function OAuthCallback() {
         if (response.success && response.data) {
           // Step 2: Fetch the full profile to get the real role
           let userData = response.data.user;
-          try {
-            const profileResp = await fetchApi("/auth/me");
-            if (profileResp.success && profileResp.data) {
-              userData = profileResp.data;
-            }
-          } catch {
-            // If /auth/me fails (e.g. maintenance), use what the oauth response gave us
-            userData = { ...response.data.user, role: response.data.user.role || "USER" };
+          await useUserStore.getState().bootstrapAuth(true);
+          const userState = useUserStore.getState().user;
+          if (userState) {
+              userData = userState;
+          } else {
+              // If /auth/me fails (e.g. maintenance), use what the oauth response gave us
+              userData = { ...response.data.user, role: response.data.user.role || "USER" };
           }
 
 
