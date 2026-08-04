@@ -6,6 +6,7 @@ import { queryClient } from '../lib/queryClient';
 
 // Share the exact same promise for concurrent callers
 let _authPromise: Promise<void> | null = null;
+let _guestPromise: Promise<void> | null = null;
 
 interface User {
   id: string;
@@ -35,6 +36,8 @@ interface UserState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isLoggingOut: boolean;
+  authInvalid: boolean;
+  setAuthInvalid: (invalid: boolean) => void;
   checkAuth: () => Promise<void>;
   initGuest: () => Promise<void>;
   incrementGuestQuota: () => void;
@@ -54,10 +57,12 @@ export const useUserStore = create<UserState>()(
       isAuthenticated: false,
       isLoading: true,
       isLoggingOut: false,
+      authInvalid: false,
+      setAuthInvalid: (invalid) => set({ authInvalid: invalid }),
       
       checkAuth: async () => {
         if (_authPromise) return _authPromise;
-        if (get().isLoggingOut) return;
+        if (get().isLoggingOut || get().authInvalid) return;
 
         const executeAuth = async () => {
           const { checkStatus, hasChecked } = useSystemStore.getState();
@@ -116,20 +121,28 @@ export const useUserStore = create<UserState>()(
           return;
         }
 
-        try {
-          const response = await fetchApi('/guest/init', { method: 'POST' });
-          if (response && response.access_token) {
-            set({ 
-              guestQuota: {
-                executions_used: response.executions_used,
-                executions_max: response.executions_max,
-                expires_at: response.expires_at
-              }
-            });
+        if (_guestPromise) return _guestPromise;
+
+        _guestPromise = (async () => {
+          try {
+            const response = await fetchApi('/guest/init', { method: 'POST' });
+            if (response && response.access_token) {
+              set({ 
+                guestQuota: {
+                  executions_used: response.executions_used,
+                  executions_max: response.executions_max,
+                  expires_at: response.expires_at
+                }
+              });
+            }
+          } catch (error) {
+            console.error("Failed to init guest:", error);
+          } finally {
+            _guestPromise = null;
           }
-        } catch (error) {
-          console.error("Failed to init guest:", error);
-        }
+        })();
+
+        return _guestPromise;
       },
       
       incrementGuestQuota: () => {
@@ -150,6 +163,7 @@ export const useUserStore = create<UserState>()(
       },
       
       login: async (user) => {
+        set({ authInvalid: false });
         let perms: string[] = user.effective_permissions || [];
         try {
           const permResp = await fetchApi('/rbac/my-permissions');

@@ -12,6 +12,7 @@ let hasDispatchedUnauthorized = false;
 
 export function resetUnauthorizedFlag() {
   hasDispatchedUnauthorized = false;
+  useUserStore.getState().setAuthInvalid(false);
 }
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
@@ -31,21 +32,29 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   };
 
   try {
+    const userStore = useUserStore.getState();
+    if (userStore.authInvalid && endpoint !== '/auth/login' && endpoint !== '/guest/init') {
+      throw new Error('Session terminated.');
+    }
+
     let response = await fetch(url, config);
 
     // Basic 401 interceptor logic: if unauthorized, maybe token expired
-    if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/refresh' && endpoint !== '/auth/logout') {
+    if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/refresh' && endpoint !== '/auth/logout' && endpoint !== '/guest/init') {
       const isLoggingOut = useUserStore.getState().isLoggingOut;
-      if (isLoggingOut) {
+      if (isLoggingOut || useUserStore.getState().authInvalid) {
         throw new Error('Session terminated.');
       }
+      
       if (!refreshPromise) {
         refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' }
         }).finally(() => {
-          refreshPromise = null;
+          if (!useUserStore.getState().authInvalid) {
+            refreshPromise = null;
+          }
         });
       }
 
@@ -54,8 +63,9 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
       if (refreshResp.ok) {
         // Retry original request
         response = await fetch(url, config);
-      } else {
+      } else if (refreshResp.status === 401 || refreshResp.status === 403 || refreshResp.status === 429) {
         // Refresh failed — clear everything and redirect to login
+        useUserStore.getState().setAuthInvalid(true);
         if (!hasDispatchedUnauthorized) {
           hasDispatchedUnauthorized = true;
           
@@ -83,6 +93,8 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
           
           window.location.href = '/login?expired=true';
         }
+        
+        throw new Error('Session terminated due to refresh failure.');
       }
     }
 
