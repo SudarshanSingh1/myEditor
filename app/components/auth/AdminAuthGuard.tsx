@@ -29,13 +29,13 @@ interface AdminAuthGuardProps {
 }
 
 export function AdminAuthGuard({ children, requiredPermission }: AdminAuthGuardProps) {
-  const { user, permissions, isAuthenticated, authBootstrapComplete } = useUserStore();
+  const { user, permissions, authState } = useUserStore();
 
-  if (!authBootstrapComplete) {
+  if (authState === 'UNKNOWN' || authState === 'BOOTSTRAPPING') {
     return <SplashLoader variant="admin" message="Loading admin console..." submessage="Securing executive access & permissions" />;
   }
 
-  if (!isAuthenticated || !user) {
+  if (authState !== 'AUTHENTICATED' || !user) {
     return <Navigate to="/login" replace />;
   }
 

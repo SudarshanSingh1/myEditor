@@ -45,7 +45,8 @@ export default function ForceChangePassword() {
       if (resp?.success) {
         success = true;
         toast.success('Password changed successfully.');
-        const authSuccess = await useUserStore.getState().bootstrapAuth(true);
+        const { authController } = await import('../../services/AuthController');
+        const authSuccess = await authController.bootstrap(true);
         if (authSuccess) {
           navigate('/app/dashboard', { replace: true });
         } else {

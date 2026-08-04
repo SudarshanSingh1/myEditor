@@ -31,7 +31,8 @@ export default function OAuthCallback() {
         if (response.success && response.data) {
           // Step 2: Fetch the full profile to get the real role
           let userData = response.data.user;
-          await useUserStore.getState().bootstrapAuth(true);
+          const { authController } = await import('../../services/AuthController');
+          await authController.bootstrap(true);
           const userState = useUserStore.getState().user;
           if (userState) {
               userData = userState;

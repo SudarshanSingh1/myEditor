@@ -88,9 +88,9 @@ const PageLoader = () => <SplashLoader message="Loading workspace..." submessage
 const AdminLoader = () => <SplashLoader variant="admin" message="Securing admin portal..." submessage="Verifying executive credentials" />;
 
 import { useUserStore } from "../stores/useUserStore";
+import { authController } from "../services/AuthController";
 
 export default function AppRouter() {
-  const bootstrapAuth = useUserStore((state) => state.bootstrapAuth);
   const location = useLocation();
 
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function AppRouter() {
       return;
     }
     // Only check auth ONCE on app mount — not on every route change.
-    bootstrapAuth();
+    authController.bootstrap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

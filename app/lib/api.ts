@@ -5,13 +5,8 @@ import { useDeploymentStore } from '../stores/useDeploymentStore';
 
 const API_BASE_URL = '/api/v1';
 
-let refreshPromise: Promise<Response> | null = null;
-// Track if we've already fired the unauthorized event this session
-// to prevent flooding the event bus on every failed request.
-let hasDispatchedUnauthorized = false;
-
 export function resetUnauthorizedFlag() {
-  hasDispatchedUnauthorized = false;
+  // Now handled by AuthController state machine.
   useUserStore.getState().setAuthInvalid(false);
 }
 
@@ -39,85 +34,10 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
 
     let response = await fetch(url, config);
 
-    // Basic 401 interceptor logic: if unauthorized, maybe token expired
-    if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/refresh' && endpoint !== '/auth/logout' && endpoint !== '/guest/init') {
-      const isLoggingOut = useUserStore.getState().isLoggingOut;
-      if (isLoggingOut || useUserStore.getState().authInvalid) {
-        throw new Error('Session terminated.');
-      }
-      
-      if (!refreshPromise) {
-        console.log("[AUTH] REFRESH_REQUEST started");
-        refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' }
-        }).finally(() => {
-          if (!useUserStore.getState().authInvalid) {
-            refreshPromise = null;
-          } else {
-            console.log("[AUTH] REFRESH_SKIPPED / Locked due to authInvalid");
-          }
-        });
-      } else {
-        console.log("[AUTH] REFRESH_REQUEST already in progress, awaiting");
-      }
-
-      const refreshResp = await refreshPromise;
-
-      if (refreshResp.ok) {
-        // Retry original request
-        response = await fetch(url, config);
-      } else if (refreshResp.status === 401 || refreshResp.status === 403 || refreshResp.status === 429) {
-        // Refresh failed — clear everything and redirect to login
-        useUserStore.getState().setAuthInvalid(true);
-        if (!hasDispatchedUnauthorized) {
-          hasDispatchedUnauthorized = true;
-          console.log("[AUTH] REFRESH FAILED (401/403/429) - Halting auth cycle");
-          
-          // Clear auth state and Zustand store
-          useUserStore.setState({ 
-            user: null, 
-            permissions: [], 
-            isAuthenticated: false, 
-            isLoading: false, 
-            guestQuota: null,
-            authBootstrapComplete: true // Ensure bootstrap is marked complete
-          });
-          
-          // Clear cookies
-          document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-          document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-          
-          // Clear React Query cache and disable future refetches
-          try {
-            const { queryClient } = await import('./queryClient');
-            queryClient.cancelQueries();
-            queryClient.clear();
-            // Completely disable refetching to prevent zombies
-            queryClient.setDefaultOptions({
-              queries: {
-                enabled: false,
-                refetchOnWindowFocus: false,
-                refetchOnReconnect: false,
-                refetchOnMount: false,
-                retry: false
-              }
-            });
-          } catch (e) {
-            // queryClient import might fail if not available, fallback to global window if needed
-          }
-          
-          const currentPath = window.location.pathname;
-          const isAuthPage = currentPath.startsWith('/login') || currentPath.startsWith('/signup') || currentPath.startsWith('/forgot-password') || currentPath.startsWith('/reset-password') || currentPath === '/' || currentPath.startsWith('/maintenance');
-          
-          if (!isAuthPage) {
-            window.location.href = '/login?expired=true';
-          }
-        }
-        
-        throw new Error('Session terminated due to refresh failure.');
-      }
+    // Basic 401 logic: just throw if unauthorized, let AuthController handle it.
+    if (response.status === 401) {
+       // We can optionally dispatch an event here if we wanted to loosely couple, 
+       // but AuthController handles explicit calls. Just throw for standard API queries.
     }
 
     const data = await response.json().catch(() => null);

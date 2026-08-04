@@ -30,24 +30,23 @@ interface GuestQuota {
   expires_at: string;
 }
 
+export type AuthState = 'UNKNOWN' | 'BOOTSTRAPPING' | 'AUTHENTICATED' | 'GUEST' | 'UNAUTHENTICATED';
+
 interface UserState {
   user: User | null;
   permissions: string[];
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  isLoggingOut: boolean;
-  authInvalid: boolean;
-  authBootstrapComplete: boolean;
-  guestInitialized: boolean;
-  setAuthInvalid: (invalid: boolean) => void;
-  bootstrapAuth: (force?: boolean) => Promise<boolean>;
-  initGuest: () => Promise<void>;
-  incrementGuestQuota: () => void;
+  authState: AuthState;
+  
   guestQuota: GuestQuota | null;
   showGuestConversionModal: boolean;
   setShowGuestConversionModal: (show: boolean) => void;
-  login: (user: User) => Promise<void>;
-  logout: () => Promise<void>;
+  
+  setAuthState: (state: AuthState) => void;
+  setAuthSuccess: (user: User, permissions: string[]) => void;
+  setGuestSuccess: (quota: GuestQuota) => void;
+  clearAuth: () => void;
+  incrementGuestQuota: () => void;
+  
   updateProfile: (data: Partial<User>) => void;
 }
 
@@ -56,125 +55,31 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       user: null,
       permissions: [],
-      isAuthenticated: false,
-      isLoading: true,
-      isLoggingOut: false,
-      authInvalid: false,
-      authBootstrapComplete: false,
-      guestInitialized: false,
-      setAuthInvalid: (invalid) => set({ authInvalid: invalid }),
+      authState: 'UNKNOWN',
+      guestQuota: null,
+      showGuestConversionModal: false,
+
+      setShowGuestConversionModal: (show) => set({ showGuestConversionModal: show }),
       
-      bootstrapAuth: async (force = false) => {
-        if (_bootstrapPromise && !force) return _bootstrapPromise;
-        if (get().isLoggingOut || get().authInvalid) {
-          console.log("[AUTH] AUTH_ME_SKIPPED (authInvalid or loggingOut)");
-          return false;
-        }
-
-        if (get().authBootstrapComplete && !force) {
-          console.log("[AUTH] AUTH_ME_SKIPPED (authBootstrapComplete)");
-          return get().isAuthenticated;
-        }
-
-        const executeAuth = async () => {
-          console.log("[AUTH] AUTH_BOOTSTRAP_START");
-          const { checkStatus, hasChecked } = useSystemStore.getState();
-          if (!hasChecked) {
-            await checkStatus();
-          }
-
-          set({ isLoading: true });
-          try {
-            console.log("[AUTH] AUTH_ME_REQUEST");
-            const response = await fetchApi('/auth/me');
-            if (response.success && response.data) {
-              let perms: string[] = response.data.effective_permissions || [];
-              try {
-                const permResp = await fetchApi('/rbac/my-permissions');
-                if (permResp && permResp.permissions) {
-                  perms = permResp.permissions;
-                }
-              } catch (e) {
-                console.error("Failed to fetch permissions", e);
-              }
-              const userWithPerms = { ...response.data, effective_permissions: perms };
-              set({ user: userWithPerms, permissions: perms, isAuthenticated: true, authBootstrapComplete: true });
-              console.log("[AUTH] AUTH_BOOTSTRAP_END (Success)");
-              return true;
-            } else {
-              // If not auth, we initialize guest
-              if (!useSystemStore.getState().isMaintenanceMode) {
-                await get().initGuest();
-              }
-              set({ user: null, permissions: [], isAuthenticated: false, authBootstrapComplete: true });
-              console.log("[AUTH] AUTH_BOOTSTRAP_END (Failure)");
-              return false;
-            }
-          } catch {
-            if (!useSystemStore.getState().isMaintenanceMode) {
-              await get().initGuest();
-            }
-            set({ user: null, permissions: [], isAuthenticated: false, authBootstrapComplete: true });
-            console.log("[AUTH] AUTH_BOOTSTRAP_END (Exception)");
-            return false;
-          } finally {
-            set({ isLoading: false });
-          }
-        };
-
-        _bootstrapPromise = executeAuth();
-        try {
-          return await _bootstrapPromise;
-        } finally {
-          _bootstrapPromise = null;
-        }
-      },
+      setAuthState: (state) => set({ authState: state }),
       
-      initGuest: async () => {
-        if (useSystemStore.getState().isMaintenanceMode) {
-          console.log("[AUTH] GUEST_INIT_SKIPPED (Maintenance Mode)");
-          return;
-        }
-
-        if (get().guestInitialized) {
-          console.log("[AUTH] GUEST_INIT_SKIPPED (Already Initialized)");
-          return;
-        }
-
-        // If we already have a quota that isn't expired, don't re-init
-        const quota = get().guestQuota;
-        if (quota && new Date(quota.expires_at).getTime() > Date.now()) {
-          console.log("[AUTH] GUEST_INIT_SKIPPED (Quota exists)");
-          set({ guestInitialized: true });
-          return;
-        }
-
-        if (_guestPromise) return _guestPromise;
-
-        _guestPromise = (async () => {
-          console.log("[AUTH] GUEST_INIT_START");
-          try {
-            const response = await fetchApi('/guest/init', { method: 'POST' });
-            if (response && response.access_token) {
-              set({ 
-                guestQuota: {
-                  executions_used: response.executions_used,
-                  executions_max: response.executions_max,
-                  expires_at: response.expires_at
-                },
-                guestInitialized: true
-              });
-              console.log("[AUTH] GUEST_INIT_DONE");
-            }
-          } catch (error) {
-            console.error("Failed to init guest:", error);
-          } finally {
-            _guestPromise = null;
-          }
-        })();
-
-        return _guestPromise;
-      },
+      setAuthSuccess: (user, permissions) => set({ 
+        user, 
+        permissions, 
+        authState: 'AUTHENTICATED' 
+      }),
+      
+      setGuestSuccess: (quota) => set({ 
+        guestQuota: quota,
+        authState: 'GUEST'
+      }),
+      
+      clearAuth: () => set({ 
+        user: null, 
+        permissions: [], 
+        authState: 'UNAUTHENTICATED',
+        guestQuota: null
+      }),
       
       incrementGuestQuota: () => {
         const quota = get().guestQuota;
@@ -192,45 +97,6 @@ export const useUserStore = create<UserState>()(
         }
         set({ showGuestConversionModal: show });
       },
-      
-      login: async (user) => {
-        set({ authInvalid: false });
-        let perms: string[] = user.effective_permissions || [];
-        try {
-          const permResp = await fetchApi('/rbac/my-permissions');
-          if (permResp && permResp.permissions) {
-            perms = permResp.permissions;
-          }
-        } catch (e) {
-          console.error("Failed to fetch permissions on login", e);
-        }
-        const userWithPerms = { ...user, effective_permissions: perms };
-        set({ user: userWithPerms, permissions: perms, isAuthenticated: true, guestQuota: null });
-      },
-      
-      logout: async () => {
-        // Cancel active queries and clear stale data immediately
-        queryClient.cancelQueries();
-        queryClient.clear();
-        
-        // Sync reset state so UI navigates in one render cycle
-        set({ 
-          user: null, 
-          permissions: [], 
-          isAuthenticated: false, 
-          isLoggingOut: true,
-          guestQuota: null
-        });
-        
-        try {
-          await fetchApi('/auth/logout', { method: 'POST' });
-        } catch (error) {
-          console.error("Logout failed:", error);
-        } finally {
-          set({ isLoggingOut: false });
-        }
-      },
-      
       updateProfile: (data) => set((state) => ({ 
         user: state.user ? { ...state.user, ...data } : null 
       })),

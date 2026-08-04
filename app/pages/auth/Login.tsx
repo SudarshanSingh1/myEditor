@@ -91,7 +91,8 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
         if (response.success) {
             resetUnauthorizedFlag();
             // Get profile and login
-            await useUserStore.getState().bootstrapAuth(true);
+            const { authController } = await import('../../services/AuthController');
+            await authController.bootstrap(true);
             const userState = useUserStore.getState().user;
             if (userState) {
                 const role: string = (userState.role || "").toUpperCase();
@@ -155,7 +156,8 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
       });
       
       if (response.success) {
-        await useUserStore.getState().bootstrapAuth(true);
+        const { authController } = await import('../../services/AuthController');
+        await authController.bootstrap(true);
         const userState = useUserStore.getState().user;
         
         if (userState) {

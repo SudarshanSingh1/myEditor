@@ -43,6 +43,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@react-router/dev": "^7.18.1",
     "@react-router/node": "^7.18.1",
     "@react-router/serve": "^7.18.1",
