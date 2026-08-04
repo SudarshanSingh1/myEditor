@@ -25,7 +25,7 @@ def admin_token(client: TestClient, db_session) -> str:
     db_session.commit()
     
     login_resp = client.post("/api/v1/auth/login", json={"email": "adminuser_test@example.com", "password": "Password123!"})
-    return login_resp.json()["data"]["access_token"]
+    return login_resp.cookies.get("access_token")
 
 def test_admin_dashboard(client: TestClient, admin_token: str):
     cookies = {"access_token": admin_token}

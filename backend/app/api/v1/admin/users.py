@@ -80,7 +80,7 @@ def get_users(
     if user_ids:
         count_rows = (
             db.query(Project.owner_id, func.count(Project.id).label("cnt"))
-            .filter(Project.owner_id.in_(user_ids), Project.is_deleted == False)  # noqa: E712
+            .filter(Project.owner_id.in_(user_ids), Project.deleted_at == None)
             .group_by(Project.owner_id)
             .all()
         )

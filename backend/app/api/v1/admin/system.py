@@ -424,6 +424,29 @@ def get_errors(
     
     return SuccessResponse(message="Errors retrieved", data={"items": items, "total": total})
 
+class BulkDeleteRequest(BaseModel):
+    ids: list[uuid.UUID]
+
+@router.delete("/errors/bulk", response_model=SuccessResponse)
+def bulk_delete_system_errors(
+    req: BulkDeleteRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_permission("system.settings"))
+):
+    if not req.ids:
+        raise HTTPException(status_code=400, detail="No IDs provided for deletion")
+
+    try:
+        deleted_count = db.query(SystemError).filter(SystemError.id.in_(req.ids)).delete(synchronize_session=False)
+        db.commit()
+        
+        AuditService.log_action(db, admin.id, "BULK_DELETE_SYSTEM_ERRORS", request.client.host, request.headers.get("user-agent"), {"deleted_count": deleted_count, "requested_count": len(req.ids)})
+        return SuccessResponse(message=f"Deleted {deleted_count} errors successfully", data={"deleted_count": deleted_count})
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.delete("/errors/{error_id}", response_model=SuccessResponse)
 def delete_system_error(
     error_id: str,
