@@ -21,8 +21,18 @@ from app.schemas.responses import SuccessResponse
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: launch database cleanup background task
+    # Startup: validate DB enum synchronization before serving traffic
     import asyncio
+    from app.core.enum_validator import validate_db_enums
+    from app.dependencies.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        validate_db_enums(db)
+    finally:
+        db.close()
+
+    # Launch database cleanup background task
     from app.services.cleanup_service import cleanup_loop
     cleanup_task = asyncio.create_task(cleanup_loop())
 
@@ -34,6 +44,7 @@ async def lifespan(app: FastAPI):
         await cleanup_task
     except asyncio.CancelledError:
         pass
+
 
 
 app = FastAPI(
