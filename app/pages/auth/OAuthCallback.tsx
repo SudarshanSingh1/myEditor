@@ -11,7 +11,6 @@ export default function OAuthCallback() {
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
   const navigate = useNavigate();
-  const { login } = useUserStore();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,7 +72,10 @@ export default function OAuthCallback() {
             return;
           }
 
-          await login(userData);
+          if (!userState) {
+            // fallback if auth/me failed but we still want to log them in based on OAuth response
+            useUserStore.getState().setAuthSuccess(userData, userData.effective_permissions || []);
+          }
           toast.success(`Successfully logged in with ${provider}`);
           const redirectUrl = sessionStorage.getItem("oauth_redirect_url") || searchParams.get("state") || null;
           if (redirectUrl) sessionStorage.removeItem("oauth_redirect_url");
@@ -101,7 +103,7 @@ export default function OAuthCallback() {
     };
 
     exchangeCode();
-  }, [provider, code, navigate, login, searchParams]);
+  }, [provider, code, navigate, searchParams]);
 
   if (error) {
     return (
