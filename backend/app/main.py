@@ -21,30 +21,80 @@ from app.schemas.responses import SuccessResponse
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: validate DB enum synchronization before serving traffic
+    """
+    FastAPI application lifespan.
+
+    Startup sequence:
+      1. Validate PostgreSQL enum synchronisation (fatal if mismatched).
+      2. Start the cleanup background scheduler — exactly ONCE across all workers.
+    """
     import asyncio
+    import logging
+    import fcntl
+    import os
     from app.core.enum_validator import validate_db_enums
     from app.dependencies.database import SessionLocal
 
+    _log = logging.getLogger("hamara.lifespan")
+
+    # ── Step 1: Enum validation (fatal on mismatch) ──────────────────────────
+    _log.info("Startup validation...")
     db = SessionLocal()
     try:
         validate_db_enums(db)
+    except Exception as exc:
+        _log.critical(
+            f"Startup validation failed — enum validation error:\n"
+            f"Reason: {exc}\n"
+            f"Remediation: Check if Alembic migrations are applied and match the Python codebase. Run `alembic upgrade head`.",
+            exc_info=True,
+        )
+        raise
     finally:
         db.close()
 
-    # Launch database cleanup background task
-    from app.services.cleanup_service import cleanup_loop
-    cleanup_task = asyncio.create_task(cleanup_loop())
-
-    yield
-
-    # Shutdown: cancel cleanup task gracefully
-    cleanup_task.cancel()
+    # ── Step 2: Scheduler Singleton (cross-worker lock) ───────────────────────
+    # Use an exclusive, non-blocking file lock.
+    # The first worker to grab the lock becomes the singleton scheduler owner.
+    # The lock is released automatically by the OS when the process exits.
+    lock_file = "/tmp/hamara_scheduler.lock"
+    lock_fd = None
+    cleanup_task = None
+    
     try:
-        await cleanup_task
-    except asyncio.CancelledError:
+        lock_fd = os.open(lock_file, os.O_CREAT | os.O_RDWR)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        
+        # We got the lock! Start the scheduler.
+        from app.services.cleanup_service import cleanup_loop
+        cleanup_task = asyncio.create_task(cleanup_loop())
+        _log.info("Background scheduler started.")
+    except (BlockingIOError, OSError):
+        # Another worker already holds the lock.
         pass
+    except Exception as exc:
+        _log.error(f"[Lifespan] Failed to acquire scheduler lock: {exc}", exc_info=True)
 
+    _log.info("Application startup complete.")
+    
+    yield  # ← application serves traffic here
+
+    # ── Shutdown ──────────────────────────────────────────────────────────────
+    if cleanup_task is not None:
+        _log.info("[Lifespan] Cancelling cleanup scheduler...")
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
+        _log.info("[Lifespan] Cleanup scheduler stopped.")
+        
+    if lock_fd is not None:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            os.close(lock_fd)
+        except OSError:
+            pass
 
 
 app = FastAPI(

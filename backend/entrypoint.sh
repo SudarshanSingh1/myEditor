@@ -36,7 +36,7 @@ for _ in range(30):
     try:
         with engine.connect() as conn:
             pass
-        print("Database is ready!")
+        print("Database ready.")
         sys.exit(0)
     except Exception:
         time.sleep(1)
@@ -46,11 +46,11 @@ sys.exit(1)
 ' || exit 1
 
 # Run database migrations
-echo "Running database migrations..."
+echo "Running migrations..."
 gosu appuser alembic upgrade head || { echo "CRITICAL: Alembic migrations failed. Exiting to prevent starting against an outdated schema."; exit 1; }
 
 # Seed database with initial permissions and data
-echo "Seeding database..."
+echo "Running seeders..."
 gosu appuser python scripts/seed_rbac.py || { echo "CRITICAL: Failed to seed RBAC permissions. Exiting."; exit 1; }
 if [ -f "scripts/seed_analytics.py" ] && [ "$APP_ENV" = "development" ]; then
     echo "Running in development mode: Seeding analytics..."

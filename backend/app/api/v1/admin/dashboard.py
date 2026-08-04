@@ -183,6 +183,8 @@ async def telemetry_websocket(websocket: WebSocket):
             await asyncio.sleep(1)
     except WebSocketDisconnect:
         pass
+    except asyncio.CancelledError:
+        pass
     except Exception as e:
         from app.core.logger import logger
         logger.error(f"Telemetry websocket error: {e}")
@@ -213,6 +215,8 @@ async def alerts_websocket(websocket: WebSocket):
             # Check every 10 seconds
             await asyncio.sleep(10)
     except WebSocketDisconnect:
+        pass
+    except asyncio.CancelledError:
         pass
     except Exception as e:
         try:

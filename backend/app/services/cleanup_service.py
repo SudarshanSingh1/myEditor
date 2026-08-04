@@ -133,6 +133,7 @@ def run_all_cleanup_jobs() -> dict:
     return summary
 
 
+
 # ---------------------------------------------------------------------------
 # Async background loop (used by main.py lifespan)
 # ---------------------------------------------------------------------------
@@ -141,14 +142,45 @@ async def cleanup_loop(interval_seconds: int = 21600) -> None:
     """
     Runs cleanup jobs in an async background loop.
     Default interval: 21600 seconds = 6 hours.
+
     Starts with a 60-second delay on application startup to avoid
     running during initial migration/seeding.
+
+    Design guarantees:
+      - Never blocks the event loop (uses asyncio.to_thread for DB work).
+      - Propagates asyncio.CancelledError cleanly so lifespan shutdown
+        never hangs on `await cleanup_task`.
+      - Swallows all other exceptions (logs them) so the scheduler keeps
+        running even if a single cleanup cycle fails.
     """
-    await asyncio.sleep(60)  # Initial delay
+    logger.info("[Cleanup] Scheduler initialised — first run in 60 s.")
+    try:
+        await asyncio.sleep(60)  # Initial startup delay
+    except asyncio.CancelledError:
+        logger.info("[Cleanup] Scheduler cancelled during startup delay.")
+        raise
+
     while True:
         try:
             logger.info("[Cleanup] Starting scheduled database cleanup...")
-            run_all_cleanup_jobs()
+            # Run the synchronous DB work in a thread pool so the event
+            # loop stays free for HTTP requests during cleanup.
+            await asyncio.to_thread(run_all_cleanup_jobs)
+        except asyncio.CancelledError:
+            # Lifespan is shutting down — exit cleanly.
+            logger.info("[Cleanup] Scheduler cancelled during cleanup run.")
+            raise
         except Exception as exc:
-            logger.error(f"[Cleanup] Unhandled error in cleanup loop: {exc}", exc_info=True)
-        await asyncio.sleep(interval_seconds)
+            # Log but keep the loop alive — a single failed cycle must
+            # never stop the scheduler.
+            logger.error(
+                f"[Cleanup] Unhandled error in cleanup loop: {exc}",
+                exc_info=True,
+            )
+
+        try:
+            await asyncio.sleep(interval_seconds)
+        except asyncio.CancelledError:
+            # Cancellation during the 6-hour sleep — exit cleanly.
+            logger.info("[Cleanup] Scheduler cancelled during sleep.")
+            raise

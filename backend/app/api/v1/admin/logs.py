@@ -53,6 +53,8 @@ async def websocket_logs(
             await websocket.send_text(msg)
     except WebSocketDisconnect:
         pass
+    except asyncio.CancelledError:
+        pass
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
