@@ -12,7 +12,7 @@ async def get_current_user_ws(token: str, db: Session) -> User:
     try:
         return AuthService.get_current_user(db, token)
     except Exception as e:
-        logger.exception("WebSocket authentication failed")
+        logger.warning(f"WebSocket authentication warning: {e}")
         return None
 
 @router.websocket("/ws")

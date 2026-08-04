@@ -176,9 +176,9 @@ class AuthService:
                 detail="Account is temporarily locked due to too many failed login attempts. Try again later."
             )
 
-        logger.info(f"User found: ID {user.id}, Username {user.username}. Verifying password hash...")
+        logger.debug(f"User found: ID {user.id}, Username {user.username}. Verifying password hash...")
         is_valid_password = verify_password(req.password, user.password_hash)
-        logger.info(f"Password verification result: {'Success' if is_valid_password else 'Failed'}")
+        logger.debug(f"Password verification result: {'Success' if is_valid_password else 'Failed'}")
         
         if not is_valid_password:
             user.failed_login_attempts += 1
@@ -192,7 +192,7 @@ class AuthService:
                 detail="Invalid email or password."
             )
             
-        logger.info(f"Account status for {user.username}: {user.status.value}, is_deleted: {user.is_deleted}")
+        logger.debug(f"Account status for {user.username}: {user.status.value}, is_deleted: {user.is_deleted}")
         if user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED] or user.is_deleted:
             reason = f"Account is {user.status.value.lower()}" if not user.is_deleted else "Account is deleted"
             logger.warning(f"Login failed: {reason} for user {user.username}")

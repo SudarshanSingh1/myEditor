@@ -45,7 +45,7 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
                 user_id = user.id
                 logger.info(f"User authenticated successfully: {user_id}")
         except Exception as e:
-            logger.error(f"Authentication exception: {e}")
+            logger.warning(f"WebSocket authentication warning: {e}")
             await websocket.send_json({"type": "error", "message": "Authentication failed"})
             await websocket.close()
             return
