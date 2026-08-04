@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Bell, X, AlertTriangle, AlertCircle, Info } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAdminContext } from "../auth/AdminAuthGuard";
+import { useDeploymentStore } from "../../stores/useDeploymentStore";
 
 interface AlertMessage {
   id: string;
@@ -26,7 +27,7 @@ export function NotificationCenter() {
     let isMounted = true;
 
     const connect = () => {
-      if (!isMounted) return;
+      if (!isMounted || useDeploymentStore.getState().isDeploying) return;
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const host = import.meta.env.VITE_API_URL 
         ? new URL(import.meta.env.VITE_API_URL).host 
@@ -54,16 +55,34 @@ export function NotificationCenter() {
       };
 
       ws.onclose = () => {
-        if (!isMounted) return;
+        if (!isMounted || useDeploymentStore.getState().isDeploying) return;
         const backoff = Math.min(1000 * Math.pow(2, attempts++), 10000);
         reconnectTimeout = window.setTimeout(connect, backoff);
       };
     };
 
+    const handleDeployStart = () => {
+      clearTimeout(reconnectTimeout);
+      if (ws) {
+        ws.onclose = null;
+        ws.close();
+      }
+    };
+
+    const handleDeployEnd = () => {
+      attempts = 0;
+      connect();
+    };
+
+    window.addEventListener("deployment:start", handleDeployStart);
+    window.addEventListener("deployment:end", handleDeployEnd);
+
     connect();
 
     return () => {
       isMounted = false;
+      window.removeEventListener("deployment:start", handleDeployStart);
+      window.removeEventListener("deployment:end", handleDeployEnd);
       clearTimeout(reconnectTimeout);
       if (ws) {
         ws.onclose = null;

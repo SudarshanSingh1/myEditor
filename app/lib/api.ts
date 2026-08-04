@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import { useSystemStore } from '../stores/useSystemStore';
 import { useUserStore } from '../stores/useUserStore';
+import { useDeploymentStore } from '../stores/useDeploymentStore';
 
 const API_BASE_URL = '/api/v1';
 
@@ -81,13 +82,19 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
         errorMsg = data.errors[0];
       }
       
-      if (response.status === 503) {
+      const isDeploying = useDeploymentStore?.getState?.()?.isDeploying;
+      
+      if (response.status === 502 || response.status === 504 || (response.status === 503 && !data)) {
+        window.dispatchEvent(new Event('deployment:trigger'));
+      } else if (response.status === 503 && data) {
         window.dispatchEvent(new Event('maintenance:active'));
         try {
           useSystemStore.setState({ isMaintenanceMode: true, hasChecked: true, isChecking: false });
         } catch {}
       } else if (response.status >= 500) {
-        toast.error(`Server Error: ${errorMsg}`);
+        if (!isDeploying) {
+          toast.error(`Server Error: ${errorMsg}`);
+        }
       } else if (response.status === 403 || response.status === 429) {
         toast.error(errorMsg);
       }
@@ -101,6 +108,9 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     return data;
   } catch (error) {
     console.error('API Fetch Error:', error);
+    if (error instanceof TypeError && (error.message === 'Failed to fetch' || error.message.includes('Network'))) {
+      window.dispatchEvent(new Event('deployment:trigger'));
+    }
     throw error;
   }
 }

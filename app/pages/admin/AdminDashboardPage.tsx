@@ -33,6 +33,7 @@ import { StatusChip, LiveDot } from "../../components/enterprise/MiniSparkline";
 import { PageHeader, SectionLabel } from "../../components/enterprise/PageHeader";
 
 import { useAdminContext } from "../../components/auth/AdminAuthGuard";
+import { useDeploymentStore } from "../../stores/useDeploymentStore";
 
 interface DashData {
   total_users: number;
@@ -138,7 +139,7 @@ export default function AdminDashboardPage() {
     let isMounted = true;
 
     const connect = () => {
-      if (!isMounted) return;
+      if (!isMounted || useDeploymentStore.getState().isDeploying) return;
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const host = import.meta.env.VITE_API_URL 
         ? new URL(import.meta.env.VITE_API_URL).host 
@@ -165,11 +166,27 @@ export default function AdminDashboardPage() {
       };
 
       ws.onclose = () => {
-        if (!isMounted) return;
+        if (!isMounted || useDeploymentStore.getState().isDeploying) return;
         const backoff = Math.min(1000 * Math.pow(2, attempts++), 10000);
         reconnectTimeout = window.setTimeout(connect, backoff);
       };
     };
+
+    const handleDeployStart = () => {
+      clearTimeout(reconnectTimeout);
+      if (ws) {
+        ws.onclose = null;
+        ws.close();
+      }
+    };
+
+    const handleDeployEnd = () => {
+      attempts = 0;
+      connect();
+    };
+
+    window.addEventListener("deployment:start", handleDeployStart);
+    window.addEventListener("deployment:end", handleDeployEnd);
 
     connect();
 
@@ -183,6 +200,8 @@ export default function AdminDashboardPage() {
 
     return () => {
       isMounted = false;
+      window.removeEventListener("deployment:start", handleDeployStart);
+      window.removeEventListener("deployment:end", handleDeployEnd);
       clearTimeout(reconnectTimeout);
       if (ws) {
         ws.onclose = null;

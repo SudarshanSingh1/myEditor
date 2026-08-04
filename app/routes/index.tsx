@@ -80,6 +80,7 @@ const Forbidden = lazy(() => import("../pages/error/Forbidden"));
 import { MaintenancePage } from "../pages/MaintenancePage";
 import { MaintenanceGuard } from "../components/auth/MaintenanceGuard";
 import { SplashLoader } from "../components/ui/SplashLoader";
+import { DeploymentManager } from "../components/enterprise/DeploymentManager";
 
 // Fallback loader
 const PageLoader = () => <SplashLoader message="Loading workspace..." submessage="Preparing your cloud coding environment" />;
@@ -106,6 +107,7 @@ export default function AppRouter() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
+        <DeploymentManager />
         <Suspense fallback={<PageLoader />}>
         <MaintenanceGuard>
         <Routes location={location}>

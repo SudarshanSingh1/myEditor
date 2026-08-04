@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { TerminalSquare, RefreshCw, XCircle, Play, Pause, AlertCircle } from "lucide-react";
 import { PageHeader } from "../../components/enterprise/PageHeader";
+import { useDeploymentStore } from "../../stores/useDeploymentStore";
 import "../../styles/enterprise.css";
 
 export default function AdminLogsPage() {
@@ -28,7 +29,7 @@ export default function AdminLogsPage() {
   }, [isPaused]);
 
   const connect = useCallback(() => {
-    if (ws.current) return;
+    if (ws.current || useDeploymentStore.getState().isDeploying) return;
     
     setIsReconnecting(reconnectAttempts.current > 0);
     
@@ -53,6 +54,8 @@ export default function AdminLogsPage() {
     socket.onclose = () => {
       setIsConnected(false);
       ws.current = null;
+      
+      if (useDeploymentStore.getState().isDeploying) return;
       
       // Auto-reconnect with exponential backoff
       const backoff = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
@@ -108,8 +111,22 @@ export default function AdminLogsPage() {
   }, []);
 
   useEffect(() => {
+    const handleDeployStart = () => {
+      disconnect();
+    };
+    const handleDeployEnd = () => {
+      connect();
+    };
+    
+    window.addEventListener("deployment:start", handleDeployStart);
+    window.addEventListener("deployment:end", handleDeployEnd);
+    
     connect();
-    return () => disconnect();
+    return () => {
+      window.removeEventListener("deployment:start", handleDeployStart);
+      window.removeEventListener("deployment:end", handleDeployEnd);
+      disconnect();
+    };
   }, [connect, disconnect]);
 
   useEffect(() => {

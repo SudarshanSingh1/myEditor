@@ -14,6 +14,7 @@ import { useUserStore } from '../../../stores/useUserStore';
 
 import { History } from 'lucide-react';
 import { Modal } from '../../ui/Modal';
+import { useDeploymentStore } from '../../../stores/useDeploymentStore';
 
 interface TerminalPanelProps {
   projectId: string;
@@ -127,7 +128,10 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
           if (activeWs && activeWs.readyState === WebSocket.OPEN) {
             activeWs.send(data);
           } else {
-            if (data === '\r') {
+             // Avoid local echo if deployment is happening
+             if (useDeploymentStore.getState().isDeploying) return;
+             
+             if (data === '\r') {
                const cmd = localBuffer.trim();
                if (cmd === 'clear') {
                   term.write('\x1b[2J\x1b[3J\x1b[H$ ');
@@ -181,10 +185,11 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
        return;
     }
     
-    // Only connect if we aren't already connected
-    if (shellWsRef.current && (shellWsRef.current.readyState === WebSocket.OPEN || shellWsRef.current.readyState === WebSocket.CONNECTING)) return;
-    
-    const timeoutId = setTimeout(() => {
+    const connectShell = () => {
+      // Only connect if we aren't already connected
+      if (shellWsRef.current && (shellWsRef.current.readyState === WebSocket.OPEN || shellWsRef.current.readyState === WebSocket.CONNECTING)) return;
+      if (useDeploymentStore.getState().isDeploying) return;
+      
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsHost = window.location.host;
       const wsUrl = `${wsProtocol}//${wsHost}/api/v1/execution/ws`;
@@ -238,11 +243,35 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         }
         if (shellWsRef.current === ws) shellWsRef.current = null;
       };
-      
-    }, 200);
+    };
+    
+    // Initial connect
+    let timeoutId = window.setTimeout(connectShell, 200);
+    
+    const handleDeployStart = () => {
+      if (xtermRef.current) {
+        xtermRef.current.writeln('\r\n\x1b[38;5;14m[System] Hamara Editor is deploying. Pausing terminal...\x1b[0m\r\n');
+      }
+      if (shellWsRef.current) {
+        shellWsRef.current.close();
+        shellWsRef.current = null;
+      }
+    };
+    
+    const handleDeployEnd = () => {
+      if (xtermRef.current) {
+        xtermRef.current.writeln('\r\n\x1b[38;5;10m[System] Deployment complete. Reconnecting...\x1b[0m\r\n');
+      }
+      timeoutId = window.setTimeout(connectShell, 500);
+    };
+
+    window.addEventListener("deployment:start", handleDeployStart);
+    window.addEventListener("deployment:end", handleDeployEnd);
     
     return () => {
       clearTimeout(timeoutId);
+      window.removeEventListener("deployment:start", handleDeployStart);
+      window.removeEventListener("deployment:end", handleDeployEnd);
       // We DO NOT close the shell websocket here, so it persists across re-renders!
       // This solves the persistent shell requirement.
     };
@@ -268,6 +297,13 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
     }
     term.focus();
     term.scrollToBottom();
+    
+    if (useDeploymentStore.getState().isDeploying) {
+      term.writeln('\r\n\x1b[38;5;3m[System] Cannot execute code during deployment. Please wait.\x1b[0m\r\n');
+      setExecutionFinished(1);
+      currentMode.current = 'shell';
+      return;
+    }
     
     const timeoutId = setTimeout(() => {
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
