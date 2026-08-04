@@ -108,7 +108,12 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
             // queryClient import might fail if not available, fallback to global window if needed
           }
           
-          window.location.href = '/login?expired=true';
+          const currentPath = window.location.pathname;
+          const isAuthPage = currentPath.startsWith('/login') || currentPath.startsWith('/signup') || currentPath.startsWith('/forgot-password') || currentPath.startsWith('/reset-password') || currentPath === '/' || currentPath.startsWith('/maintenance');
+          
+          if (!isAuthPage) {
+            window.location.href = '/login?expired=true';
+          }
         }
         
         throw new Error('Session terminated due to refresh failure.');

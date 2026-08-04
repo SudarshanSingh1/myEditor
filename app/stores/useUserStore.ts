@@ -38,6 +38,7 @@ interface UserState {
   isLoggingOut: boolean;
   authInvalid: boolean;
   authBootstrapComplete: boolean;
+  guestInitialized: boolean;
   setAuthInvalid: (invalid: boolean) => void;
   bootstrapAuth: (force?: boolean) => Promise<boolean>;
   initGuest: () => Promise<void>;
@@ -60,16 +61,18 @@ export const useUserStore = create<UserState>()(
       isLoggingOut: false,
       authInvalid: false,
       authBootstrapComplete: false,
+      guestInitialized: false,
       setAuthInvalid: (invalid) => set({ authInvalid: invalid }),
       
       bootstrapAuth: async (force = false) => {
         if (_bootstrapPromise && !force) return _bootstrapPromise;
         if (get().isLoggingOut || get().authInvalid) {
-          console.log("[AUTH] AUTH_INVALID_ALREADY_SET or logging out, skipping bootstrap");
+          console.log("[AUTH] AUTH_ME_SKIPPED (authInvalid or loggingOut)");
           return false;
         }
 
         if (get().authBootstrapComplete && !force) {
+          console.log("[AUTH] AUTH_ME_SKIPPED (authBootstrapComplete)");
           return get().isAuthenticated;
         }
 
@@ -99,19 +102,19 @@ export const useUserStore = create<UserState>()(
               console.log("[AUTH] AUTH_BOOTSTRAP_END (Success)");
               return true;
             } else {
-              set({ user: null, permissions: [], isAuthenticated: false, authBootstrapComplete: true });
               // If not auth, we initialize guest
               if (!useSystemStore.getState().isMaintenanceMode) {
                 await get().initGuest();
               }
+              set({ user: null, permissions: [], isAuthenticated: false, authBootstrapComplete: true });
               console.log("[AUTH] AUTH_BOOTSTRAP_END (Failure)");
               return false;
             }
           } catch {
-            set({ user: null, permissions: [], isAuthenticated: false, authBootstrapComplete: true });
             if (!useSystemStore.getState().isMaintenanceMode) {
               await get().initGuest();
             }
+            set({ user: null, permissions: [], isAuthenticated: false, authBootstrapComplete: true });
             console.log("[AUTH] AUTH_BOOTSTRAP_END (Exception)");
             return false;
           } finally {
@@ -133,10 +136,16 @@ export const useUserStore = create<UserState>()(
           return;
         }
 
+        if (get().guestInitialized) {
+          console.log("[AUTH] GUEST_INIT_SKIPPED (Already Initialized)");
+          return;
+        }
+
         // If we already have a quota that isn't expired, don't re-init
         const quota = get().guestQuota;
         if (quota && new Date(quota.expires_at).getTime() > Date.now()) {
           console.log("[AUTH] GUEST_INIT_SKIPPED (Quota exists)");
+          set({ guestInitialized: true });
           return;
         }
 
@@ -152,7 +161,8 @@ export const useUserStore = create<UserState>()(
                   executions_used: response.executions_used,
                   executions_max: response.executions_max,
                   expires_at: response.expires_at
-                }
+                },
+                guestInitialized: true
               });
               console.log("[AUTH] GUEST_INIT_DONE");
             }

@@ -29,9 +29,9 @@ interface AdminAuthGuardProps {
 }
 
 export function AdminAuthGuard({ children, requiredPermission }: AdminAuthGuardProps) {
-  const { user, permissions, isAuthenticated, isLoading } = useUserStore();
+  const { user, permissions, isAuthenticated, authBootstrapComplete } = useUserStore();
 
-  if (isLoading) {
+  if (!authBootstrapComplete) {
     return <SplashLoader variant="admin" message="Loading admin console..." submessage="Securing executive access & permissions" />;
   }
 
