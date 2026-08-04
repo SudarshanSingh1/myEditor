@@ -40,6 +40,34 @@ from .schemas import *
 
 router = APIRouter()
 
+
+def _get_table_counts(db: Session) -> dict:
+    """Return row counts for major tables in ONE SQL round trip.
+
+    Before: 7 separate COUNT(*) queries (7 round trips).
+    After:  1 subselect query (1 round trip).
+    """
+    row = db.execute(text("""
+        SELECT
+            (SELECT COUNT(*) FROM users         WHERE is_deleted = false) AS users,
+            (SELECT COUNT(*) FROM projects)                                AS projects,
+            (SELECT COUNT(*) FROM files)                                   AS files,
+            (SELECT COUNT(*) FROM execution_logs)                          AS execution_logs,
+            (SELECT COUNT(*) FROM feedback)                                AS feedback,
+            (SELECT COUNT(*) FROM system_errors)                           AS system_errors,
+            (SELECT COUNT(*) FROM audit_logs)                              AS audit_logs
+    """)).fetchone()
+    return {
+        "users":          row.users,
+        "projects":       row.projects,
+        "files":          row.files,
+        "execution_logs": row.execution_logs,
+        "feedback":       row.feedback,
+        "system_errors":  row.system_errors,
+        "audit_logs":     row.audit_logs,
+    }
+
+
 # --- Platform Analytics Center ---
 
 @router.get("/analytics/compiler/charts", response_model=SuccessResponse)
@@ -56,14 +84,19 @@ def get_compiler_analytics_charts(
     ).filter(ExecutionLog.created_at >= since, ExecutionLog.execution_time_ms.isnot(None)).group_by(func.date(ExecutionLog.created_at)).order_by(func.date(ExecutionLog.created_at)).all()
     runtime_trend = [{"date": str(r.date), "runtime": round(r.avg_runtime or 0)} for r in runtime_trend_rows]
 
-    # 2. Runtime Distribution (<1s, 1-5s, >5s)
-    under_1s = db.query(ExecutionLog).filter(ExecutionLog.execution_time_ms < 1000).count()
-    one_to_5s = db.query(ExecutionLog).filter(ExecutionLog.execution_time_ms >= 1000, ExecutionLog.execution_time_ms <= 5000).count()
-    over_5s = db.query(ExecutionLog).filter(ExecutionLog.execution_time_ms > 5000).count()
+    # 2. Runtime Distribution (<1s, 1-5s, >5s) — ONE query using CASE WHEN (was 3 queries)
+    from sqlalchemy import case as sa_case
+    dist_row = db.query(
+        func.count(sa_case((ExecutionLog.execution_time_ms < 1000, 1))).label("under_1s"),
+        func.count(sa_case((
+            (ExecutionLog.execution_time_ms >= 1000) & (ExecutionLog.execution_time_ms <= 5000), 1
+        ))).label("one_to_5s"),
+        func.count(sa_case((ExecutionLog.execution_time_ms > 5000, 1))).label("over_5s"),
+    ).filter(ExecutionLog.execution_time_ms.isnot(None)).one()
     runtime_dist = [
-        {"bucket": "< 1s", "count": under_1s},
-        {"bucket": "1s - 5s", "count": one_to_5s},
-        {"bucket": "> 5s", "count": over_5s}
+        {"bucket": "< 1s", "count": dist_row.under_1s},
+        {"bucket": "1s - 5s", "count": dist_row.one_to_5s},
+        {"bucket": "> 5s", "count": dist_row.over_5s},
     ]
 
     # 3. Top Users
@@ -268,15 +301,7 @@ def get_database_info(db: Session = Depends(get_db), admin: User = Depends(requi
             pool_status = "Unknown"
             migration_status = "Unknown"
             
-        table_counts = {
-            "users": db.query(User).filter(User.is_deleted == False).count(),
-            "projects": db.query(Project).count(),
-            "files": db.query(File).count(),
-            "execution_logs": db.query(ExecutionLog).count(),
-            "feedback": db.query(Feedback).count(),
-            "system_errors": db.query(SystemError).count(),
-            "audit_logs": db.query(AuditLog).count(),
-        }
+        table_counts = _get_table_counts(db)
         
         return SuccessResponse(message="Database info retrieved", data={
             "db_size": db_size_result.size if db_size_result else "Unknown",

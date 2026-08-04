@@ -53,7 +53,9 @@ class User(Base):
     # 2FA and Security
     totp_secret = Column(String(255), nullable=True)
     totp_enabled = Column(Boolean, nullable=False, default=False, server_default="false")
-    recovery_codes = Column(String(1000), nullable=True)
+    recovery_codes = Column(String(1000), nullable=True)  # Legacy plaintext — kept for backward compat
+    totp_backup_codes = Column(String(2000), nullable=True)  # JSON array of SHA-256 hashed backup codes
+    totp_last_used_at = Column(DateTime(timezone=True), nullable=True)  # Last TOTP code timestamp — replay prevention
     failed_login_attempts = Column(Integer, nullable=False, default=0, server_default="0")
     account_locked_until = Column(DateTime(timezone=True), nullable=True)
     

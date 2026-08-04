@@ -86,7 +86,10 @@ export default function AdminServerPage() {
 
   useEffect(() => {
     poll();
-    const id = setInterval(poll, 5000);
+    // Only poll while the tab is visible — pause when hidden to save resources
+    const id = setInterval(() => {
+      if (!document.hidden) poll();
+    }, 5000);
     return () => clearInterval(id);
   }, []);
 

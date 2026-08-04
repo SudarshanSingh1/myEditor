@@ -19,7 +19,15 @@ class UserSession(Base):
     os = Column(String(50), nullable=True)
     
     is_active = Column(Boolean, nullable=False, default=True)
-    
+
+    # Refresh token rotation: SHA-256 hash of the current refresh token.
+    # On every /auth/refresh call, the incoming token hash is validated against this field.
+    # A mismatch means the token was already rotated (replay attack) — session is invalidated.
+    refresh_token_hash = Column(String(64), nullable=True, index=True)
+
+    # Geographic metadata
+    country = Column(String(100), nullable=True)
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     last_active_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     expires_at = Column(DateTime(timezone=True), nullable=False)

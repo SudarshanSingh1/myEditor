@@ -44,36 +44,48 @@ router = APIRouter()
 @router.get("/executions/dashboard", response_model=SuccessResponse)
 def get_executions_dashboard(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
     from app.models.execution_log import ExecutionStatus
-    total = db.query(ExecutionLog).count()
-    running = db.query(ExecutionLog).filter(cast(ExecutionLog.status, String) == ExecutionStatus.RUNNING.value).count()
-    queued = db.query(ExecutionLog).filter(cast(ExecutionLog.status, String) == ExecutionStatus.QUEUED.value).count()
-    failed = db.query(ExecutionLog).filter(cast(ExecutionLog.status, String).in_([
-        ExecutionStatus.COMPILE_ERROR.value, 
-        ExecutionStatus.RUNTIME_ERROR.value, 
-        ExecutionStatus.TIMEOUT.value, 
-        ExecutionStatus.SYSTEM_ERROR.value
-    ])).count()
-    completed = db.query(ExecutionLog).filter(cast(ExecutionLog.status, String) == ExecutionStatus.SUCCESS.value).count()
-    cancelled = db.query(ExecutionLog).filter(cast(ExecutionLog.status, String) == ExecutionStatus.CANCELLED.value).count()
-    
-    avg_runtime = db.query(func.avg(ExecutionLog.execution_time_ms)).filter(ExecutionLog.execution_time_ms.isnot(None)).scalar() or 0
-    active_containers = running
+    from sqlalchemy import case as sa_case
+
+    # ONE aggregation query replaces 7 separate COUNT/AVG queries (7 → 1 round trip)
+    row = db.query(
+        func.count(ExecutionLog.id).label("total"),
+        func.count(sa_case((cast(ExecutionLog.status, String) == ExecutionStatus.RUNNING.value, 1))).label("running"),
+        func.count(sa_case((cast(ExecutionLog.status, String) == ExecutionStatus.QUEUED.value, 1))).label("queued"),
+        func.count(sa_case((cast(ExecutionLog.status, String) == ExecutionStatus.SUCCESS.value, 1))).label("completed"),
+        func.count(sa_case((cast(ExecutionLog.status, String) == ExecutionStatus.CANCELLED.value, 1))).label("cancelled"),
+        func.count(sa_case((cast(ExecutionLog.status, String).in_([
+            ExecutionStatus.COMPILE_ERROR.value,
+            ExecutionStatus.RUNTIME_ERROR.value,
+            ExecutionStatus.TIMEOUT.value,
+            ExecutionStatus.SYSTEM_ERROR.value,
+        ]), 1))).label("failed"),
+        func.avg(ExecutionLog.execution_time_ms).label("avg_runtime"),
+    ).one()
+
+    total    = row.total or 0
+    running  = row.running or 0
+    queued   = row.queued or 0
+    completed = row.completed or 0
+    cancelled = row.cancelled or 0
+    failed   = row.failed or 0
+    avg_runtime = row.avg_runtime or 0
+
     failure_rate = (failed / total * 100) if total > 0 else 0
     success_rate = (completed / total * 100) if total > 0 else 0
-    
+
     data = {
-        "running_executions": running,
-        "queued_executions": queued,
-        "failed_executions": failed,
+        "running_executions":  running,
+        "queued_executions":   queued,
+        "failed_executions":   failed,
         "completed_executions": completed,
         "cancelled_executions": cancelled,
-        "live_queue_status": "Operational",
-        "running_workers": running,
-        "average_runtime_ms": round(avg_runtime),
-        "queue_length": queued,
-        "failure_rate": round(failure_rate, 1),
-        "success_rate": round(success_rate, 1),
-        "active_containers": running
+        "live_queue_status":   "Operational",
+        "running_workers":     running,
+        "average_runtime_ms":  round(avg_runtime),
+        "queue_length":        queued,
+        "failure_rate":        round(failure_rate, 1),
+        "success_rate":        round(success_rate, 1),
+        "active_containers":   running,
     }
     return SuccessResponse(message="Dashboard retrieved", data=data)
 

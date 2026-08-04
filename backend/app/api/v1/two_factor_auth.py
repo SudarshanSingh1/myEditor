@@ -6,6 +6,8 @@ from app.models.user import User
 from app.schemas.responses import StandardResponse
 import pyotp
 import json
+import hashlib
+import secrets
 from pydantic import BaseModel
 from app.core.rate_limit import limiter
 
@@ -50,18 +52,25 @@ def enable_2fa(req: TOTPVerifyRequest, request: Request, current_user: User = De
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid 2FA code")
         
     current_user.totp_enabled = True
-    
-    # Generate recovery codes
-    import secrets
-    recovery_codes = [secrets.token_hex(4) for _ in range(8)]
-    current_user.recovery_codes = json.dumps(recovery_codes)
-    
+
+    # Generate 8 backup codes (8 hex chars each = 32-bit entropy per code).
+    # SECURITY: Store only SHA-256 hashes on the server. Return plaintext to
+    # the user exactly once — they are responsible for saving them safely.
+    plaintext_codes = [secrets.token_hex(4) for _ in range(8)]
+    hashed_codes = [
+        hashlib.sha256(code.encode('utf-8')).hexdigest()
+        for code in plaintext_codes
+    ]
+    current_user.totp_backup_codes = json.dumps(hashed_codes)  # hashed — safe to store
+    # Keep legacy recovery_codes empty — plaintext storage is deprecated
+    current_user.recovery_codes = None
+
     db.commit()
-    
+
     return StandardResponse(
-        success=True, 
-        message="2FA enabled successfully", 
-        data={"recovery_codes": recovery_codes}
+        success=True,
+        message="2FA enabled successfully",
+        data={"recovery_codes": plaintext_codes}  # shown to user once, never stored plaintext
     )
 
 @router.post("/2fa/disable", response_model=StandardResponse)
@@ -76,7 +85,9 @@ def disable_2fa(req: TOTPVerifyRequest, request: Request, current_user: User = D
         
     current_user.totp_enabled = False
     current_user.totp_secret = None
-    current_user.recovery_codes = None
+    current_user.totp_last_used_at = None
+    current_user.totp_backup_codes = None
+    current_user.recovery_codes = None  # clear legacy plaintext codes too
     db.commit()
     
     return StandardResponse(success=True, message="2FA disabled successfully")

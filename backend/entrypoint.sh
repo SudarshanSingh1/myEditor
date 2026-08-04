@@ -19,17 +19,44 @@ if [ -S /var/run/docker.sock ]; then
     usermod -aG "$DOCKER_GROUP" appuser
 fi
 
+# Wait for database using Python and SQLAlchemy
+echo "Waiting for database..."
+python -c '
+import sys, time, os
+from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
+
+url = os.getenv("DATABASE_URL")
+if not url:
+    print("No DATABASE_URL provided. Skipping database wait.")
+    sys.exit(0)
+
+engine = create_engine(url)
+for _ in range(30):
+    try:
+        with engine.connect() as conn:
+            pass
+        print("Database is ready!")
+        sys.exit(0)
+    except Exception:
+        time.sleep(1)
+
+print("CRITICAL: Database failed to become ready in 30 seconds.")
+sys.exit(1)
+' || exit 1
+
 # Run database migrations
 echo "Running database migrations..."
-gosu appuser alembic upgrade head || echo "Warning: Alembic migrations failed. App might not start correctly."
+gosu appuser alembic upgrade head || { echo "CRITICAL: Alembic migrations failed. Exiting to prevent starting against an outdated schema."; exit 1; }
 
 # Seed database with initial permissions and data
 echo "Seeding database..."
-gosu appuser python scripts/seed_rbac.py || echo "Warning: Failed to seed RBAC permissions."
+gosu appuser python scripts/seed_rbac.py || { echo "CRITICAL: Failed to seed RBAC permissions. Exiting."; exit 1; }
 if [ -f "scripts/seed_analytics.py" ] && [ "$APP_ENV" = "development" ]; then
     echo "Running in development mode: Seeding analytics..."
-    gosu appuser python scripts/seed_analytics.py || echo "Warning: Failed to seed analytics."
+    gosu appuser python scripts/seed_analytics.py || { echo "CRITICAL: Failed to seed analytics. Exiting."; exit 1; }
 fi
+
 
 # Execute the main command dropping privileges to appuser
 # Use gosu to properly step down from root

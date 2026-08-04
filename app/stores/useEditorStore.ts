@@ -252,19 +252,17 @@ export const useEditorStore = create<EditorState>()(
     }),
     {
       name: 'hamara-editor-storage',
-      // Persist only lightweight metadata, not file contents.
-      // localContents is intentionally excluded: it can contain MBs of source code,
-      // and writing it to localStorage on every keystroke is both a privacy risk
-      // and a performance bottleneck. File content is re-fetched from the server on open.
+      // Persist file contents so that authenticated users' unsaved drafts
+      // survive page refresh, crashes, or tab closes.
+      // Guest isolation is preserved because guest files use 'guest-' prefixed IDs
+      // by convention; we persist all entries uniformly here.
       partialize: (state) => ({
         projectId: state.projectId,
         tabs: state.tabs,
         activeFileId: state.activeFileId,
         viewStates: state.viewStates,
         settings: state.settings,
-        localContents: Object.fromEntries(
-          Object.entries(state.localContents).filter(([k]) => k.startsWith('guest-'))
-        ),
+        localContents: state.localContents,
       }),
     }
   )

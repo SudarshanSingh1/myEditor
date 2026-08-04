@@ -16,6 +16,8 @@ import { useWorkspaceStore } from '../../stores/useWorkspaceStore';
 
 import { useEditorStore } from '../../stores/useEditorStore';
 
+import { useNotificationStore } from '../../stores/useNotificationStore';
+
 import { Modal } from '../ui/Modal';
 
 import { Button } from '../ui/Button';
@@ -171,7 +173,19 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const updateFolderMut = useMutation({
     mutationFn: (args: { id: string; name?: string; parent_id?: string | null }) => workspaceApi.updateFolder(args.id, { name: args.name, parent_id: args.parent_id }),
     onMutate: async (args) => {
+      const treeKey = ['workspace', projectId];
+      await queryClient.cancelQueries({ queryKey: treeKey });
+      const snapshot = queryClient.getQueryData(treeKey);
       if (args.name) updateCacheItem(args.id, args.name, true);
+      return { snapshot };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(['workspace', projectId], context?.snapshot);
+      useNotificationStore.getState().addToast({
+        type: 'error',
+        title: 'Rename failed',
+        message: 'Could not rename folder. Your changes have been restored.',
+      });
     },
     onSettled: invalidateTree
   });
@@ -179,7 +193,19 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const deleteFolderMut = useMutation({
     mutationFn: workspaceApi.deleteFolder,
     onMutate: async (id) => {
+      const treeKey = ['workspace', projectId];
+      await queryClient.cancelQueries({ queryKey: treeKey });
+      const snapshot = queryClient.getQueryData(treeKey);
       removeCacheItem(id, true);
+      return { snapshot };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(['workspace', projectId], context?.snapshot);
+      useNotificationStore.getState().addToast({
+        type: 'error',
+        title: 'Delete failed',
+        message: 'Could not delete folder. The tree has been restored.',
+      });
     },
     onSettled: invalidateTree
   });
@@ -195,10 +221,22 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const updateFileMut = useMutation({
     mutationFn: (args: { id: string; name?: string; folder_id?: string | null }) => workspaceApi.updateFile(args.id, { name: args.name, folder_id: args.folder_id }),
     onMutate: async (args) => {
+      const treeKey = ['workspace', projectId];
+      await queryClient.cancelQueries({ queryKey: treeKey });
+      const snapshot = queryClient.getQueryData(treeKey);
       if (args.name) {
         updateCacheItem(args.id, args.name, false);
         useEditorStore.getState().updateTab(args.id, { name: args.name });
       }
+      return { snapshot };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(['workspace', projectId], context?.snapshot);
+      useNotificationStore.getState().addToast({
+        type: 'error',
+        title: 'Rename failed',
+        message: 'Could not rename file. Your changes have been restored.',
+      });
     },
     onSettled: invalidateTree
   });
@@ -206,8 +244,27 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
   const deleteFileMut = useMutation({
     mutationFn: workspaceApi.deleteFile,
     onMutate: async (id) => {
+      // Snapshot the cache BEFORE removing — allows rollback if server DELETE fails
+      const treeKey = ['workspace', projectId];
+      await queryClient.cancelQueries({ queryKey: treeKey });
+      const snapshot = queryClient.getQueryData(treeKey);
       removeCacheItem(id, false);
+      // NOTE: closeTab is intentionally NOT called here.
+      // It is called in onSuccess only after the server confirms deletion.
+      return { id, snapshot };
+    },
+    onSuccess: (_data, id) => {
+      // Server confirmed the delete — safe to close the tab now
       useEditorStore.getState().closeTab(id);
+    },
+    onError: (_error, _id, context) => {
+      // Server DELETE failed — restore the cache so the file reappears
+      queryClient.setQueryData(['workspace', projectId], context?.snapshot);
+      useNotificationStore.getState().addToast({
+        type: 'error',
+        title: 'Delete failed',
+        message: 'Failed to delete file. Your changes are preserved.',
+      });
     },
     onSettled: invalidateTree
   });
@@ -222,6 +279,38 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
       updateFileMut.mutate({ id: draggedId, folder_id: targetFolderId });
     } else {
       if (draggedId === targetFolderId) return;
+
+      // BUG C3: Walk the ancestor chain of targetFolderId to detect circular moves.
+      // If draggedId appears as an ancestor of targetFolderId, the move would create
+      // a cycle (e.g. moving a parent folder into one of its own descendants).
+      const isDescendant = (ancestorId: string, childId: string | null): boolean => {
+        if (childId === null) return false;
+        const currentTree = queryClient.getQueryData<import('../../lib/api/workspace').ProjectTree>(['workspace', projectId]);
+        if (!currentTree) return false;
+        // Find the folder with childId and check its parent_id
+        const findFolder = (folders: import('../../lib/api/workspace').FolderTree[]): import('../../lib/api/workspace').FolderTree | null => {
+          for (const f of folders) {
+            if (f.id === childId) return f;
+            const found = findFolder(f.children || []);
+            if (found) return found;
+          }
+          return null;
+        };
+        const folder = findFolder(currentTree.folders);
+        if (!folder) return false;
+        if (folder.parent_id === ancestorId) return true;
+        return isDescendant(ancestorId, folder.parent_id);
+      };
+
+      if (isDescendant(draggedId, targetFolderId)) {
+        useNotificationStore.getState().addToast({
+          type: 'warning',
+          title: 'Invalid move',
+          message: 'Cannot move a folder into its own subfolder.',
+        });
+        return;
+      }
+
       updateFolderMut.mutate({ id: draggedId, parent_id: targetFolderId });
     }
   };

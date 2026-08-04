@@ -136,7 +136,26 @@ export default function ProjectWorkspace({ projectId }: { projectId?: string } =
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       // Always read fresh state from the store — avoids stale closure from mount-time snapshot
-      const hasDirtyFiles = Object.values(useEditorStore.getState().dirtyFiles).some(Boolean);
+      const { dirtyFiles, localContents } = useEditorStore.getState();
+      const { fileVersions } = useSaveStore.getState();
+
+      const dirtyIds = Object.keys(dirtyFiles).filter((k) => dirtyFiles[k]);
+
+      // BUG C7 FIX: Flush all pending autosave content via sendBeacon BEFORE
+      // showing the browser prompt. sendBeacon is fire-and-forget and is
+      // guaranteed to complete even when the page is being torn down.
+      if (dirtyIds.length > 0) {
+        const payload = JSON.stringify({
+          files: dirtyIds.map((id) => ({
+            id,
+            content: localContents[id] ?? '',
+            expected_version: fileVersions[id] ?? 1,
+          })),
+        });
+        navigator.sendBeacon('/api/v1/workspace/files/save-batch', new Blob([payload], { type: 'application/json' }));
+      }
+
+      const hasDirtyFiles = dirtyIds.length > 0;
       if (hasDirtyFiles) {
         e.preventDefault();
         e.returnValue = '';

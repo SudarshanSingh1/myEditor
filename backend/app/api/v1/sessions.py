@@ -52,18 +52,35 @@ def revoke_session(session_id: uuid.UUID, current_user: User = Depends(get_curre
     return StandardResponse(success=True, message="Session revoked successfully")
 
 @router.delete("", response_model=StandardResponse)
-def revoke_all_other_sessions(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
-    # Note: we should strictly exclude the *current* session, but without the jti in the token, 
-    # we can't easily identify it from get_current_user alone since we only decode `sub` there.
-    # A full implementation would require get_current_user to return the jti or we decode it here.
-    # For now, we'll just invalidate all, forcing a re-login on the current device too.
+def revoke_all_other_sessions(request: Request, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    # Extract the jti of the CURRENT session from the access_token cookie so we can
+    # exclude it — the user should remain logged in on the device they initiated this from.
+    current_jti: str | None = None
+    try:
+        from jose import jwt
+        from app.core.config import settings
+        cookie_token = request.cookies.get("access_token")
+        if cookie_token:
+            payload = jwt.decode(cookie_token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+            current_jti = payload.get("jti")
+    except Exception:
+        pass  # If we can't decode, we'll revoke all (safe fallback)
+
     sessions = db.query(UserSession).filter(
         UserSession.user_id == current_user.id,
-        UserSession.is_active == True
+        UserSession.is_active == True  # noqa: E712
     ).all()
-    
+
+    revoked = 0
     for s in sessions:
+        # Skip the current session if we successfully identified its jti
+        if current_jti and s.session_token_jti == current_jti:
+            continue
         s.is_active = False
-    
+        revoked += 1
+
     db.commit()
-    return StandardResponse(success=True, message="All sessions revoked. Please log in again.")
+    return StandardResponse(
+        success=True,
+        message=f"Revoked {revoked} other session(s). Your current session remains active."
+    )

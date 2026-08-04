@@ -110,8 +110,9 @@ def seed_rbac():
         db.commit()
         print("RBAC seeded successfully.")
     except Exception as e:
-        print(f"Error seeding RBAC: {e}")
+        print(f"CRITICAL: Error seeding RBAC: {e}")
         db.rollback()
+        sys.exit(1)
     finally:
         db.close()
 

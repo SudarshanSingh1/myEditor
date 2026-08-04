@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from typing import List, Any, Optional
 
 from app.models.user import User
-from app.models.workspace import Folder, File
+from app.models.workspace import Folder, File, FileVersion
 from app.models.project import Project
 from app.schemas.workspace import (
     FolderCreate, FolderUpdate, FileCreate, FileUpdate, WorkspaceTreeResponse, TreeFolder, TreeFile
@@ -134,9 +134,43 @@ class WorkspaceService:
         folder = WorkspaceRepository.get_folder(db, folder_id)
         if not folder:
             raise HTTPException(status_code=404, detail="Folder not found")
-            
+
         cls._verify_project_access(db, folder.project_id, current_user)
+
+        # Take pre-delete snapshots of every non-deleted file in the folder (and descendants).
+        # This allows recovery without a full DB restore if deletion was accidental.
+        files_to_snapshot = db.query(File).filter(
+            File.project_id == folder.project_id,
+            File.is_deleted == False  # noqa: E712
+        ).all()
+        # Filter to files that are within this folder's subtree by path prefix
+        folder_path_prefix = folder.path + "/"
+        affected_files = [
+            f for f in files_to_snapshot
+            if f.folder_id == folder_id
+            or (f.folder_id is not None and str(f.folder_id) != str(folder_id)
+                and db.query(Folder).filter(Folder.id == f.folder_id).first() is not None
+                and (db.query(Folder).filter(Folder.id == f.folder_id).first().path or "").startswith(folder_path_prefix))
+        ]
+        for f in affected_files:
+            if f.content is not None:
+                import hashlib
+                snapshot = FileVersion(
+                    file_id=f.id,
+                    version_number=f.version + 1 if hasattr(f, 'version') else 0,
+                    content=f.content,
+                    size=len(f.content.encode('utf-8')) if f.content else 0,
+                    hash=hashlib.sha256(f.content.encode('utf-8')).hexdigest() if f.content else None,
+                    is_pre_delete=True,
+                    change_description=f"Pre-delete snapshot before folder '{folder.name}' was deleted",
+                    created_by=current_user.id,
+                )
+                db.add(snapshot)
+        if affected_files:
+            db.flush()  # Write snapshots before the cascade delete
+
         WorkspaceRepository.soft_delete_folder_cascade(db, folder)
+
 
     # ---------------------------------------------------------
     # Files
@@ -212,7 +246,31 @@ class WorkspaceService:
         if not file:
             raise HTTPException(status_code=404, detail="File not found")
         cls._verify_project_access(db, file.project_id, current_user)
+
+        # Snapshot content before deletion so it can be recovered without a full DB restore.
+        if file.content is not None:
+            import hashlib
+            # Determine a safe version number for the snapshot
+            latest_version = db.query(FileVersion).filter(
+                FileVersion.file_id == file_id
+            ).order_by(FileVersion.version_number.desc()).first()
+            snapshot_version = (latest_version.version_number + 1) if latest_version else 1
+
+            snapshot = FileVersion(
+                file_id=file.id,
+                version_number=snapshot_version,
+                content=file.content,
+                size=len(file.content.encode('utf-8')) if file.content else 0,
+                hash=hashlib.sha256(file.content.encode('utf-8')).hexdigest() if file.content else None,
+                is_pre_delete=True,
+                change_description=f"Pre-delete snapshot of '{file.name}'",
+                created_by=current_user.id,
+            )
+            db.add(snapshot)
+            db.flush()  # Write snapshot before soft-delete
+
         WorkspaceRepository.soft_delete_file(db, file)
+
 
     @classmethod
     def duplicate_file(cls, db: Session, file_id: UUID, current_user: User) -> File:

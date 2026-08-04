@@ -43,24 +43,24 @@ router = APIRouter()
 # 2. Security Center
 @router.get("/security/dashboard", response_model=SuccessResponse)
 def get_security_dashboard(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
-    from app.models.blocked_ip import BlockedIP
-    from app.models.admin_audit_log import AdminAuditLog
-    from app.models.audit_log import AuditLog
-    
-    security_events = db.query(AdminAuditLog).count()
-    blocked_ips = db.query(BlockedIP).count()
-    suspicious_logins = db.query(AuditLog).filter(AuditLog.action.in_(["LOGIN_FAILED", "SUSPICIOUS_LOGIN"])).count()
-    permission_changes = db.query(AdminAuditLog).filter(AdminAuditLog.action.like('%ROLE%')).count()
-    failed_api = db.query(SystemError).count()
-    jwt_activity = db.query(AuditLog).filter(AuditLog.action == "JWT_REFRESH").count()
-    
+    # One query replaces 6 separate COUNT queries (6 → 1 round trip)
+    row = db.execute(text("""
+        SELECT
+            (SELECT COUNT(*) FROM admin_audit_logs)                                                   AS security_events,
+            (SELECT COUNT(*) FROM blocked_ips)                                                         AS blocked_ips,
+            (SELECT COUNT(*) FROM audit_logs  WHERE action IN ('LOGIN_FAILED','SUSPICIOUS_LOGIN'))     AS suspicious_logins,
+            (SELECT COUNT(*) FROM admin_audit_logs WHERE action LIKE '%%ROLE%%')                       AS permission_changes,
+            (SELECT COUNT(*) FROM system_errors)                                                       AS failed_api,
+            (SELECT COUNT(*) FROM audit_logs  WHERE action = 'JWT_REFRESH')                            AS jwt_activity
+    """)).fetchone()
+
     return SuccessResponse(message="Security dashboard", data={
-        "security_events": security_events,
-        "blocked_ips": blocked_ips,
-        "suspicious_logins": suspicious_logins,
-        "permission_changes": permission_changes,
-        "failed_api_requests": failed_api,
-        "jwt_activity": jwt_activity
+        "security_events":     row.security_events,
+        "blocked_ips":         row.blocked_ips,
+        "suspicious_logins":   row.suspicious_logins,
+        "permission_changes":  row.permission_changes,
+        "failed_api_requests": row.failed_api,
+        "jwt_activity":        row.jwt_activity,
     })
 
 @router.get("/security/blocked-ips", response_model=SuccessResponse)

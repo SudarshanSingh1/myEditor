@@ -19,8 +19,15 @@ from app.services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
 
+
+def _hash_token(token: str) -> str:
+    """SHA-256 hash a token string. Used to store refresh token fingerprints without
+    persisting the token itself, enabling replay detection without full revocation lists."""
+    return hashlib.sha256(token.encode('utf-8')).hexdigest()
+
+
 class AuthService:
-    
+
     @staticmethod
     def register_user(db: Session, req: UserRegisterRequest, ip_address: str = None) -> User:
         # Validate password strength
@@ -265,9 +272,15 @@ class AuthService:
         browser = _ua_clean(ua.browser.family if hasattr(ua, 'browser') else "") or "Unknown"
         os_name = _ua_clean(ua.os.family if hasattr(ua, 'os') else "") or "Unknown"
         
+        # Generate tokens first so we can hash the refresh token for storage
+        access_token = create_access_token(subject=user.id)
+        refresh_token_val = create_refresh_token(subject=user.id, jti=session_token_jti)
+        refresh_hash = _hash_token(refresh_token_val)
+
         new_session = UserSession(
             user_id=user.id,
             session_token_jti=session_token_jti,
+            refresh_token_hash=refresh_hash,
             ip_address=ip_address,
             user_agent=user_agent_string or "Unknown",
             device_type=device_type,
@@ -277,15 +290,11 @@ class AuthService:
         )
         db.add(new_session)
         
-        # Generate tokens
-        access_token = create_access_token(subject=user.id)
-        refresh_token = create_refresh_token(subject=user.id, jti=session_token_jti)
-
         # Update last login timestamp
         user.last_login = datetime.now(timezone.utc)
 
-        # Log action in the same transaction
-        log = AuditLog(user_id=user.id, action="LOGIN", ip_address=ip_address)
+        # Log action in the same transaction (include user_agent for audit completeness)
+        log = AuditLog(user_id=user.id, action="LOGIN", ip_address=ip_address, user_agent=user_agent_string)
         db.add(log)
         db.commit()
 
@@ -295,10 +304,217 @@ class AuthService:
         except Exception:
             pass
 
+        return user, access_token, refresh_token_val
+
+    # ------------------------------------------------------------------ #
+    # TOTP Helpers                                                          #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def verify_totp(db: Session, user: User, code: str) -> bool:
+        """Verify a TOTP code with replay attack prevention.
+
+        Uses a ±1 window (30s grace) but tracks the last-used code's
+        time counter to ensure each code can only be consumed once.
+        Returns True on success, False on failure (wrong code or replay).
+        """
+        import pyotp
+        import math
+        if not user.totp_secret:
+            return False
+
+        totp = pyotp.TOTP(user.totp_secret)
+        # verify() with valid_window=1 accepts codes from t-30s to t+30s
+        if not totp.verify(code, valid_window=1):
+            return False
+
+        # Compute the current time counter for this code
+        current_counter = int(datetime.now(timezone.utc).timestamp()) // 30
+
+        # Replay check: reject if this counter was already used
+        if user.totp_last_used_at is not None:
+            last_counter = int(user.totp_last_used_at.timestamp()) // 30
+            if current_counter <= last_counter:
+                logger.warning(f"TOTP replay attempt detected for user {user.id}")
+                return False
+
+        # Mark this counter as consumed
+        user.totp_last_used_at = datetime.now(timezone.utc)
+        db.commit()
+        return True
+
+    @staticmethod
+    def verify_backup_code(db: Session, user: User, raw_code: str) -> bool:
+        """Verify a backup code (single-use). Removes the code from the stored list on success."""
+        import json
+        if not user.totp_backup_codes:
+            return False
+
+        try:
+            hashed_codes: list = json.loads(user.totp_backup_codes)
+        except (json.JSONDecodeError, TypeError):
+            return False
+
+        code_hash = hashlib.sha256(raw_code.strip().encode('utf-8')).hexdigest()
+
+        if code_hash not in hashed_codes:
+            return False
+
+        # Consume the code — remove it so it cannot be reused
+        hashed_codes.remove(code_hash)
+        user.totp_backup_codes = json.dumps(hashed_codes)
+        db.commit()
+
+        log = AuditLog(
+            user_id=user.id,
+            action="2FA_BACKUP_CODE_USED",
+            details={"remaining_codes": len(hashed_codes)}
+        )
+        db.add(log)
+        db.commit()
+        return True
+
+    @staticmethod
+    def complete_2fa_login(
+        db: Session,
+        pre_auth_token: str,
+        code: str,
+        ip_address: str = None,
+        user_agent_string: str = None,
+        is_backup_code: bool = False
+    ):
+        """Complete the 2FA login flow after password validation.
+
+        Accepts the pre_auth_token issued by authenticate_user() when totp_enabled=True,
+        along with the TOTP code (or backup code). Creates the full session on success.
+
+        Returns: (user, access_token, refresh_token)
+        """
+        # Validate the pre-auth token
+        try:
+            payload = jwt.decode(pre_auth_token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired 2FA token. Please log in again."
+            )
+
+        token_type = payload.get("type")
+        user_id_str = payload.get("sub")
+
+        if token_type != "2fa" or not user_id_str:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid 2FA token."
+            )
+
+        try:
+            uid = uuid.UUID(user_id_str)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid 2FA token subject."
+            )
+
+        user = db.query(User).filter(User.id == uid).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found."
+            )
+
+        if user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Account is {user.status.value.lower()}."
+            )
+
+        # Verify the TOTP or backup code
+        if is_backup_code:
+            if not AuthService.verify_backup_code(db, user, code):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid backup code."
+                )
+        else:
+            if not AuthService.verify_totp(db, user, code):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid or expired 2FA code."
+                )
+
+        # Reset failed attempts
+        user.failed_login_attempts = 0
+        user.account_locked_until = None
+
+        # Cache effective permissions
+        from app.models.role_permission import RolePermission
+        from app.models.permission import Permission
+        if user.role != RoleEnum.OWNER:
+            perms = db.query(Permission.node).join(RolePermission).filter(RolePermission.role == user.role).all()
+            user.effective_permissions = [p[0] for p in perms]
+        db.commit()
+
+        # Create session
+        from app.models.user_session import UserSession
+        from user_agents import parse
+
+        session_token_jti = str(uuid.uuid4())
+        ua = parse(user_agent_string or "")
+
+        def _ua_clean(val: str) -> str:
+            return val if val and val.lower() not in ("other", "", "none") else None
+
+        raw_device = ua.device.family if hasattr(ua, 'device') else "Other"
+        if raw_device == "Other":
+            device_type = "Mobile" if ua.is_mobile else ("Tablet" if ua.is_tablet else ("Bot" if ua.is_bot else "Desktop"))
+        else:
+            device_type = raw_device
+
+        browser = _ua_clean(ua.browser.family if hasattr(ua, 'browser') else "") or "Unknown"
+        os_name = _ua_clean(ua.os.family if hasattr(ua, 'os') else "") or "Unknown"
+
+        # Generate tokens first so we can hash the refresh token
+        access_token = create_access_token(subject=user.id)
+        refresh_token = create_refresh_token(subject=user.id, jti=session_token_jti)
+        refresh_hash = _hash_token(refresh_token)
+
+        new_session = UserSession(
+            user_id=user.id,
+            session_token_jti=session_token_jti,
+            refresh_token_hash=refresh_hash,
+            ip_address=ip_address,
+            user_agent=user_agent_string or "Unknown",
+            device_type=device_type,
+            browser=browser,
+            os=os_name,
+            expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        )
+        db.add(new_session)
+
+        user.last_login = datetime.now(timezone.utc)
+        log = AuditLog(
+            user_id=user.id,
+            action="LOGIN_2FA",
+            ip_address=ip_address,
+            user_agent=user_agent_string
+        )
+        db.add(log)
+        db.commit()
+
         return user, access_token, refresh_token
 
     @staticmethod
-    def refresh_token(db: Session, refresh_token: str) -> str:
+    def refresh_token(db: Session, refresh_token: str) -> tuple:
+        """Refresh the access token and rotate the refresh token.
+
+        Full rotation: each /auth/refresh call issues a brand-new refresh token
+        and invalidates the previous one by updating refresh_token_hash on the session.
+        If the incoming token hash does not match the stored hash, the token was
+        already rotated — possible replay attack. The session is immediately revoked.
+
+        Returns: (access_token, new_refresh_token)
+        """
         try:
             payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
             token_type = payload.get("type")
@@ -307,7 +523,7 @@ class AuthService:
 
             user_id = payload.get("sub")
             jti = payload.get("jti")
-            
+
             if not user_id:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
 
@@ -319,24 +535,58 @@ class AuthService:
             user = db.query(User).filter(User.id == uid).first()
             if not user or user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED]:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive.")
-                
+
             if jti:
                 from app.models.user_session import UserSession
                 session = db.query(UserSession).filter(UserSession.session_token_jti == jti).first()
                 if not session or not session.is_active:
                     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session revoked or inactive.")
-                
+
                 if session.expires_at and session.expires_at < datetime.now(timezone.utc):
                     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired.")
-                
-                # Update last active
+
+                # --- Refresh Token Rotation: Replay Detection ---
+                # Only validate hash if one exists (allows migration of old sessions)
+                if session.refresh_token_hash:
+                    incoming_hash = _hash_token(refresh_token)
+                    if session.refresh_token_hash != incoming_hash:
+                        # Token mismatch: token was already rotated or stolen.
+                        # Immediately revoke the session to contain the breach.
+                        logger.warning(
+                            f"Refresh token replay detected for user {user.id}, "
+                            f"session {session.id}. Revoking session immediately."
+                        )
+                        session.is_active = False
+                        db.commit()
+                        raise HTTPException(
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Session invalidated due to security policy. Please log in again."
+                        )
+
+                # Issue new jti + refresh token (rotation)
+                new_jti = str(uuid.uuid4())
+                new_refresh_token = create_refresh_token(subject=user.id, jti=new_jti)
+                new_refresh_hash = _hash_token(new_refresh_token)
+
+                # Atomically rotate the session
+                session.session_token_jti = new_jti
+                session.refresh_token_hash = new_refresh_hash
                 session.last_active_at = datetime.now(timezone.utc)
                 db.commit()
 
-            return create_access_token(subject=user.id)
+                access_token = create_access_token(subject=user.id)
+                return access_token, new_refresh_token
+
+            else:
+                # Legacy token without jti — issue new access token + new refresh token
+                new_jti = str(uuid.uuid4())
+                new_refresh_token = create_refresh_token(subject=user.id, jti=new_jti)
+                access_token = create_access_token(subject=user.id)
+                return access_token, new_refresh_token
 
         except JWTError:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials.")
+
 
     @staticmethod
     def get_current_user(db: Session, token: str) -> User:

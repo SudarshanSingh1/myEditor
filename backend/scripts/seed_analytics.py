@@ -1,4 +1,5 @@
 import random
+import sys
 from datetime import datetime, timedelta, timezone
 import uuid
 from app.database.session import SessionLocal
@@ -70,7 +71,8 @@ def seed():
         print("Successfully seeded analytics data!")
     except Exception as e:
         db.rollback()
-        print(f"Failed to seed: {e}")
+        print(f"CRITICAL: Failed to seed: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     seed()

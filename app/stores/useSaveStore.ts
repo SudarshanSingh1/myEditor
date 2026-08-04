@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { workspaceApi } from '../lib/api/workspace';
 import { useEditorStore } from './useEditorStore';
+import { useNotificationStore } from './useNotificationStore';
 
 type SaveStatus = 'saved' | 'saving' | 'failed' | 'conflicted' | 'modified';
 
@@ -12,6 +13,7 @@ interface SaveState {
   fileVersions: Record<string, number>;
   fileStatuses: Record<string, SaveStatus>;
   lastSavedAt: Record<string, number>;
+  conflictedFiles: Set<string>;
 
   setFileVersion: (fileId: string, version: number) => void;
   setFileStatus: (fileId: string, status: SaveStatus) => void;
@@ -29,6 +31,7 @@ export const useSaveStore = create<SaveState>((set, get) => ({
   fileVersions: {},
   fileStatuses: {},
   lastSavedAt: {},
+  conflictedFiles: new Set<string>(),
 
   setFileVersion: (fileId, version) => set((state) => ({
     fileVersions: { ...state.fileVersions, [fileId]: version }
@@ -42,7 +45,7 @@ export const useSaveStore = create<SaveState>((set, get) => ({
     // Clear any pending timeouts on reset
     autoSaveTimeouts.forEach(clearTimeout);
     autoSaveTimeouts.clear();
-    set({ fileVersions: {}, fileStatuses: {}, lastSavedAt: {} });
+    set({ fileVersions: {}, fileStatuses: {}, lastSavedAt: {}, conflictedFiles: new Set<string>() });
   },
 
   saveFile: async (fileId: string, content: string) => {
@@ -72,8 +75,24 @@ export const useSaveStore = create<SaveState>((set, get) => ({
 
       return true;
     } catch (error: any) {
-      if (error?.message?.includes('Conflict')) {
+      if (error?.status === 409) {
+        // Extract the server's authoritative version from the error response body.
+        // Updating fileVersions unblocks future saves — they will use this version.
+        const serverVersion: number | undefined = error?.data?.current_version;
+        if (serverVersion !== undefined) {
+          set((state) => ({
+            fileVersions: { ...state.fileVersions, [fileId]: serverVersion },
+          }));
+        }
+        set((state) => ({
+          conflictedFiles: new Set([...state.conflictedFiles, fileId]),
+        }));
         setFileStatus(fileId, 'conflicted');
+        useNotificationStore.getState().addToast({
+          type: 'warning',
+          title: 'Save conflict detected',
+          message: 'Your next save will overwrite the server version.',
+        });
       } else {
         setFileStatus(fileId, 'failed');
       }

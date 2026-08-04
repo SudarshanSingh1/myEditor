@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
+import re
+from typing import List
 
 from app.dependencies.database import get_db
 from app.models.user import User
@@ -13,6 +15,7 @@ from app.schemas.workspace import (
     WorkspaceTreeResponse
 )
 from app.services.workspace_service import WorkspaceService
+from app.core.rate_limit import limiter
 
 router = APIRouter()
 
@@ -143,3 +146,87 @@ def migrate_guest_workspace(req: GuestMigrationRequest, db: Session = Depends(ge
     
     return SuccessResponse(message="Guest workspace migrated successfully.", data={"project_id": str(new_project.id)})
 
+
+# -------------------------------------------------------------------
+# SEARCH
+# -------------------------------------------------------------------
+
+@router.get("/search")
+@limiter.limit("20/minute")
+def search_project_files(
+    request,  # required by slowapi for rate limiting
+    project_id: UUID = Query(..., description="Project to search within"),
+    q: str = Query(..., min_length=1, max_length=200, description="Search query"),
+    case_sensitive: bool = Query(False, description="Case-sensitive match"),
+    use_regex: bool = Query(False, alias="regex", description="Treat q as a regular expression"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Search for text or a regex pattern across all files in a project.
+
+    Returns up to 500 matches with file path, line number, line content,
+    and character-level match offsets.
+
+    Rate limited to 20 requests/minute per user.
+    """
+    from app.models.workspace import File, Folder
+
+    # Build regex pattern from query
+    flags = 0 if case_sensitive else re.IGNORECASE
+    try:
+        if use_regex:
+            pattern = re.compile(q, flags)
+        else:
+            pattern = re.compile(re.escape(q), flags)
+    except re.error as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid regex pattern: {exc}")
+
+    # Fetch all non-deleted files for this project
+    files = (
+        db.query(File)
+        .filter(File.project_id == project_id, File.is_deleted == False)  # noqa: E712
+        .all()
+    )
+
+    if not files:
+        return SuccessResponse(message="No files found in project.", data=[])
+
+    # Verify access via the first file's project (cheap authorization check)
+    WorkspaceService._verify_project_access(db, project_id, current_user)
+
+    results = []
+    MAX_RESULTS = 500
+
+    for file in files:
+        if not file.content:
+            continue
+        # Resolve folder path for display
+        folder_path = ""
+        if file.folder_id:
+            folder = db.query(Folder).filter(Folder.id == file.folder_id).first()
+            if folder:
+                folder_path = folder.path.lstrip("/") + "/"
+
+        full_path = folder_path + file.name
+
+        for line_num, line in enumerate(file.content.splitlines(), start=1):
+            for match in pattern.finditer(line):
+                results.append({
+                    "file_id": str(file.id),
+                    "file_name": file.name,
+                    "path": full_path,
+                    "line_number": line_num,
+                    "line_content": line,
+                    "match_start": match.start(),
+                    "match_end": match.end(),
+                })
+                if len(results) >= MAX_RESULTS:
+                    return SuccessResponse(
+                        message=f"Showing first {MAX_RESULTS} matches. Refine your query for more precise results.",
+                        data=results,
+                    )
+
+    return SuccessResponse(
+        message=f"Found {len(results)} match(es).",
+        data=results,
+    )

@@ -73,7 +73,14 @@ class FileVersion(Base):
     content = Column(Text, nullable=True)
     size = Column(Integer, default=0, nullable=False)
     hash = Column(String(64), nullable=True)
-    
+
+    # True when this version was captured as a pre-deletion snapshot (for recovery).
+    # These versions are retained even after the parent file is soft-deleted.
+    is_pre_delete = Column(Boolean, nullable=False, default=False, server_default="false")
+
+    # Optional human-readable description of the save (e.g. "pre-delete snapshot", "manual checkpoint")
+    change_description = Column(String(255), nullable=True)
+
     created_by = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

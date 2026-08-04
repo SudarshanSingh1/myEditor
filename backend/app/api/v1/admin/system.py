@@ -299,32 +299,55 @@ def export_audit_logs(
     logs = query.order_by(AuditLog.created_at.desc()).limit(10000).all() # Cap at 10k for safety
 
     if format == "json":
-        log_list = []
-        for log, un in logs:
-            log_list.append({
+        # JSON export: load up to 5 000 rows into memory (reasonable for JSON download)
+        logs = query.order_by(AuditLog.created_at.desc()).limit(5000).all()
+        log_list = [
+            {
                 "id": str(log.id), "action": log.action, "username": un or "Unknown",
-                "ip_address": log.ip_address, "details": log.details, "created_at": log.created_at.isoformat() if log.created_at else None
-            })
+                "ip_address": log.ip_address, "details": log.details,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
+            }
+            for log, un in logs
+        ]
         return log_list
     else:
-        # Default to CSV
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow(["ID", "Timestamp", "Action", "Username", "IP Address", "Details"])
-        for log, un in logs:
-            writer.writerow([
-                str(log.id), 
-                log.created_at.isoformat() if log.created_at else "", 
-                log.action, 
-                un or "Unknown", 
-                log.ip_address or "", 
-                str(log.details)
-            ])
-        
-        headers = {
-            "Content-Disposition": "attachment; filename=audit_export.csv"
-        }
-        return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
+        # CSV export: stream in batches of 500 rows — never holds >500 rows in memory
+        # regardless of total table size.
+        BATCH = 500
+
+        def _csv_row_generator():
+            header = io.StringIO()
+            w = csv.writer(header)
+            w.writerow(["ID", "Timestamp", "Action", "Username", "IP Address", "Details"])
+            yield header.getvalue()
+
+            offset = 0
+            while True:
+                batch = query.order_by(AuditLog.created_at.desc()).offset(offset).limit(BATCH).all()
+                if not batch:
+                    break
+                buf = io.StringIO()
+                w = csv.writer(buf)
+                for log, un in batch:
+                    w.writerow([
+                        str(log.id),
+                        log.created_at.isoformat() if log.created_at else "",
+                        log.action,
+                        un or "Unknown",
+                        log.ip_address or "",
+                        str(log.details),
+                    ])
+                yield buf.getvalue()
+                offset += BATCH
+                if len(batch) < BATCH:
+                    break  # last page
+
+        from fastapi.responses import StreamingResponse as _StreamingResponse
+        return _StreamingResponse(
+            _csv_row_generator(),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=audit_export.csv"},
+        )
 
 # --- Feedback Management ---
 @router.get("/feedback", response_model=SuccessResponse)

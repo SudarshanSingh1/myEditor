@@ -171,11 +171,14 @@ def logout(
 
 
 @router.post("/refresh", response_model=SuccessResponse)
-def refresh(response: Response, refresh_token: str | None = Cookie(default=None), db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def refresh(request: Request, response: Response, refresh_token: str | None = Cookie(default=None), db: Session = Depends(get_db)):
     if not refresh_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token missing")
-    access_token = AuthService.refresh_token(db, refresh_token)
-    
+
+    # refresh_token() now returns (access_token, new_refresh_token) — full rotation
+    access_token, new_refresh_token = AuthService.refresh_token(db, refresh_token)
+
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -185,7 +188,16 @@ def refresh(response: Response, refresh_token: str | None = Cookie(default=None)
         path="/",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
-    
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        path="/",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+
     return SuccessResponse(message="Token refreshed.")
 
 @router.get("/me", response_model=SuccessResponse[UserProfileResponse])
@@ -223,3 +235,91 @@ def reset_password(req: ResetPasswordConfirmRequest, request: Request, db: Sessi
     ip_address = request.client.host if request.client else None
     AuthService.reset_password_confirm(db, req, ip_address)
     return SuccessResponse(message="Password has been reset successfully.")
+
+
+# ---------------------------------------------------------------------------
+# 2FA — Login Completion
+# ---------------------------------------------------------------------------
+
+class TwoFactorVerifyRequest(BaseModel):
+    token: str       # pre_auth_token from the login 401 response
+    code: str        # TOTP code from authenticator app
+
+class TwoFactorRecoverRequest(BaseModel):
+    token: str       # pre_auth_token from the login 401 response
+    backup_code: str # one of the 8 backup codes shown during 2FA setup
+
+
+@router.post("/2fa/verify", response_model=SuccessResponse)
+@limiter.limit("5/minute")
+def verify_2fa(
+    req: TwoFactorVerifyRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    """Complete 2FA login flow: validate pre_auth_token + TOTP code, issue full session."""
+    forwarded_for = request.headers.get("x-forwarded-for")
+    ip_address = forwarded_for.split(",")[0].strip() if forwarded_for else (
+        request.client.host if request.client else None
+    )
+    user_agent = request.headers.get("user-agent", "")
+
+    user, access_token, refresh_token_val = AuthService.complete_2fa_login(
+        db=db,
+        pre_auth_token=req.token,
+        code=req.code,
+        ip_address=ip_address,
+        user_agent_string=user_agent,
+        is_backup_code=False,
+    )
+
+    response.set_cookie(
+        key="access_token", value=access_token,
+        httponly=True, secure=True, samesite="strict", path="/",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    )
+    response.set_cookie(
+        key="refresh_token", value=refresh_token_val,
+        httponly=True, secure=True, samesite="strict", path="/",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+    return SuccessResponse(message="2FA verification successful.")
+
+
+@router.post("/2fa/recover", response_model=SuccessResponse)
+@limiter.limit("3/minute")
+def recover_2fa(
+    req: TwoFactorRecoverRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    """Recover 2FA access using a backup code. The backup code is consumed (single-use)."""
+    forwarded_for = request.headers.get("x-forwarded-for")
+    ip_address = forwarded_for.split(",")[0].strip() if forwarded_for else (
+        request.client.host if request.client else None
+    )
+    user_agent = request.headers.get("user-agent", "")
+
+    user, access_token, refresh_token_val = AuthService.complete_2fa_login(
+        db=db,
+        pre_auth_token=req.token,
+        code=req.backup_code,
+        ip_address=ip_address,
+        user_agent_string=user_agent,
+        is_backup_code=True,
+    )
+
+    response.set_cookie(
+        key="access_token", value=access_token,
+        httponly=True, secure=True, samesite="strict", path="/",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    )
+    response.set_cookie(
+        key="refresh_token", value=refresh_token_val,
+        httponly=True, secure=True, samesite="strict", path="/",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+    return SuccessResponse(message="Backup code accepted. You are now logged in.")
+

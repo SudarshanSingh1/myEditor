@@ -1,14 +1,20 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.dependencies.database import get_db
 from app.schemas.responses import SuccessResponse
 import docker
 import os
+import time
+import psutil
 
 from fastapi import HTTPException
 
 router = APIRouter()
+
+# Record startup time for uptime metric
+_START_TIME = time.time()
 
 @router.get("/live")
 def liveness_check():
@@ -67,3 +73,66 @@ def get_status(db: Session = Depends(get_db)):
         "maintenance_mode": maintenance_mode,
         "maintenance_message": maintenance_message
     })
+
+
+@router.get("/metrics", response_class=PlainTextResponse, include_in_schema=False)
+def prometheus_metrics(db: Session = Depends(get_db)):
+    """Prometheus-compatible text format metrics.
+
+    Scraped by Prometheus / Grafana without any external library.
+    Endpoint is excluded from OpenAPI docs (internal use only).
+    """
+    proc = psutil.Process(os.getpid())
+    mem = proc.memory_info()
+    uptime_seconds = time.time() - _START_TIME
+
+    # DB pool stats from SQLAlchemy engine
+    from app.database.session import engine
+    pool = engine.pool
+    pool_size      = getattr(pool, 'size',       lambda: 0)()
+    pool_checked_in  = getattr(pool, 'checkedin',  lambda: 0)()
+    pool_checked_out = getattr(pool, 'checkedout', lambda: 0)()
+    pool_overflow    = getattr(pool, 'overflow',   lambda: 0)()
+
+    # DB ping latency
+    db_ok = 0
+    try:
+        db.execute(text("SELECT 1"))
+        db_ok = 1
+    except Exception:
+        pass
+
+    lines = [
+        "# HELP hamara_uptime_seconds Seconds since process started",
+        "# TYPE hamara_uptime_seconds gauge",
+        f"hamara_uptime_seconds {uptime_seconds:.2f}",
+
+        "# HELP hamara_process_rss_bytes Resident set size in bytes",
+        "# TYPE hamara_process_rss_bytes gauge",
+        f"hamara_process_rss_bytes {mem.rss}",
+
+        "# HELP hamara_process_vms_bytes Virtual memory size in bytes",
+        "# TYPE hamara_process_vms_bytes gauge",
+        f"hamara_process_vms_bytes {mem.vms}",
+
+        "# HELP hamara_db_pool_size Configured pool size",
+        "# TYPE hamara_db_pool_size gauge",
+        f"hamara_db_pool_size {pool_size}",
+
+        "# HELP hamara_db_pool_checked_in Connections available in pool",
+        "# TYPE hamara_db_pool_checked_in gauge",
+        f"hamara_db_pool_checked_in {pool_checked_in}",
+
+        "# HELP hamara_db_pool_checked_out Connections currently in use",
+        "# TYPE hamara_db_pool_checked_out gauge",
+        f"hamara_db_pool_checked_out {pool_checked_out}",
+
+        "# HELP hamara_db_pool_overflow Connections beyond pool_size",
+        "# TYPE hamara_db_pool_overflow gauge",
+        f"hamara_db_pool_overflow {pool_overflow}",
+
+        "# HELP hamara_db_healthy 1 if database is reachable, 0 otherwise",
+        "# TYPE hamara_db_healthy gauge",
+        f"hamara_db_healthy {db_ok}",
+    ]
+    return "\n".join(lines) + "\n"

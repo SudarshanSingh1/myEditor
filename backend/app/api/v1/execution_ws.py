@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
@@ -10,7 +11,41 @@ from app.models.user import RoleEnum
 from app.models.user_activity import UserActivity
 from datetime import datetime, timezone, date
 from sqlalchemy import select
+
 logger = logging.getLogger(__name__)
+
+# WebSocket health constants
+_WS_HEARTBEAT_INTERVAL = 30   # seconds between ping frames
+_WS_IDLE_TIMEOUT       = 300  # seconds before an idle connection is closed
+
+
+async def _heartbeat_loop(websocket: WebSocket) -> None:
+    """Send a ping every 30 s; close the socket if the client goes dark for 5 min.
+
+    This task is cancelled by the caller when execution finishes normally.
+    It raises asyncio.CancelledError on clean cancellation — never touches the
+    websocket after the caller has already closed it.
+    """
+    silent_cycles = 0
+    max_silent = _WS_IDLE_TIMEOUT // _WS_HEARTBEAT_INTERVAL  # e.g. 10
+    try:
+        while True:
+            await asyncio.sleep(_WS_HEARTBEAT_INTERVAL)
+            try:
+                await websocket.send_json({"type": "ping"})
+                silent_cycles = 0
+            except Exception:
+                silent_cycles += 1
+                if silent_cycles >= max_silent:
+                    logger.warning("[WS] Idle timeout — closing stale connection")
+                    try:
+                        await websocket.close(code=1001)
+                    except Exception:
+                        pass
+                    return
+    except asyncio.CancelledError:
+        pass  # Normal shutdown — don't touch the socket
+
 
 router = APIRouter()
 
@@ -70,60 +105,72 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
         logger.info("Waiting for initialization message from frontend...")
         init_message = await websocket.receive_text()
         init_data = json.loads(init_message)
-        
+
         mode = init_data.get("mode", "execute")
         service = ExecutionService(db)
-        
-        if mode == "execute_guest":
-            content = init_data.get("content")
-            language = init_data.get("language")
-            if not content or not language:
-                await websocket.send_json({"type": "error", "message": "Missing content or language"})
-                await websocket.close()
-                return
 
-            if is_guest:
-                from app.models.guest_session import GuestSession
-                import uuid
-                
-                # Check Quota
-                session_model = db.query(GuestSession).filter(GuestSession.id == uuid.UUID(user_id)).first()
-                if not session_model or session_model.expires_at < datetime.now(timezone.utc):
-                    await websocket.send_json({"type": "error", "message": "Guest session expired"})
+        # Start heartbeat after successful auth + init — keeps connection alive
+        # and automatically closes stale/zombie connections after idle timeout.
+        heartbeat_task = asyncio.create_task(_heartbeat_loop(websocket))
+
+        try:
+            if mode == "execute_guest":
+                content = init_data.get("content")
+                language = init_data.get("language")
+                if not content or not language:
+                    await websocket.send_json({"type": "error", "message": "Missing content or language"})
                     await websocket.close()
                     return
-                    
-                if session_model.execution_count >= 15:
-                    await websocket.send_json({"type": "error", "message": "Guest execution quota exceeded. Please sign up."})
-                    await websocket.close()
-                    return
-                    
-                # Increment quota
-                session_model.execution_count += 1
-                db.commit()
-            
-            # Run Guest Code (for both real users and guests)
-            await service.run_guest_code_interactive(websocket, content, language)
-            
-        else:
-            if is_guest:
-                await websocket.send_json({"type": "error", "message": "Guests cannot access projects"})
-                await websocket.close()
-                return
-                
-            project_id = init_data.get("projectId")
-            
-            if mode == "shell":
-                terminal_prompt = init_data.get("terminalPrompt")
-                await service.run_shell_interactive(websocket, project_id, user_id, terminal_prompt)
+
+                if is_guest:
+                    from app.models.guest_session import GuestSession
+                    import uuid
+
+                    # Check Quota
+                    session_model = db.query(GuestSession).filter(GuestSession.id == uuid.UUID(user_id)).first()
+                    if not session_model or session_model.expires_at < datetime.now(timezone.utc):
+                        await websocket.send_json({"type": "error", "message": "Guest session expired"})
+                        await websocket.close()
+                        return
+
+                    if session_model.execution_count >= 15:
+                        await websocket.send_json({"type": "error", "message": "Guest execution quota exceeded. Please sign up."})
+                        await websocket.close()
+                        return
+
+                    # Increment quota
+                    session_model.execution_count += 1
+                    db.commit()
+
+                # Run Guest Code (for both real users and guests)
+                await service.run_guest_code_interactive(websocket, content, language)
+
             else:
-                file_id = init_data.get("fileId")
-                if not file_id:
-                    await websocket.send_json({"type": "error", "message": "Missing fileId for execution"})
+                if is_guest:
+                    await websocket.send_json({"type": "error", "message": "Guests cannot access projects"})
                     await websocket.close()
                     return
-                await service.run_code_interactive(websocket, project_id, file_id, user_id)
-        
+
+                project_id = init_data.get("projectId")
+
+                if mode == "shell":
+                    terminal_prompt = init_data.get("terminalPrompt")
+                    await service.run_shell_interactive(websocket, project_id, user_id, terminal_prompt)
+                else:
+                    file_id = init_data.get("fileId")
+                    if not file_id:
+                        await websocket.send_json({"type": "error", "message": "Missing fileId for execution"})
+                        await websocket.close()
+                        return
+                    await service.run_code_interactive(websocket, project_id, file_id, user_id)
+        finally:
+            # Always cancel the heartbeat when execution ends (success or error)
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
+
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected gracefully")
     except Exception as e:
@@ -131,6 +178,6 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
         try:
             await websocket.send_json({"type": "error", "message": "An internal server error occurred."})
             await websocket.close()
-        except:
+        except Exception:
             pass
 

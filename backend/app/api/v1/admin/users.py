@@ -4,7 +4,7 @@ import zipfile
 import io
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func, text
+from sqlalchemy import func, text, case
 import uuid
 from datetime import datetime, timezone, timedelta
 import psutil
@@ -70,17 +70,34 @@ def get_users(
         order_col = User.created_at.desc() if sort_dir == "desc" else User.created_at.asc()
         
     users = query.order_by(order_col).offset(skip).limit(limit).all()
-    
-    safe_users = []
-    for u in users:
-        projects_count = db.query(Project).filter(Project.owner_id == u.id).count()
-        safe_users.append({
+
+    # -----------------------------------------------------------------------
+    # Batch project counts — ONE query for all users (fixes N+1)
+    # Before: 1 COUNT query per user row (50 queries per page)
+    # After:  1 GROUP BY query regardless of page size
+    # -----------------------------------------------------------------------
+    user_ids = [u.id for u in users]
+    if user_ids:
+        count_rows = (
+            db.query(Project.owner_id, func.count(Project.id).label("cnt"))
+            .filter(Project.owner_id.in_(user_ids), Project.is_deleted == False)  # noqa: E712
+            .group_by(Project.owner_id)
+            .all()
+        )
+        project_counts: dict = {row.owner_id: row.cnt for row in count_rows}
+    else:
+        project_counts = {}
+
+    safe_users = [
+        {
             "id": str(u.id), "username": u.username, "email": u.email, "role": u.role,
             "status": u.status, "created_at": u.created_at, "last_login": u.last_login,
-            "projects_count": projects_count, "is_deleted": u.is_deleted,
-            "failed_login_attempts": u.failed_login_attempts
-        })
-        
+            "projects_count": project_counts.get(u.id, 0), "is_deleted": u.is_deleted,
+            "failed_login_attempts": u.failed_login_attempts,
+        }
+        for u in users
+    ]
+
     return SuccessResponse(message="Users retrieved", data={"items": safe_users, "total": total})
 
 class UserActionRequest(BaseModel):
