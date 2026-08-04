@@ -26,7 +26,7 @@ def upgrade() -> None:
     _exec("CREATE INDEX IF NOT EXISTS ix_audit_logs_action_created_at ON audit_logs (action, created_at DESC)")
     _exec("CREATE INDEX IF NOT EXISTS ix_execution_logs_created_at_status ON execution_logs (created_at DESC, status)")
     _exec("CREATE INDEX IF NOT EXISTS ix_execution_logs_user_id_created_at ON execution_logs (user_id, created_at DESC)")
-    _exec("CREATE INDEX IF NOT EXISTS ix_projects_owner_id_not_deleted ON projects (owner_id) WHERE is_deleted = false")
+    _exec("CREATE INDEX IF NOT EXISTS ix_projects_owner_id_not_deleted ON projects (owner_id) WHERE deleted_at IS NULL")
     _exec("CREATE INDEX IF NOT EXISTS ix_files_project_id_not_deleted ON files (project_id) WHERE deleted_at IS NULL")
     _exec("CREATE INDEX IF NOT EXISTS ix_folders_project_id_not_deleted ON folders (project_id) WHERE deleted_at IS NULL")
     _exec("CREATE INDEX IF NOT EXISTS ix_file_versions_file_id_version ON file_versions (file_id, version_number DESC)")
