@@ -78,7 +78,13 @@ export default function ProjectWorkspace({ projectId }: { projectId?: string } =
     if (typeof window === 'undefined') return 'FILES';
     const saved = localStorage.getItem('hamara-sidebar-tab');
     if (saved === 'null') return null;
-    if (saved === null) return 'FILES';
+    if (saved === null) {
+      // Auto-collapse on portrait tablets
+      if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
+        return null;
+      }
+      return 'FILES';
+    }
     return saved as 'FILES' | 'SEARCH' | 'GIT' | 'RUN' | 'EXTENSIONS' | null;
   });
 
@@ -224,10 +230,12 @@ export default function ProjectWorkspace({ projectId }: { projectId?: string } =
 
   // Handle Resizing
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging) return;
+      
+      const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
       // e.clientX is absolute, subtract Activity Bar width (48px)
-      let newWidth = e.clientX - 48;
+      let newWidth = clientX - 48;
       
       if (newWidth < 100) {
         // Snap closed
@@ -253,11 +261,15 @@ export default function ProjectWorkspace({ projectId }: { projectId?: string } =
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleMouseMove, { passive: false });
+      document.addEventListener('touchend', handleMouseUp);
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleMouseMove);
+      document.removeEventListener('touchend', handleMouseUp);
     };
   }, [isDragging, explorerWidth, sidebarTab]);
 
@@ -433,6 +445,9 @@ export default function ProjectWorkspace({ projectId }: { projectId?: string } =
         )}
         onMouseDown={(e) => {
           e.preventDefault();
+          setIsDragging(true);
+        }}
+        onTouchStart={(e) => {
           setIsDragging(true);
         }}
         onDoubleClick={() => {

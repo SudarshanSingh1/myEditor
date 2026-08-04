@@ -685,3 +685,32 @@
   color: var(--e-accent-light);
   flex-shrink: 0;
 }
+
+/* ============================================================
+   TABLET TOUCH OPTIMIZATIONS (768px - 1366px)
+   Enforces 44x44 minimum touch targets on coarse pointers
+   without shifting desktop paddings/margins.
+   ============================================================ */
+@media (pointer: coarse) and (min-width: 768px) and (max-width: 1366px) {
+  .e-btn, .e-btn-sm, .e-btn-icon, .e-nav-item, 
+  .e-sidebar-logo, .e-status-pill, .e-feed-item {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: pan-y;
+  }
+  
+  .e-btn, .e-btn-sm, .e-btn-icon, .e-nav-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .e-btn, .e-btn-sm {
+    justify-content: center;
+  }
+
+  .e-nav-item {
+    margin: 4px 6px;
+  }
+}
+

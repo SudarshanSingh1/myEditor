@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useUserStore } from "../stores/useUserStore";
 import { useSystemStore } from "../stores/useSystemStore";
@@ -86,6 +86,61 @@ export function AdminLayout({ isSuperAdminLayout = false }: { isSuperAdminLayout
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Tablet: Resizable sidebar
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    if (typeof window === "undefined") return 240;
+    const saved = localStorage.getItem("hamara-admin-sidebar-width");
+    return saved ? parseInt(saved, 10) : 240;
+  });
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Tablet: Swipe to close
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.touches[0].clientX;
+    if (diff > 50) {
+      setSidebarOpen(false);
+      touchStartX.current = null;
+    }
+  };
+  const handleTouchEnd = () => {
+    touchStartX.current = null;
+  };
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging) return;
+      const clientX = "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      let newWidth = clientX;
+      if (newWidth < 200) newWidth = 200;
+      if (newWidth > 400) newWidth = 400;
+      setSidebarWidth(newWidth);
+    };
+    const handleUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        localStorage.setItem("hamara-admin-sidebar-width", sidebarWidth.toString());
+      }
+    };
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMove);
+      document.addEventListener("mouseup", handleUp);
+      document.addEventListener("touchmove", handleMove, { passive: false });
+      document.addEventListener("touchend", handleUp);
+    }
+    return () => {
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleUp);
+      document.removeEventListener("touchmove", handleMove);
+      document.removeEventListener("touchend", handleUp);
+    };
+  }, [isDragging, sidebarWidth]);
+
   const handleLogout = async () => {
     await logout();
     navigate("/login");
@@ -122,8 +177,11 @@ export function AdminLayout({ isSuperAdminLayout = false }: { isSuperAdminLayout
     </NavLink>
   );
 
-  const Sidebar = () => (
-    <aside className="flex flex-col h-full w-60 bg-[#0d0d14] border-r border-white/8">
+  const Sidebar = ({ widthOverride }: { widthOverride?: number }) => (
+    <aside 
+      className="flex flex-col h-full bg-[#0d0d14] border-r border-white/8 flex-shrink-0" 
+      style={{ width: widthOverride ?? 240 }}
+    >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-4 border-b border-white/8">
         <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">H</div>
@@ -194,11 +252,22 @@ export function AdminLayout({ isSuperAdminLayout = false }: { isSuperAdminLayout
 
       {/* Sidebar — desktop: always visible, mobile: slide-in */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 lg:static lg:z-auto transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 z-50 lg:static lg:z-auto transition-transform duration-300 flex ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
+        style={{ touchAction: sidebarOpen ? "none" : "auto" }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        <Sidebar />
+        <Sidebar widthOverride={sidebarWidth} />
+        {/* Resizer Handle */}
+        <div 
+          className={`hidden lg:block w-1 z-20 cursor-col-resize hover:bg-violet-500/50 transition-colors flex-shrink-0 ${isDragging ? "bg-violet-500" : ""}`}
+          onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onTouchStart={(e) => { setIsDragging(true); }}
+          onDoubleClick={() => setSidebarWidth(240)}
+        />
       </div>
 
       {/* Main column */}

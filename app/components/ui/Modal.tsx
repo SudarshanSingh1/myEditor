@@ -36,7 +36,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, c
       
       <div 
         className={cn(
-          "relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg animate-in fade-in-90 zoom-in-95 slide-in-from-bottom-10 sm:slide-in-from-bottom-0",
+          "relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg animate-in fade-in-90 zoom-in-95 slide-in-from-bottom-10 sm:slide-in-from-bottom-0 max-h-[90vh] overflow-y-auto",
           className
         )}
       >

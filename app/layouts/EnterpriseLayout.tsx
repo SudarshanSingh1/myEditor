@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 
@@ -200,6 +200,63 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
 
+  // Tablet: Resizable sidebar
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    if (typeof window === "undefined") return 220;
+    const saved = localStorage.getItem("hamara-enterprise-sidebar-width");
+    return saved ? parseInt(saved, 10) : 220;
+  });
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Tablet: Swipe to close
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.touches[0].clientX;
+    if (diff > 50) {
+      setMobileOpen(false);
+      touchStartX.current = null;
+    }
+  };
+  const handleTouchEnd = () => {
+    touchStartX.current = null;
+  };
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging) return;
+      const clientX = "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      let newWidth = clientX;
+      if (newWidth < 120) newWidth = 56;
+      if (newWidth > 400) newWidth = 400;
+      setSidebarWidth(newWidth);
+      if (newWidth === 56) setCollapsed(true);
+      else setCollapsed(false);
+    };
+    const handleUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        localStorage.setItem("hamara-enterprise-sidebar-width", sidebarWidth.toString());
+      }
+    };
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMove);
+      document.addEventListener("mouseup", handleUp);
+      document.addEventListener("touchmove", handleMove, { passive: false });
+      document.addEventListener("touchend", handleUp);
+    }
+    return () => {
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleUp);
+      document.removeEventListener("touchmove", handleMove);
+      document.removeEventListener("touchend", handleUp);
+    };
+  }, [isDragging, sidebarWidth]);
+
   const serverStatus = useServerStatus();
 
   // Keyboard shortcut: Cmd+K / Ctrl+K
@@ -254,8 +311,14 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
   );
 
   /* ── Sidebar Component ── */
-  const SidebarContent = () => (
-    <div className={`e-sidebar ${collapsed ? "collapsed" : "expanded"}`} style={{ height: "100%" }}>
+  const SidebarContent = ({ widthOverride }: { widthOverride?: number }) => (
+    <div 
+      className={`e-sidebar ${collapsed ? "collapsed" : "expanded"}`} 
+      style={{ 
+        height: "100%", 
+        width: widthOverride ? (collapsed ? 56 : widthOverride) : undefined 
+      }}
+    >
       {/* Logo */}
       <div className="e-sidebar-logo">
         <div style={{
@@ -355,16 +418,38 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
       )}
 
       {/* Sidebar — desktop */}
-      <div style={{ display: "flex", flexShrink: 0 }} className="max-lg:hidden">
-        <SidebarContent />
+      <div 
+        style={{ display: "flex", flexShrink: 0, position: "relative", zIndex: 10 }} 
+        className="max-lg:hidden"
+      >
+        <SidebarContent widthOverride={sidebarWidth} />
+        {/* Resizer Handle */}
+        <div 
+          className={`w-1 z-20 cursor-col-resize hover:bg-indigo-500/50 transition-colors flex-shrink-0 absolute right-0 top-0 bottom-0 ${isDragging ? "bg-indigo-500" : ""}`}
+          onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onTouchStart={(e) => { setIsDragging(true); }}
+          onDoubleClick={() => {
+            if (collapsed) {
+              setCollapsed(false);
+              setSidebarWidth(220);
+            } else {
+              setCollapsed(true);
+            }
+          }}
+        />
       </div>
 
       {/* Sidebar — mobile slide-in */}
       {mobileOpen && (
-        <div style={{
-          position: "fixed", inset: "0 auto 0 0", zIndex: 50,
-          display: "flex",
-        }}>
+        <div 
+          style={{
+            position: "fixed", inset: "0 auto 0 0", zIndex: 50,
+            display: "flex", touchAction: "none"
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <SidebarContent />
         </div>
       )}

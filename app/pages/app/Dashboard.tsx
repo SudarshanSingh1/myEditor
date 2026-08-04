@@ -240,7 +240,7 @@ export default function Dashboard() {
             />
 
             {isLoading && projects.length === 0 ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <LoadingSkeleton className="h-[140px] w-full rounded-xl" />
                 <LoadingSkeleton className="h-[140px] w-full rounded-xl" />
               </div>
@@ -255,7 +255,7 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {recentProjects.map((project) => (
                   <ProjectCard
                     key={project.id}
