@@ -55,15 +55,33 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
         // Retry original request
         response = await fetch(url, config);
       } else {
-        // Refresh failed — fire unauthorized ONCE, not on every request
+        // Refresh failed — clear everything and redirect to login
         if (!hasDispatchedUnauthorized) {
           hasDispatchedUnauthorized = true;
-          if (endpoint !== '/auth/me') {
-            toast.error('Session expired. Please log in again.');
-            window.location.href = '/login?expired=true';
-          } else {
-            window.dispatchEvent(new Event('auth:unauthorized'));
+          
+          // Clear auth state and Zustand store
+          useUserStore.setState({ 
+            user: null, 
+            permissions: [], 
+            isAuthenticated: false, 
+            isLoading: false, 
+            guestQuota: null 
+          });
+          
+          // Clear cookies
+          document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          
+          // Clear React Query cache
+          try {
+            const { queryClient } = await import('./queryClient');
+            queryClient.cancelQueries();
+            queryClient.clear();
+          } catch (e) {
+            // queryClient import might fail if not available, fallback to global window if needed
           }
+          
+          window.location.href = '/login?expired=true';
         }
       }
     }
