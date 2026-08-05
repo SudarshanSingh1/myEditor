@@ -60,20 +60,20 @@ const codeSnippets = [
 const floatingLanguages = [
   { name: "Python", color: "#3572A5", ver: "3.13", style: { top: "15%", left: "5%" } },
   { name: "TypeScript", color: "#3178C6", ver: "5.0", style: { top: "25%", right: "8%" } },
-  { name: "JavaScript", color: "#f1e05a", ver: "Node 20", style: { top: "45%", left: "2%" } },
+  { name: "JavaScript", color: "#f1e05a", ver: "Node 20", style: { top: "45%", left: "3%" } },
   { name: "C++", color: "#f34b7d", ver: "GCC 12", style: { top: "55%", right: "5%" } },
-  { name: "C", color: "#555555", ver: "GCC 12", style: { top: "75%", left: "8%" } },
-  { name: "Rust", color: "#dea584", ver: "1.75", style: { top: "85%", right: "12%" } },
-  { name: "Go", color: "#00ADD8", ver: "1.21", style: { top: "10%", right: "20%" } },
-  { name: "Java", color: "#b07219", ver: "JDK 17", style: { top: "35%", left: "15%" } },
-  { name: "HTML/CSS", color: "#e34c26", ver: "HTML5/CSS3", style: { top: "65%", left: "12%" } },
-  { name: "SQL", color: "#e38c00", ver: "SQLite/PG", style: { top: "70%", right: "25%" } },
-  { name: "Bash", color: "#89e051", ver: "5.2", style: { top: "5%", left: "30%" } },
-  { name: "PHP", color: "#4F5D95", ver: "8.2", style: { top: "90%", left: "20%" } },
-  { name: "Ruby", color: "#701516", ver: "3.2", style: { top: "40%", right: "18%" } },
-  { name: "C#", color: "#178600", ver: ".NET 8", style: { top: "80%", right: "35%" } },
-  { name: "Swift", color: "#F05138", ver: "5.9", style: { top: "20%", left: "35%" } },
-  { name: "Kotlin", color: "#A97BFF", ver: "1.9", style: { top: "50%", right: "32%" } },
+  { name: "C", color: "#555555", ver: "GCC 12", style: { top: "75%", left: "6%" } },
+  { name: "Rust", color: "#dea584", ver: "1.75", style: { top: "85%", right: "10%" } },
+  { name: "Go", color: "#00ADD8", ver: "1.21", style: { top: "10%", right: "15%" } },
+  { name: "Java", color: "#b07219", ver: "JDK 17", style: { top: "35%", left: "10%" } },
+  { name: "HTML/CSS", color: "#e34c26", ver: "HTML5/CSS3", style: { top: "65%", left: "8%" } },
+  { name: "SQL", color: "#e38c00", ver: "SQLite/PG", style: { top: "70%", right: "15%" } },
+  { name: "Bash", color: "#89e051", ver: "5.2", style: { top: "5%", left: "15%" } },
+  { name: "PHP", color: "#4F5D95", ver: "8.2", style: { top: "90%", left: "12%" } },
+  { name: "Ruby", color: "#701516", ver: "3.2", style: { top: "40%", right: "12%" } },
+  { name: "C#", color: "#178600", ver: ".NET 8", style: { top: "80%", right: "4%" } },
+  { name: "Swift", color: "#F05138", ver: "5.9", style: { top: "20%", left: "18%" } },
+  { name: "Kotlin", color: "#A97BFF", ver: "1.9", style: { top: "50%", right: "18%" } },
 ];
 
 export function Hero() {
@@ -209,12 +209,12 @@ export function Hero() {
             {/* Animated Mouse Cursor */}
             <motion.div
               className="absolute z-50 pointer-events-none drop-shadow-2xl"
-              initial={{ x: 50, y: 200, opacity: 0 }}
+              initial={{ left: "10%", top: "60%", opacity: 0 }}
               animate={
-                animationStep === 0 ? { x: 50, y: 200, opacity: 0 } :
-                animationStep === 1 ? { x: "90%", y: 15, opacity: 1 } :
-                animationStep === 2 ? { x: "90%", y: 15, opacity: 1, scale: 0.85 } :
-                { x: "90%", y: 15, opacity: 0 }
+                animationStep === 0 ? { left: "10%", top: "60%", opacity: 0 } :
+                animationStep === 1 ? { left: "calc(100% - 90px)", top: "18px", opacity: 1 } :
+                animationStep === 2 ? { left: "calc(100% - 90px)", top: "18px", opacity: 1, scale: 0.85 } :
+                { left: "calc(100% - 90px)", top: "18px", opacity: 0 }
               }
               transition={{ 
                 duration: animationStep === 1 ? 0.8 : 0.2, 
