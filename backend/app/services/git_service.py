@@ -1,6 +1,5 @@
 import os
 import tempfile
-import git
 from typing import Dict, Optional
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -57,6 +56,7 @@ class GitService:
         with tempfile.TemporaryDirectory() as tmpdir:
             try:
                 # Clone
+                import git
                 if branch:
                     git.Repo.clone_from(auth_url, tmpdir, branch=branch)
                 else:
@@ -121,6 +121,7 @@ class GitService:
         with tempfile.TemporaryDirectory() as tmpdir:
             try:
                 # 1. Clone the existing remote state
+                import git
                 import git.exc
 
                 try:
