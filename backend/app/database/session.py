@@ -11,9 +11,6 @@ engine = create_engine(
     max_overflow=200,  # Allow up to 200 extra under load
     pool_timeout=10,  # Fail fast (10s) instead of hanging the event loop
     pool_recycle=1800,  # Recycle connections every 30 min (avoids stale connections)
-    connect_args={
-        "options": "-c statement_timeout=5000"  # 5s strict statement timeout
-    },
 )
 
 # Create session factory
