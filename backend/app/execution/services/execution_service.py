@@ -231,30 +231,30 @@ class ExecutionService:
                 await websocket.send_text(json.dumps({"type": "error", "message": msg, "exitCode": exit_code}))
                 await websocket.send_text(json.dumps({"type": "stderr", "data": msg}))
 
-                # Record ExecutionLog
-                try:
-                    from app.models.execution_log import ExecutionLog, ExecutionStatus
+            # Record ExecutionLog
+            try:
+                from app.models.execution_log import ExecutionLog, ExecutionStatus
 
-                    status_enum = (
-                        ExecutionStatus.SUCCESS
-                        if exit_code == 0
-                        else ExecutionStatus.RUNTIME_ERROR
-                    )
-                    # Note: we use self.db for the session
-                    el = ExecutionLog(
-                        project_id=project_uuid,
-                        user_id=user_id,
-                        language=ext.replace(".", "") if ext else "unknown",
-                        status=status_enum,
-                        execution_time_ms=runtime_ms,
-                    )
-                    self.db.add(el)
-                    self.db.commit()
-                    logger.info("Recorded ExecutionLog in database")
-                except Exception as e:
-                    logger.error(f"Failed to record ExecutionLog: {e}")
+                status_enum = (
+                    ExecutionStatus.SUCCESS
+                    if exit_code == 0
+                    else ExecutionStatus.RUNTIME_ERROR
+                )
+                # Note: we use self.db for the session
+                el = ExecutionLog(
+                    project_id=project_uuid,
+                    user_id=user_id,
+                    language=ext.replace(".", "") if ext else "unknown",
+                    status=status_enum,
+                    execution_time_ms=runtime_ms,
+                )
+                self.db.add(el)
+                self.db.commit()
+                logger.info("Recorded ExecutionLog in database")
+            except Exception as e:
+                logger.error(f"Failed to record ExecutionLog: {e}")
 
-                logger.info("Sent final execution status to websocket")
+            logger.info("Sent final execution status to websocket")
 
         except Exception as e:
             logger.exception(f"Interactive execution failed: {e}")
