@@ -21,6 +21,7 @@ router = APIRouter(prefix="/auth/oauth", tags=["oauth"])
 # Authorize Endpoints – redirect to real provider OAuth pages
 # ---------------------------------------------------------------------------
 
+
 @router.get("/google/authorize")
 def google_authorize(request: Request):
     """Redirect the browser to Google's OAuth 2.0 consent page."""
@@ -74,6 +75,7 @@ def oauth_authorize_generic(provider: str, request: Request):
 # Callback Endpoint – exchange code → token → user profile → JWT cookies
 # ---------------------------------------------------------------------------
 
+
 class OAuthCallbackRequest(BaseModel):
     code: str
 
@@ -93,12 +95,24 @@ async def oauth_callback(
     code = req.code
 
     if provider == "github":
-        email, provider_id, name, avatar, provider_access_token, provider_refresh_token = \
-            await _exchange_github(code)
+        (
+            email,
+            provider_id,
+            name,
+            avatar,
+            provider_access_token,
+            provider_refresh_token,
+        ) = await _exchange_github(code)
 
     elif provider == "google":
-        email, provider_id, name, avatar, provider_access_token, provider_refresh_token = \
-            await _exchange_google(code)
+        (
+            email,
+            provider_id,
+            name,
+            avatar,
+            provider_access_token,
+            provider_refresh_token,
+        ) = await _exchange_google(code)
 
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported provider: {provider}")
@@ -119,6 +133,7 @@ async def oauth_callback(
 # ---------------------------------------------------------------------------
 # Private helpers – one per provider
 # ---------------------------------------------------------------------------
+
 
 async def _exchange_github(code: str):
     """Exchange a GitHub authorization code for user profile data."""
@@ -141,7 +156,9 @@ async def _exchange_github(code: str):
             headers={"Accept": "application/json"},
         )
         if token_res.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to exchange GitHub authorization code.")
+            raise HTTPException(
+                status_code=400, detail="Failed to exchange GitHub authorization code."
+            )
         token_data = token_res.json()
         if "error" in token_data:
             raise HTTPException(
@@ -158,7 +175,9 @@ async def _exchange_github(code: str):
             headers={"Authorization": f"Bearer {provider_access_token}"},
         )
         if user_res.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to fetch GitHub user profile.")
+            raise HTTPException(
+                status_code=400, detail="Failed to fetch GitHub user profile."
+            )
         user_data = user_res.json()
 
         provider_id = str(user_data["id"])
@@ -174,7 +193,10 @@ async def _exchange_github(code: str):
             )
             if emails_res.status_code == 200:
                 emails_data = emails_res.json()
-                primary = next((e for e in emails_data if e.get("primary") and e.get("verified")), None)
+                primary = next(
+                    (e for e in emails_data if e.get("primary") and e.get("verified")),
+                    None,
+                )
                 if primary:
                     email = primary["email"]
                 elif emails_data:
@@ -184,10 +206,17 @@ async def _exchange_github(code: str):
             raise HTTPException(
                 status_code=400,
                 detail="No email address is associated with this GitHub account. "
-                       "Please make your email public on GitHub and try again.",
+                "Please make your email public on GitHub and try again.",
             )
 
-    return email, provider_id, name, avatar, provider_access_token, provider_refresh_token
+    return (
+        email,
+        provider_id,
+        name,
+        avatar,
+        provider_access_token,
+        provider_refresh_token,
+    )
 
 
 async def _exchange_google(code: str):
@@ -214,7 +243,9 @@ async def _exchange_google(code: str):
             err = token_res.json()
             raise HTTPException(
                 status_code=400,
-                detail=err.get("error_description") or err.get("error") or "Failed to exchange Google authorization code.",
+                detail=err.get("error_description")
+                or err.get("error")
+                or "Failed to exchange Google authorization code.",
             )
         token_data = token_res.json()
         provider_access_token: str = token_data["access_token"]
@@ -226,7 +257,9 @@ async def _exchange_google(code: str):
             headers={"Authorization": f"Bearer {provider_access_token}"},
         )
         if user_res.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to fetch Google user profile.")
+            raise HTTPException(
+                status_code=400, detail="Failed to fetch Google user profile."
+            )
         user_data = user_res.json()
 
         provider_id: str = user_data["id"]
@@ -234,12 +267,20 @@ async def _exchange_google(code: str):
         name: str = user_data.get("name", "Google User")
         avatar: str | None = user_data.get("picture")
 
-    return email, provider_id, name, avatar, provider_access_token, provider_refresh_token
+    return (
+        email,
+        provider_id,
+        name,
+        avatar,
+        provider_access_token,
+        provider_refresh_token,
+    )
 
 
 # ---------------------------------------------------------------------------
 # Shared session creation – upsert User/OAuthAccount, issue JWT cookies
 # ---------------------------------------------------------------------------
+
 
 def _create_session_response(
     *,
@@ -255,32 +296,47 @@ def _create_session_response(
 ) -> JSONResponse:
     """Upsert the local user, link the OAuth account, create a session, and return JWT cookies."""
     from app.middleware.maintenance import _get_maintenance_status
+
     maint_config = _get_maintenance_status(db)
 
     # 1. Look up existing OAuth account link
-    oauth_acc = db.query(OAuthAccount).filter(
-        OAuthAccount.provider == provider,
-        OAuthAccount.provider_account_id == provider_id,
-    ).first()
+    oauth_acc = (
+        db.query(OAuthAccount)
+        .filter(
+            OAuthAccount.provider == provider,
+            OAuthAccount.provider_account_id == provider_id,
+        )
+        .first()
+    )
 
     if maint_config.get("enabled"):
-        existing_user = oauth_acc.user if oauth_acc else db.query(User).filter(User.email == email).first()
+        existing_user = (
+            oauth_acc.user
+            if oauth_acc
+            else db.query(User).filter(User.email == email).first()
+        )
         if not existing_user:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="System is currently under maintenance. New account registration is disabled."
+                detail="System is currently under maintenance. New account registration is disabled.",
             )
         is_allowed = False
         if existing_user.role == RoleEnum.OWNER:
             is_allowed = True
-        elif existing_user.role in (RoleEnum.ADMIN, RoleEnum.MODERATOR) and maint_config.get("allow_admin", True):
+        elif existing_user.role in (
+            RoleEnum.ADMIN,
+            RoleEnum.MODERATOR,
+        ) and maint_config.get("allow_admin", True):
             is_allowed = True
-        elif existing_user.effective_permissions and ("system.maintenance.bypass" in existing_user.effective_permissions or "*" in existing_user.effective_permissions):
+        elif existing_user.effective_permissions and (
+            "system.maintenance.bypass" in existing_user.effective_permissions
+            or "*" in existing_user.effective_permissions
+        ):
             is_allowed = True
         if not is_allowed:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="System is currently under maintenance. Only administrators can log in at this time."
+                detail="System is currently under maintenance. Only administrators can log in at this time.",
             )
 
     if oauth_acc:
@@ -338,7 +394,8 @@ def _create_session_response(
         device_type="Unknown",
         browser="Unknown",
         os="Unknown",
-        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        expires_at=datetime.now(timezone.utc)
+        + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
     db.add(new_session)
     db.commit()
@@ -361,7 +418,9 @@ def _create_session_response(
                     "first_name": user.first_name,
                     "last_name": user.last_name,
                     "avatar": user.avatar,
-                    "role": user.role.value if hasattr(user.role, "value") else str(user.role),
+                    "role": user.role.value
+                    if hasattr(user.role, "value")
+                    else str(user.role),
                     "effective_permissions": user.effective_permissions or [],
                 },
             },
@@ -394,14 +453,21 @@ def _create_session_response(
 # Connected-accounts management
 # ---------------------------------------------------------------------------
 
+
 @router.get("/connected", response_model=StandardResponse)
 def get_connected_accounts(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    accounts = db.query(OAuthAccount).filter(OAuthAccount.user_id == current_user.id).all()
+    accounts = (
+        db.query(OAuthAccount).filter(OAuthAccount.user_id == current_user.id).all()
+    )
     providers = [acc.provider for acc in accounts]
-    return StandardResponse(success=True, message="Connected accounts fetched", data={"providers": providers})
+    return StandardResponse(
+        success=True,
+        message="Connected accounts fetched",
+        data={"providers": providers},
+    )
 
 
 @router.delete("/disconnect/{provider}", response_model=StandardResponse)
@@ -410,10 +476,14 @@ def disconnect_oauth_account(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    other_accounts = db.query(OAuthAccount).filter(
-        OAuthAccount.user_id == current_user.id,
-        OAuthAccount.provider != provider,
-    ).count()
+    other_accounts = (
+        db.query(OAuthAccount)
+        .filter(
+            OAuthAccount.user_id == current_user.id,
+            OAuthAccount.provider != provider,
+        )
+        .count()
+    )
 
     if current_user.password_hash == "oauth" and other_accounts == 0:
         raise HTTPException(
@@ -421,10 +491,14 @@ def disconnect_oauth_account(
             detail="Cannot disconnect your only login method. Please set a password or connect another account first.",
         )
 
-    account = db.query(OAuthAccount).filter(
-        OAuthAccount.user_id == current_user.id,
-        OAuthAccount.provider == provider,
-    ).first()
+    account = (
+        db.query(OAuthAccount)
+        .filter(
+            OAuthAccount.user_id == current_user.id,
+            OAuthAccount.provider == provider,
+        )
+        .first()
+    )
 
     if not account:
         raise HTTPException(status_code=404, detail=f"No {provider} account connected.")
@@ -432,4 +506,8 @@ def disconnect_oauth_account(
     db.delete(account)
     db.commit()
 
-    return StandardResponse(success=True, message=f"{provider.capitalize()} account disconnected.", data=None)
+    return StandardResponse(
+        success=True,
+        message=f"{provider.capitalize()} account disconnected.",
+        data=None,
+    )

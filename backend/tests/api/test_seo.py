@@ -1,12 +1,12 @@
-import pytest
 from app.models.language_content import LanguageContent
 import uuid
+
 
 def test_seo_language_endpoint(client, db_session):
     # 1. Non-existent slug
     resp = client.get("/api/v1/seo/language/unknown-python")
     assert resp.status_code == 404
-    
+
     # 2. Existing slug
     content = LanguageContent(
         id=uuid.uuid4(),
@@ -17,11 +17,11 @@ def test_seo_language_endpoint(client, db_session):
         h1_heading="Python Compiler",
         features=[{"title": "Fast", "description": "Very fast"}],
         starter_code="print('Hello World')",
-        starter_file_name="main.py"
+        starter_file_name="main.py",
     )
     db_session.add(content)
     db_session.commit()
-    
+
     resp = client.get("/api/v1/seo/language/python-compiler")
     assert resp.status_code == 200
     data = resp.json()

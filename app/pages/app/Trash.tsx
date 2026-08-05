@@ -11,6 +11,7 @@ import { LoadingSkeleton } from "../../components/ui/LoadingSkeleton";
 import { Card, CardContent } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { useConfirm } from "../../components/ui/ConfirmProvider";
+import { ProjectIcon } from "../../components/projects/ProjectIcon";
 
 export default function Trash() {
   const { trash, fetchTrash, restoreProject, permanentDeleteProject, emptyTrash, isLoading } = useProjectsStore();
@@ -80,7 +81,7 @@ export default function Trash() {
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg border bg-muted/50 flex items-center justify-center shrink-0">
-                      {project.icon || "📁"}
+                      <ProjectIcon name={project.icon} className="w-5 h-5 text-muted-foreground" />
                     </div>
                     <div>
                       <h4 className="font-semibold">{project.name}</h4>

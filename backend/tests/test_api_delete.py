@@ -1,4 +1,3 @@
-import uuid
 from app.database.session import SessionLocal
 from app.models.user import User
 from app.models.project import Project
@@ -7,6 +6,7 @@ from app.main import app
 from app.dependencies.auth import require_super_admin
 
 import pytest
+
 
 @pytest.mark.skip(reason="Manual test script requiring live DB")
 def test_api_delete_manual():
@@ -45,4 +45,3 @@ def test_api_delete_manual():
         print("USER IS STILL IN DB. is_deleted=", u_after.is_deleted)
     else:
         print("USER IS NOT IN DB (Hard Deleted)")
-

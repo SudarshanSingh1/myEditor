@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Search, Bell, Settings, Menu, MessageSquare } from "lucide-react";
 import { useSidebarStore } from "../../stores/useSidebarStore";
 import { useUserStore } from "../../stores/useUserStore";
+import { authController } from "../../services/AuthController";
 import { Logo } from "../ui/Logo";
 import { Button } from "../ui/Button";
 import { ThemeToggle } from "../ui/ThemeToggle";
@@ -10,10 +11,11 @@ import { Avatar } from "../ui/Avatar";
 import { SearchInput } from "../ui/SearchInput";
 import { Dropdown, DropdownItem, DropdownSeparator } from "../ui/Dropdown";
 import { FeedbackModal } from "../feedback/FeedbackModal";
+import { useShallow } from 'zustand/react/shallow';
 
 export function AppNavbar() {
   const { toggleSidebar, toggleRightPanel } = useSidebarStore();
-  const { user, logout } = useUserStore();
+  const { user } = useUserStore(useShallow(state => ({ user: state.user })));
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   return (
@@ -73,7 +75,7 @@ export function AppNavbar() {
           <DropdownItem><Link to="/app/settings" className="flex w-full">Settings</Link></DropdownItem>
           <DropdownItem onClick={() => setIsFeedbackOpen(true)} className="flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Send Feedback</DropdownItem>
           <DropdownSeparator />
-          <DropdownItem onClick={logout} className="text-destructive">Log out</DropdownItem>
+          <DropdownItem onClick={() => authController.logout()} className="text-destructive">Log out</DropdownItem>
         </Dropdown>
       </div>
 

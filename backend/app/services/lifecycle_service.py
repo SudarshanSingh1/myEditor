@@ -10,6 +10,7 @@ Implements the complete data lifecycle for Users and Projects:
 All methods return structured data dicts or raise HTTPException with
 domain-specific error codes — never expose raw SQLAlchemy exceptions.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -25,14 +26,11 @@ from app.models.user import User, RoleEnum, StatusEnum
 from app.models.project import Project
 from app.models.workspace import File, Folder, FileVersion
 from app.models.execution_log import ExecutionLog
-from app.models.notification import Notification, UserNotificationSettings
+from app.models.notification import Notification
 from app.models.report import Report
 from app.models.user_session import UserSession
-from app.models.oauth_account import OAuthAccount
-from app.models.user_activity import UserActivity
 from app.models.feedback import Feedback
 from app.models.audit_log import AuditLog
-from app.models.admin_audit_log import AdminAuditLog
 from app.models.system_error import SystemError
 from app.services.admin_audit_service import AdminAuditService
 
@@ -43,23 +41,62 @@ logger = logging.getLogger(__name__)
 # Dependency Report structures
 # ---------------------------------------------------------------------------
 
+
 def _user_dependency_report(user_id: uuid.UUID, db: Session) -> dict[str, Any]:
     """
     Count every record that references this user.
     Returns a structured dict — never raises.
     """
-    projects_count = db.query(func.count(Project.id)).filter(Project.owner_id == user_id).scalar() or 0
-    active_projects = db.query(func.count(Project.id)).filter(
-        Project.owner_id == user_id, Project.deleted_at.is_(None)
-    ).scalar() or 0
-    executions_count = db.query(func.count(ExecutionLog.id)).filter(ExecutionLog.user_id == user_id).scalar() or 0
-    notifications_count = db.query(func.count(Notification.id)).filter(Notification.user_id == user_id).scalar() or 0
-    reports_filed = db.query(func.count(Report.id)).filter(Report.reporter_id == user_id).scalar() or 0
-    reports_assigned = db.query(func.count(Report.id)).filter(Report.assigned_to == user_id).scalar() or 0
-    feedback_count = db.query(func.count(Feedback.id)).filter(Feedback.user_id == user_id).scalar() or 0
-    sessions_count = db.query(func.count(UserSession.id)).filter(UserSession.user_id == user_id).scalar() or 0
-    audit_entries = db.query(func.count(AuditLog.id)).filter(AuditLog.user_id == user_id).scalar() or 0
-    system_errors = db.query(func.count(SystemError.id)).filter(SystemError.user_id == user_id).scalar() or 0
+    projects_count = (
+        db.query(func.count(Project.id)).filter(Project.owner_id == user_id).scalar()
+        or 0
+    )
+    active_projects = (
+        db.query(func.count(Project.id))
+        .filter(Project.owner_id == user_id, Project.deleted_at.is_(None))
+        .scalar()
+        or 0
+    )
+    executions_count = (
+        db.query(func.count(ExecutionLog.id))
+        .filter(ExecutionLog.user_id == user_id)
+        .scalar()
+        or 0
+    )
+    notifications_count = (
+        db.query(func.count(Notification.id))
+        .filter(Notification.user_id == user_id)
+        .scalar()
+        or 0
+    )
+    reports_filed = (
+        db.query(func.count(Report.id)).filter(Report.reporter_id == user_id).scalar()
+        or 0
+    )
+    reports_assigned = (
+        db.query(func.count(Report.id)).filter(Report.assigned_to == user_id).scalar()
+        or 0
+    )
+    feedback_count = (
+        db.query(func.count(Feedback.id)).filter(Feedback.user_id == user_id).scalar()
+        or 0
+    )
+    sessions_count = (
+        db.query(func.count(UserSession.id))
+        .filter(UserSession.user_id == user_id)
+        .scalar()
+        or 0
+    )
+    audit_entries = (
+        db.query(func.count(AuditLog.id)).filter(AuditLog.user_id == user_id).scalar()
+        or 0
+    )
+    system_errors = (
+        db.query(func.count(SystemError.id))
+        .filter(SystemError.user_id == user_id)
+        .scalar()
+        or 0
+    )
 
     return {
         "projects_total": projects_count,
@@ -78,8 +115,16 @@ def _user_dependency_report(user_id: uuid.UUID, db: Session) -> dict[str, Any]:
 
 
 def _project_dependency_report(project_id: uuid.UUID, db: Session) -> dict[str, Any]:
-    executions_count = db.query(func.count(ExecutionLog.id)).filter(ExecutionLog.project_id == project_id).scalar() or 0
-    files_count = db.query(func.count(File.id)).filter(File.project_id == project_id).scalar() or 0
+    executions_count = (
+        db.query(func.count(ExecutionLog.id))
+        .filter(ExecutionLog.project_id == project_id)
+        .scalar()
+        or 0
+    )
+    files_count = (
+        db.query(func.count(File.id)).filter(File.project_id == project_id).scalar()
+        or 0
+    )
     versions_count = (
         db.query(func.count(FileVersion.id))
         .join(File, FileVersion.file_id == File.id)
@@ -99,13 +144,15 @@ def _project_dependency_report(project_id: uuid.UUID, db: Session) -> dict[str, 
 # User Lifecycle
 # ---------------------------------------------------------------------------
 
-class UserLifecycle:
 
+class UserLifecycle:
     @staticmethod
     def get_dependencies(user_id: uuid.UUID, db: Session) -> dict[str, Any]:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
         return _user_dependency_report(user_id, db)
 
     @staticmethod
@@ -123,23 +170,38 @@ class UserLifecycle:
         Fully reversible via restore().
         """
         if user_id == actor.id:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete your own account.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete your own account.",
+            )
 
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
 
         if user.role == RoleEnum.OWNER and actor.role != RoleEnum.OWNER:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only an Owner can delete another Owner.")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only an Owner can delete another Owner.",
+            )
 
         if user.role == RoleEnum.OWNER:
-            remaining_owners = db.query(func.count(User.id)).filter(
-                User.role == RoleEnum.OWNER, User.is_deleted == False, User.id != user_id
-            ).scalar() or 0
+            remaining_owners = (
+                db.query(func.count(User.id))
+                .filter(
+                    User.role == RoleEnum.OWNER,
+                    User.is_deleted == False,
+                    User.id != user_id,
+                )
+                .scalar()
+                or 0
+            )
             if remaining_owners == 0:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Cannot delete the last Owner account. Promote another user to Owner first."
+                    detail="Cannot delete the last Owner account. Promote another user to Owner first.",
                 )
 
         now = datetime.now(timezone.utc)
@@ -151,7 +213,9 @@ class UserLifecycle:
         user.restored_by = None
 
         # Invalidate all active sessions immediately
-        db.query(UserSession).filter(UserSession.user_id == user_id).update({"is_active": False})
+        db.query(UserSession).filter(UserSession.user_id == user_id).update(
+            {"is_active": False}
+        )
 
         db.commit()
 
@@ -160,11 +224,21 @@ class UserLifecycle:
             actor_id=actor.id,
             action="USER_SOFT_DELETE",
             target_id=user_id,
-            metadata_json={"reason": reason, "username": user.username, "email": user.email},
+            metadata_json={
+                "reason": reason,
+                "username": user.username,
+                "email": user.email,
+            },
         )
 
-        logger.info(f"User {user.username} ({user_id}) soft-deleted by admin {actor.username}")
-        return {"user_id": str(user_id), "deleted_at": now.isoformat(), "action": "soft_deleted"}
+        logger.info(
+            f"User {user.username} ({user_id}) soft-deleted by admin {actor.username}"
+        )
+        return {
+            "user_id": str(user_id),
+            "deleted_at": now.isoformat(),
+            "action": "soft_deleted",
+        }
 
     @staticmethod
     def restore(
@@ -179,10 +253,14 @@ class UserLifecycle:
         """
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
 
         if not user.is_deleted:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is not deleted.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="User is not deleted."
+            )
 
         now = datetime.now(timezone.utc)
         user.is_deleted = False
@@ -202,8 +280,14 @@ class UserLifecycle:
             metadata_json={"username": user.username},
         )
 
-        logger.info(f"User {user.username} ({user_id}) restored by admin {actor.username}")
-        return {"user_id": str(user_id), "restored_at": now.isoformat(), "action": "restored"}
+        logger.info(
+            f"User {user.username} ({user_id}) restored by admin {actor.username}"
+        )
+        return {
+            "user_id": str(user_id),
+            "restored_at": now.isoformat(),
+            "action": "restored",
+        }
 
     @staticmethod
     def permanent_delete(
@@ -232,22 +316,33 @@ class UserLifecycle:
           - projects: CASCADE (only if user was soft-deleted; active projects block this)
         """
         if user_id == actor.id:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete your own account.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete your own account.",
+            )
 
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
 
         if user.role == RoleEnum.OWNER:
             if actor.role != RoleEnum.OWNER:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only an Owner can permanently delete another Owner.")
-            remaining = db.query(func.count(User.id)).filter(
-                User.role == RoleEnum.OWNER, User.id != user_id
-            ).scalar() or 0
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Only an Owner can permanently delete another Owner.",
+                )
+            remaining = (
+                db.query(func.count(User.id))
+                .filter(User.role == RoleEnum.OWNER, User.id != user_id)
+                .scalar()
+                or 0
+            )
             if remaining == 0:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Cannot delete the last Owner account."
+                    detail="Cannot delete the last Owner account.",
                 )
 
         # Check for blocking dependencies
@@ -288,10 +383,18 @@ class UserLifecycle:
 
                 if file_ids:
                     from sqlalchemy import delete as sa_delete
-                    db.execute(sa_delete(FileVersion).where(FileVersion.file_id.in_(file_ids)))
+
+                    db.execute(
+                        sa_delete(FileVersion).where(FileVersion.file_id.in_(file_ids))
+                    )
 
                 from sqlalchemy import delete as sa_delete
-                db.execute(sa_delete(ExecutionLog).where(ExecutionLog.project_id.in_(project_ids)))
+
+                db.execute(
+                    sa_delete(ExecutionLog).where(
+                        ExecutionLog.project_id.in_(project_ids)
+                    )
+                )
                 db.execute(sa_delete(File).where(File.project_id.in_(project_ids)))
                 db.execute(sa_delete(Folder).where(Folder.project_id.in_(project_ids)))
                 db.execute(sa_delete(Project).where(Project.owner_id == user_id))
@@ -304,7 +407,9 @@ class UserLifecycle:
 
         except Exception as exc:
             db.rollback()
-            logger.error(f"Permanent delete failed for user {user_id}: {exc}", exc_info=True)
+            logger.error(
+                f"Permanent delete failed for user {user_id}: {exc}", exc_info=True
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail={
@@ -330,20 +435,26 @@ class UserLifecycle:
             f"User {username_log} ({user_id}) PERMANENTLY DELETED by admin {actor.username}. "
             f"Reason: {reason}. Dependencies: {deps}"
         )
-        return {"user_id": str(user_id), "action": "permanently_deleted", "username": username_log}
+        return {
+            "user_id": str(user_id),
+            "action": "permanently_deleted",
+            "username": username_log,
+        }
 
 
 # ---------------------------------------------------------------------------
 # Project Lifecycle
 # ---------------------------------------------------------------------------
 
-class ProjectLifecycle:
 
+class ProjectLifecycle:
     @staticmethod
     def get_dependencies(project_id: uuid.UUID, db: Session) -> dict[str, Any]:
         project = db.query(Project).filter(Project.id == project_id).first()
         if not project:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+            )
         return _project_dependency_report(project_id, db)
 
     @staticmethod
@@ -357,18 +468,26 @@ class ProjectLifecycle:
     ) -> dict[str, Any]:
         project = db.query(Project).filter(Project.id == project_id).first()
         if not project:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+            )
 
         now = datetime.now(timezone.utc)
         project.deleted_at = now
         db.commit()
 
         AdminAuditService.log_action(
-            db=db, actor_id=actor.id, target_id=project_id,
+            db=db,
+            actor_id=actor.id,
+            target_id=project_id,
             action="PROJECT_ARCHIVE",
             metadata_json={"reason": reason, "name": project.name},
         )
-        return {"project_id": str(project_id), "archived_at": now.isoformat(), "action": "archived"}
+        return {
+            "project_id": str(project_id),
+            "archived_at": now.isoformat(),
+            "action": "archived",
+        }
 
     @staticmethod
     def restore(
@@ -380,16 +499,23 @@ class ProjectLifecycle:
     ) -> dict[str, Any]:
         project = db.query(Project).filter(Project.id == project_id).first()
         if not project:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+            )
 
         if project.deleted_at is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project is not archived.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Project is not archived.",
+            )
 
         project.deleted_at = None
         db.commit()
 
         AdminAuditService.log_action(
-            db=db, actor_id=actor.id, target_id=project_id,
+            db=db,
+            actor_id=actor.id,
+            target_id=project_id,
             action="PROJECT_RESTORE",
             metadata_json={"name": project.name},
         )
@@ -406,19 +532,26 @@ class ProjectLifecycle:
     ) -> dict[str, Any]:
         project = db.query(Project).filter(Project.id == project_id).first()
         if not project:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+            )
 
         project_name = project.name
 
         try:
             from sqlalchemy import delete as sa_delete
+
             file_ids_q = select(File.id).where(File.project_id == project_id)
             file_ids = [row[0] for row in db.execute(file_ids_q).all()]
 
             if file_ids:
-                db.execute(sa_delete(FileVersion).where(FileVersion.file_id.in_(file_ids)))
+                db.execute(
+                    sa_delete(FileVersion).where(FileVersion.file_id.in_(file_ids))
+                )
 
-            db.execute(sa_delete(ExecutionLog).where(ExecutionLog.project_id == project_id))
+            db.execute(
+                sa_delete(ExecutionLog).where(ExecutionLog.project_id == project_id)
+            )
             db.execute(sa_delete(File).where(File.project_id == project_id))
             db.execute(sa_delete(Folder).where(Folder.project_id == project_id))
             db.delete(project)
@@ -426,7 +559,10 @@ class ProjectLifecycle:
 
         except Exception as exc:
             db.rollback()
-            logger.error(f"Permanent project delete failed for {project_id}: {exc}", exc_info=True)
+            logger.error(
+                f"Permanent project delete failed for {project_id}: {exc}",
+                exc_info=True,
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail={
@@ -436,8 +572,14 @@ class ProjectLifecycle:
             ) from exc
 
         AdminAuditService.log_action(
-            db=db, actor_id=actor.id, target_id=project_id,
+            db=db,
+            actor_id=actor.id,
+            target_id=project_id,
             action="PROJECT_PERMANENT_DELETE",
             metadata_json={"reason": reason, "name": project_name},
         )
-        return {"project_id": str(project_id), "action": "permanently_deleted", "name": project_name}
+        return {
+            "project_id": str(project_id),
+            "action": "permanently_deleted",
+            "name": project_name,
+        }

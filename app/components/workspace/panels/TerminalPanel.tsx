@@ -15,6 +15,7 @@ import { useUserStore } from '../../../stores/useUserStore';
 import { History } from 'lucide-react';
 import { Modal } from '../../ui/Modal';
 import { useDeploymentStore } from '../../../stores/useDeploymentStore';
+import { useShallow } from 'zustand/react/shallow';
 
 interface TerminalPanelProps {
   projectId: string;
@@ -36,7 +37,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
   const isCancelling = useExecutionStore((state: any) => state.isCancelling);
   const history = useExecutionStore((state: any) => state.history);
   const _runCode = useExecutionStore((state: any) => state.runCode);
-  const { settings: editorSettings } = useEditorStore();
+  const { settings: editorSettings } = useEditorStore(useShallow(state => ({ settings: state.settings })));
   const _user = useUserStore((state: any) => state.user);
   
   const appendLog = useOutputStore((state: any) => state.appendLog);
@@ -126,7 +127,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         onDataDisposable = term.onData((data: string) => {
           const activeWs = currentMode.current === 'execution' ? execWsRef.current : shellWsRef.current;
           if (activeWs && activeWs.readyState === WebSocket.OPEN) {
-            activeWs.send(data);
+            activeWs.send(JSON.stringify({ type: 'stdin', data: data }));
           } else {
              // Avoid local echo if deployment is happening
              if (useDeploymentStore.getState().isDeploying) return;
@@ -185,6 +186,8 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
        return;
     }
     
+    let reconnectAttempt = 0;
+
     const connectShell = () => {
       // Only connect if we aren't already connected
       if (shellWsRef.current && (shellWsRef.current.readyState === WebSocket.OPEN || shellWsRef.current.readyState === WebSocket.CONNECTING)) return;
@@ -198,6 +201,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
       shellWsRef.current = ws;
 
       ws.onopen = () => {
+        reconnectAttempt = 0; // Reset on successful connection
         if (currentMode.current === 'none') {
             currentMode.current = 'shell';
         }
@@ -215,29 +219,51 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         
         if (typeof event.data === 'string' && xtermRef.current) {
           try {
-            const trimmedData = event.data.trim();
-            if (trimmedData.startsWith('{') && trimmedData.endsWith('}')) {
-              const parsed = JSON.parse(event.data);
-              if (parsed.type === 'error') {
+            const parsed = JSON.parse(event.data);
+            switch (parsed.type) {
+              case 'stdout':
+              case 'stderr':
+                if (parsed.data) {
+                  xtermRef.current.write(parsed.data.replace(/\r?\n/g, '\r\n'));
+                }
+                break;
+              case 'error':
                 xtermRef.current.writeln(`\r\n\x1b[38;5;1m[Shell Error] ${parsed.message}\x1b[0m\r\n`);
-                return;
-              }
+                break;
+              case 'ping':
+              case 'pong':
+              case 'status':
+              case 'execution_started':
+              case 'execution_finished':
+                // Control messages, do not print to terminal
+                break;
+              default:
+                // Unknown message type, ignore
+                break;
             }
-            xtermRef.current.write(event.data.replace(/\r?\n/g, '\r\n'));
           } catch {
+            // Backward compatibility for raw strings just in case
             xtermRef.current.write(event.data.replace(/\r?\n/g, '\r\n'));
           }
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         if (currentMode.current === 'shell') {
             currentMode.current = 'none';
         }
         if (shellWsRef.current === ws) shellWsRef.current = null;
+        
+        // Auto-reconnect if not deploying and not cleanly closed
+        if (!useDeploymentStore.getState().isDeploying && event.code !== 1000 && event.code !== 1001 && event.code !== 1005) {
+            reconnectAttempt++;
+            const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempt), 15000);
+            timeoutId = window.setTimeout(connectShell, delay);
+        }
       };
 
       ws.onerror = () => {
+        // Error will trigger onclose which handles the reconnection
         if (currentMode.current === 'shell') {
             currentMode.current = 'none';
         }
@@ -340,13 +366,18 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
         if (currentMode.current !== 'execution') return;
         
         if (typeof event.data === 'string') {
-          execOutputBuffer.current += event.data;
           try {
-            const trimmedData = event.data.trim();
-            if (trimmedData.startsWith('{') && trimmedData.endsWith('}')) {
-              const parsed = JSON.parse(event.data);
-              if (parsed.type === 'error') {
-                if (parsed.message.includes('quota exceeded')) {
+            const parsed = JSON.parse(event.data);
+            switch (parsed.type) {
+              case 'stdout':
+              case 'stderr':
+                if (parsed.data) {
+                  execOutputBuffer.current += parsed.data;
+                  term.write(parsed.data.replace(/\r?\n/g, '\r\n'));
+                }
+                break;
+              case 'error':
+                if (parsed.message && parsed.message.includes('quota exceeded')) {
                   const editorState = useEditorStore.getState();
                   const guestFileId = editorState.activeFileId;
                   if (guestFileId && guestFileId.startsWith('guest-')) {
@@ -363,11 +394,21 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
                 }
                 term.writeln(`\r\n\x1b[38;5;1m[Server Error] ${parsed.message}\x1b[0m\r\n`);
                 appendLog(`[WebSocket Error] ${parsed.message}`, 'System');
-                return;
-              }
+                break;
+              case 'ping':
+              case 'pong':
+              case 'status':
+              case 'execution_started':
+              case 'execution_finished':
+                // Control messages, do not print to terminal
+                break;
+              default:
+                // Unknown message type, ignore
+                break;
             }
-            term.write(event.data.replace(/\r?\n/g, '\r\n'));
           } catch {
+            // Backward compatibility for raw strings
+            execOutputBuffer.current += event.data;
             term.write(event.data.replace(/\r?\n/g, '\r\n'));
           }
         }
@@ -446,6 +487,9 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ projectId }) => {
   useEffect(() => {
     if (isCancelling && execWsRef.current) {
       xtermRef.current?.writeln('\r\n\x1b[38;5;3m[System] Execution Cancelled by User\x1b[0m\r\n');
+      if (execWsRef.current.readyState === WebSocket.OPEN) {
+        execWsRef.current.send(JSON.stringify({ type: 'signal', signal: 'SIGKILL' }));
+      }
       execWsRef.current.close();
       setExecutionFinished(1);
     }

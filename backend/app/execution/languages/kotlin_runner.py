@@ -1,6 +1,7 @@
 from typing import Tuple
 from app.execution.languages.base_runner import BaseRunner
 
+
 class KotlinRunner(BaseRunner):
     @property
     def image_name(self) -> str:
@@ -21,4 +22,6 @@ class KotlinRunner(BaseRunner):
         return "java -jar Main.jar"
 
     def get_interactive_command(self, source_file: str) -> str:
-        return f"kotlinc {source_file} -include-runtime -d Main.jar && java -jar Main.jar"
+        return (
+            f"kotlinc {source_file} -include-runtime -d Main.jar && java -jar Main.jar"
+        )

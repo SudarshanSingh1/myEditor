@@ -25,12 +25,8 @@ interface NetworkSpeedCardProps {
 }
 
 export function NetworkSpeedCard({ readMbps, writeMbps, history }: NetworkSpeedCardProps) {
-  // Pad history to at least 20 points so the chart is never empty/flat
-  const chartData = history.length >= 2 ? history : Array.from({ length: 20 }, (_, i) => ({
-    t: `${10 + Math.floor(i / 4)}:${String((i % 4) * 15).padStart(2, "0")}`,
-    read:  1 + Math.random() * 2,
-    write: 0.5 + Math.random() * 1,
-  }));
+  // Use actual history data. The area chart handles < 2 points by being blank gracefully.
+  const chartData = history;
 
   return (
     <div className="e-widget" style={{

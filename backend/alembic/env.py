@@ -26,6 +26,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 target_metadata = Base.metadata
 
+
 def get_url():
     return settings.DATABASE_URL
 
@@ -33,7 +34,8 @@ def get_url():
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = get_url()
-    context.configure(compare_type=True,
+    context.configure(
+        compare_type=True,
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
@@ -50,7 +52,7 @@ def run_migrations_online() -> None:
     if configuration is None:
         configuration = {}
     configuration["sqlalchemy.url"] = get_url()
-    
+
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",
@@ -58,8 +60,8 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(compare_type=True,
-            connection=connection, target_metadata=target_metadata
+        context.configure(
+            compare_type=True, connection=connection, target_metadata=target_metadata
         )
 
         with context.begin_transaction():

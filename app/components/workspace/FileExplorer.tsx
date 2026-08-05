@@ -25,6 +25,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useMemo, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
 type FlatNode = 
   | { type: 'folder'; folder: FolderTree; level: number }
@@ -128,7 +129,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     });
   };
 
-  const { tabs, openTab, activeFileId } = useEditorStore();
+  const { tabs, openTab, activeFileId } = useEditorStore(useShallow(state => ({ tabs: state.tabs, openTab: state.openTab, activeFileId: state.activeFileId })));
 
   // Auto-open first file on initial project load
   useEffect(() => {

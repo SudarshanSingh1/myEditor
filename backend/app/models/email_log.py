@@ -5,10 +5,12 @@ from sqlalchemy import Column, String, DateTime, Enum, Uuid, Text, Integer
 
 from app.database.base import Base
 
+
 class EmailStatus(str, enum.Enum):
     PENDING = "PENDING"
     SENT = "SENT"
     FAILED = "FAILED"
+
 
 class EmailLog(Base):
     __tablename__ = "email_logs"
@@ -21,7 +23,9 @@ class EmailLog(Base):
     provider = Column(String(50), default="MOCK")
     error_message = Column(Text, nullable=True)
     retries = Column(Integer, default=0)
-    
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
     sent_at = Column(DateTime(timezone=True), nullable=True)
     opened_at = Column(DateTime(timezone=True), nullable=True)

@@ -7,9 +7,10 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Avatar } from "../../components/ui/Avatar";
 import { fetchApi } from "../../lib/api";
+import { useShallow } from 'zustand/react/shallow';
 
 export default function Profile() {
-  const { user, updateProfile } = useUserStore();
+  const { user, updateProfile } = useUserStore(useShallow(state => ({ user: state.user, updateProfile: state.updateProfile })));
   
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");

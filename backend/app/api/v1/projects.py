@@ -179,6 +179,7 @@ def soft_delete_project(
         data=project,
     )
 
+
 @router.delete(
     "/{project_id}/permanent",
     response_model=SuccessResponse[dict],

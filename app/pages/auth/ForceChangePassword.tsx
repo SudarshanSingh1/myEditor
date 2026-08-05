@@ -6,6 +6,7 @@ import { Input } from '../../components/ui/Input';
 import { Shield, KeyRound, ArrowRight, Lock, Eye, EyeOff } from 'lucide-react';
 import { SudarshanaMandala } from '../../components/ui/SplashLoader';
 import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function ForceChangePassword() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -17,7 +18,7 @@ export default function ForceChangePassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [loading, setLoading] = useState(false);
-  const { logout } = useUserStore();
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +51,7 @@ export default function ForceChangePassword() {
         if (authSuccess) {
           navigate('/app/dashboard', { replace: true });
         } else {
-          await logout();
+          await authController.logout();
           navigate('/login', { replace: true });
         }
       }
@@ -64,7 +65,7 @@ export default function ForceChangePassword() {
   };
 
   const handleLogout = async () => {
-    await logout();
+    await authController.logout();
     navigate('/login', { replace: true });
   };
 

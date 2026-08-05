@@ -3,6 +3,7 @@ from app.database.base import Base
 from app.utils.dates import utc_now
 from app.utils.identifiers import generate_uuid
 
+
 class ApiKey(Base):
     __tablename__ = "api_keys"
 

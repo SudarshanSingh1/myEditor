@@ -7,63 +7,121 @@ from app.models.user import User
 from app.models.workspace import Folder, File, FileVersion
 from app.models.project import Project
 from app.schemas.workspace import (
-    FolderCreate, FolderUpdate, FileCreate, FileUpdate, WorkspaceTreeResponse, TreeFolder, TreeFile
+    FolderCreate,
+    FolderUpdate,
+    FileCreate,
+    FileUpdate,
+    WorkspaceTreeResponse,
+    TreeFolder,
+    TreeFile,
 )
 from app.repositories.workspace_repository import WorkspaceRepository
 from app.repositories.project_repository import ProjectRepository
 import re
 
+
 class WorkspaceService:
+    """
+    Service layer for managing Workspace entities (Folders, Files, and FileVersions).
+    
+    This service enforces business logic, path calculation, duplicate name prevention, 
+    and handles pre-deletion version snapshots (soft-delete recovery) before delegating 
+    raw database operations to WorkspaceRepository.
+    """
     RESERVED_NAMES = {".git", ".env", "node_modules", "dist", "build"}
     INVALID_CHARS_REGEX = re.compile(r'[<>:"/\\|?*]')
     ALLOWED_EXTENSIONS = {
-        "py", "js", "ts", "jsx", "tsx", "html", "css", "scss", "less", "json", "md",
-        "txt", "csv", "sql", "sh", "yaml", "yml", "xml", "c", "cpp", "h", "hpp",
-        "java", "go", "rs", "rb", "php", "swift", "kt", "scala", "bat", "ps1"
+        "py",
+        "js",
+        "ts",
+        "jsx",
+        "tsx",
+        "html",
+        "css",
+        "scss",
+        "less",
+        "json",
+        "md",
+        "txt",
+        "csv",
+        "sql",
+        "sh",
+        "yaml",
+        "yml",
+        "xml",
+        "c",
+        "cpp",
+        "h",
+        "hpp",
+        "java",
+        "go",
+        "rs",
+        "rb",
+        "php",
+        "swift",
+        "kt",
+        "scala",
+        "bat",
+        "ps1",
     }
 
     @classmethod
     def _validate_name(cls, name: str, is_folder: bool = False):
         if not name or not name.strip():
             raise HTTPException(status_code=400, detail="Name cannot be empty")
-        
+
         name = name.strip()
         if cls.INVALID_CHARS_REGEX.search(name):
-            raise HTTPException(status_code=400, detail="Name contains invalid characters")
-            
+            raise HTTPException(
+                status_code=400, detail="Name contains invalid characters"
+            )
+
         if is_folder and name in cls.RESERVED_NAMES:
             raise HTTPException(status_code=400, detail="Reserved folder name")
 
         if not is_folder:
             ext = cls._extract_extension(name)
             if not ext or ext.lower() not in cls.ALLOWED_EXTENSIONS:
-                raise HTTPException(status_code=400, detail="Only coding files are allowed.")
+                raise HTTPException(
+                    status_code=400, detail="Only coding files are allowed."
+                )
 
         return name
 
     @classmethod
-    def _verify_project_access(cls, db: Session, project_id: UUID, current_user: User) -> Project:
+    def _verify_project_access(
+        cls, db: Session, project_id: UUID, current_user: User
+    ) -> Project:
         repo = ProjectRepository(db)
         project = repo.get_by_id(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-        
+
         # Simplified access control: Owner only for now (collaboration later)
         if str(project.owner_id) != str(current_user.id):
-            raise HTTPException(status_code=403, detail="Not authorized to access this project")
+            raise HTTPException(
+                status_code=403, detail="Not authorized to access this project"
+            )
         return project
 
     # ---------------------------------------------------------
     # Folders
     # ---------------------------------------------------------
     @classmethod
-    def create_folder(cls, db: Session, obj_in: FolderCreate, current_user: User) -> Folder:
+    def create_folder(
+        cls, db: Session, obj_in: FolderCreate, current_user: User
+    ) -> Folder:
         cls._verify_project_access(db, obj_in.project_id, current_user)
         name = cls._validate_name(obj_in.name, is_folder=True)
         obj_in.name = name
 
-        if WorkspaceRepository.get_folder_by_name(db, obj_in.project_id, name, obj_in.parent_id):
-            raise HTTPException(status_code=409, detail="Folder with this name already exists in the destination")
+        if WorkspaceRepository.get_folder_by_name(
+            db, obj_in.project_id, name, obj_in.parent_id
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="Folder with this name already exists in the destination",
+            )
 
         path = f"/{name}"
         depth = 0
@@ -77,44 +135,56 @@ class WorkspaceService:
         return WorkspaceRepository.create_folder(db, obj_in, path=path, depth=depth)
 
     @classmethod
-    def update_folder(cls, db: Session, folder_id: UUID, obj_in: FolderUpdate, current_user: User) -> Folder:
+    def update_folder(
+        cls, db: Session, folder_id: UUID, obj_in: FolderUpdate, current_user: User
+    ) -> Folder:
         folder = WorkspaceRepository.get_folder(db, folder_id)
         if not folder:
             raise HTTPException(status_code=404, detail="Folder not found")
-            
+
         cls._verify_project_access(db, folder.project_id, current_user)
 
         new_path = None
         new_depth = None
-        
+
         # Determine if we are renaming or moving or both
         new_name = folder.name
         if obj_in.name is not None:
             new_name = cls._validate_name(obj_in.name, is_folder=True)
-            
+
         new_parent_id = folder.parent_id
         if obj_in.parent_id is not None:
             new_parent_id = obj_in.parent_id
-            
+
             # Anti-cycle check
             if new_parent_id == folder.id:
-                raise HTTPException(status_code=400, detail="Folder cannot be its own parent")
+                raise HTTPException(
+                    status_code=400, detail="Folder cannot be its own parent"
+                )
 
         # If name or parent changed, check for duplicates
         if new_name != folder.name or new_parent_id != folder.parent_id:
-            if WorkspaceRepository.get_folder_by_name(db, folder.project_id, new_name, new_parent_id):
-                raise HTTPException(status_code=409, detail="Folder with this name already exists in the destination")
-                
+            if WorkspaceRepository.get_folder_by_name(
+                db, folder.project_id, new_name, new_parent_id
+            ):
+                raise HTTPException(
+                    status_code=409,
+                    detail="Folder with this name already exists in the destination",
+                )
+
             # Recalculate path and depth
             if new_parent_id:
                 parent = WorkspaceRepository.get_folder(db, new_parent_id)
                 if not parent or parent.project_id != folder.project_id:
                     raise HTTPException(status_code=400, detail="Invalid parent folder")
-                
+
                 # Cannot move into a descendant (cycle prevention)
                 if parent.path.startswith(f"{folder.path}/"):
-                    raise HTTPException(status_code=400, detail="Cannot move folder into its own descendant")
-                    
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Cannot move folder into its own descendant",
+                    )
+
                 new_path = f"{parent.path}/{new_name}"
                 new_depth = parent.depth + 1
             else:
@@ -124,10 +194,12 @@ class WorkspaceService:
             obj_in.name = new_name
             # Note: We aren't doing cascade path update on descendants here for simplicity,
             # but in a full production system, moving a folder requires updating paths
-            # of all descendants. For the requested Tree structure, path is less critical 
+            # of all descendants. For the requested Tree structure, path is less critical
             # if we reconstruct via parent_id anyway.
 
-        return WorkspaceRepository.update_folder(db, folder, obj_in, new_path, new_depth)
+        return WorkspaceRepository.update_folder(
+            db, folder, obj_in, new_path, new_depth
+        )
 
     @classmethod
     def delete_folder(cls, db: Session, folder_id: UUID, current_user: User) -> None:
@@ -139,28 +211,41 @@ class WorkspaceService:
 
         # Take pre-delete snapshots of every non-deleted file in the folder (and descendants).
         # This allows recovery without a full DB restore if deletion was accidental.
-        files_to_snapshot = db.query(File).filter(
-            File.project_id == folder.project_id,
-            File.is_deleted == False  # noqa: E712
-        ).all()
+        files_to_snapshot = (
+            db.query(File)
+            .filter(File.project_id == folder.project_id, File.deleted_at.is_(None))
+            .all()
+        )
         # Filter to files that are within this folder's subtree by path prefix
         folder_path_prefix = folder.path + "/"
+        all_project_folders = (
+            db.query(Folder).filter(Folder.project_id == folder.project_id).all()
+        )
+        folder_dict = {f.id: f for f in all_project_folders}
+
         affected_files = [
-            f for f in files_to_snapshot
+            f
+            for f in files_to_snapshot
             if f.folder_id == folder_id
-            or (f.folder_id is not None and str(f.folder_id) != str(folder_id)
-                and db.query(Folder).filter(Folder.id == f.folder_id).first() is not None
-                and (db.query(Folder).filter(Folder.id == f.folder_id).first().path or "").startswith(folder_path_prefix))
+            or (
+                f.folder_id is not None
+                and str(f.folder_id) != str(folder_id)
+                and f.folder_id in folder_dict
+                and (folder_dict[f.folder_id].path or "").startswith(folder_path_prefix)
+            )
         ]
         for f in affected_files:
             if f.content is not None:
                 import hashlib
+
                 snapshot = FileVersion(
                     file_id=f.id,
-                    version_number=f.version + 1 if hasattr(f, 'version') else 0,
+                    version_number=f.version + 1 if hasattr(f, "version") else 0,
                     content=f.content,
-                    size=len(f.content.encode('utf-8')) if f.content else 0,
-                    hash=hashlib.sha256(f.content.encode('utf-8')).hexdigest() if f.content else None,
+                    size=len(f.content.encode("utf-8")) if f.content else 0,
+                    hash=hashlib.sha256(f.content.encode("utf-8")).hexdigest()
+                    if f.content
+                    else None,
                     is_pre_delete=True,
                     change_description=f"Pre-delete snapshot before folder '{folder.name}' was deleted",
                     created_by=current_user.id,
@@ -171,13 +256,12 @@ class WorkspaceService:
 
         WorkspaceRepository.soft_delete_folder_cascade(db, folder)
 
-
     # ---------------------------------------------------------
     # Files
     # ---------------------------------------------------------
     @staticmethod
     def _extract_extension(filename: str) -> Optional[str]:
-        parts = filename.rsplit('.', 1)
+        parts = filename.rsplit(".", 1)
         if len(parts) > 1 and parts[1]:
             return parts[1].lower()
         return None
@@ -187,7 +271,7 @@ class WorkspaceService:
         cls._verify_project_access(db, obj_in.project_id, current_user)
         name = cls._validate_name(obj_in.name)
         obj_in.name = name
-        
+
         if not obj_in.extension:
             obj_in.extension = cls._extract_extension(name)
 
@@ -196,37 +280,49 @@ class WorkspaceService:
             if not parent or parent.project_id != obj_in.project_id:
                 raise HTTPException(status_code=400, detail="Invalid folder")
 
-        if WorkspaceRepository.get_file_by_name(db, obj_in.project_id, name, obj_in.folder_id):
-            raise HTTPException(status_code=409, detail="File with this name already exists in the destination")
+        if WorkspaceRepository.get_file_by_name(
+            db, obj_in.project_id, name, obj_in.folder_id
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="File with this name already exists in the destination",
+            )
 
         return WorkspaceRepository.create_file(db, obj_in)
 
     @classmethod
-    def update_file(cls, db: Session, file_id: UUID, obj_in: FileUpdate, current_user: User) -> File:
+    def update_file(
+        cls, db: Session, file_id: UUID, obj_in: FileUpdate, current_user: User
+    ) -> File:
         file = WorkspaceRepository.get_file(db, file_id)
         if not file:
             raise HTTPException(status_code=404, detail="File not found")
-            
+
         cls._verify_project_access(db, file.project_id, current_user)
 
         new_name = file.name
         new_folder_id = file.folder_id
-        
+
         if obj_in.name is not None:
             new_name = cls._validate_name(obj_in.name)
-            
+
         if obj_in.folder_id is not None:
             new_folder_id = obj_in.folder_id
 
         if new_name != file.name or new_folder_id != file.folder_id:
-            if WorkspaceRepository.get_file_by_name(db, file.project_id, new_name, new_folder_id):
-                raise HTTPException(status_code=409, detail="File with this name already exists in the destination")
-            
+            if WorkspaceRepository.get_file_by_name(
+                db, file.project_id, new_name, new_folder_id
+            ):
+                raise HTTPException(
+                    status_code=409,
+                    detail="File with this name already exists in the destination",
+                )
+
             if new_folder_id:
                 parent = WorkspaceRepository.get_folder(db, new_folder_id)
                 if not parent or parent.project_id != file.project_id:
                     raise HTTPException(status_code=400, detail="Invalid folder")
-        
+
         obj_in.name = new_name
         extension = cls._extract_extension(new_name) if new_name != file.name else None
 
@@ -250,18 +346,26 @@ class WorkspaceService:
         # Snapshot content before deletion so it can be recovered without a full DB restore.
         if file.content is not None:
             import hashlib
+
             # Determine a safe version number for the snapshot
-            latest_version = db.query(FileVersion).filter(
-                FileVersion.file_id == file_id
-            ).order_by(FileVersion.version_number.desc()).first()
-            snapshot_version = (latest_version.version_number + 1) if latest_version else 1
+            latest_version = (
+                db.query(FileVersion)
+                .filter(FileVersion.file_id == file_id)
+                .order_by(FileVersion.version_number.desc())
+                .first()
+            )
+            snapshot_version = (
+                (latest_version.version_number + 1) if latest_version else 1
+            )
 
             snapshot = FileVersion(
                 file_id=file.id,
                 version_number=snapshot_version,
                 content=file.content,
-                size=len(file.content.encode('utf-8')) if file.content else 0,
-                hash=hashlib.sha256(file.content.encode('utf-8')).hexdigest() if file.content else None,
+                size=len(file.content.encode("utf-8")) if file.content else 0,
+                hash=hashlib.sha256(file.content.encode("utf-8")).hexdigest()
+                if file.content
+                else None,
                 is_pre_delete=True,
                 change_description=f"Pre-delete snapshot of '{file.name}'",
                 created_by=current_user.id,
@@ -271,14 +375,13 @@ class WorkspaceService:
 
         WorkspaceRepository.soft_delete_file(db, file)
 
-
     @classmethod
     def duplicate_file(cls, db: Session, file_id: UUID, current_user: User) -> File:
         file = cls.get_file(db, file_id, current_user)
 
         base_name = file.name
         ext = ""
-        parts = file.name.rsplit('.', 1)
+        parts = file.name.rsplit(".", 1)
         if len(parts) > 1:
             base_name, ext = parts[0], "." + parts[1]
 
@@ -286,12 +389,14 @@ class WorkspaceService:
         _MAX_COPY_ATTEMPTS = 100
         counter = 1
         new_name = f"{base_name} copy{ext}"
-        while WorkspaceRepository.get_file_by_name(db, file.project_id, new_name, file.folder_id):
+        while WorkspaceRepository.get_file_by_name(
+            db, file.project_id, new_name, file.folder_id
+        ):
             counter += 1
             if counter > _MAX_COPY_ATTEMPTS:
                 raise HTTPException(
                     status_code=409,
-                    detail="Too many copies of this file already exist."
+                    detail="Too many copies of this file already exist.",
                 )
             new_name = f"{base_name} copy {counter}{ext}"
 
@@ -301,7 +406,7 @@ class WorkspaceService:
             folder_id=file.folder_id,
             content=file.content,
             language=file.language,
-            extension=file.extension
+            extension=file.extension,
         )
         return WorkspaceRepository.create_file(db, create_schema)
 
@@ -309,32 +414,44 @@ class WorkspaceService:
     # Save Engine & Versions
     # ---------------------------------------------------------
     @classmethod
-    def save_file(cls, db: Session, file_id: UUID, expected_version: int, content: str, current_user: User) -> File:
+    def save_file(
+        cls,
+        db: Session,
+        file_id: UUID,
+        expected_version: int,
+        content: str,
+        current_user: User,
+    ) -> File:
         file = WorkspaceRepository.get_file(db, file_id, for_update=True)
         if not file:
             raise HTTPException(status_code=404, detail="File not found")
         cls._verify_project_access(db, file.project_id, current_user)
-        
+
         if file.is_read_only:
             raise HTTPException(status_code=403, detail="File is read-only")
-            
+
         if expected_version < file.version:
-            raise HTTPException(status_code=409, detail=f"Conflict: File has been modified by another process. Expected {expected_version}, but got {file.version}.")
-            
+            raise HTTPException(
+                status_code=409,
+                detail=f"Conflict: File has been modified by another process. Expected {expected_version}, but got {file.version}.",
+            )
+
         # Update content and increment version
         file.content = content
-        file.size = len(content.encode('utf-8'))
+        file.size = len(content.encode("utf-8"))
         file.version += 1
-        
+
         # Create Version History
         WorkspaceRepository.create_file_version(db, file, current_user.id)
-        
+
         db.commit()
         db.refresh(file)
         return file
 
     @classmethod
-    def save_batch(cls, db: Session, requests: List[Any], current_user: User) -> List[File]:
+    def save_batch(
+        cls, db: Session, requests: List[Any], current_user: User
+    ) -> List[File]:
         # 'requests' is a list of FileSaveRequest from schemas
         files_to_save = []
         for req in requests:
@@ -342,30 +459,37 @@ class WorkspaceService:
             if not file:
                 raise HTTPException(status_code=404, detail=f"File not found: {req.id}")
             cls._verify_project_access(db, file.project_id, current_user)
-            
+
             if file.is_read_only:
-                raise HTTPException(status_code=403, detail=f"File is read-only: {file.name}")
-                
+                raise HTTPException(
+                    status_code=403, detail=f"File is read-only: {file.name}"
+                )
+
             if req.expected_version < file.version:
-                raise HTTPException(status_code=409, detail=f"Conflict on {file.name}: File has been modified.")
-                
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Conflict on {file.name}: File has been modified.",
+                )
+
             files_to_save.append((file, req.content))
-            
+
         # Commit all if no conflicts found
         for file, content in files_to_save:
             file.content = content
-            file.size = len(content.encode('utf-8'))
+            file.size = len(content.encode("utf-8"))
             file.version += 1
             WorkspaceRepository.create_file_version(db, file, current_user.id)
-            
+
         db.commit()
         for file, _ in files_to_save:
             db.refresh(file)
-            
+
         return [f for f, _ in files_to_save]
 
     @classmethod
-    def get_file_versions(cls, db: Session, file_id: UUID, current_user: User) -> List[Any]:
+    def get_file_versions(
+        cls, db: Session, file_id: UUID, current_user: User
+    ) -> List[Any]:
         file = WorkspaceRepository.get_file(db, file_id)
         if not file:
             raise HTTPException(status_code=404, detail="File not found")
@@ -373,24 +497,28 @@ class WorkspaceService:
         return WorkspaceRepository.get_file_versions(db, file_id)
 
     @classmethod
-    def get_file_version(cls, db: Session, file_id: UUID, version_number: int, current_user: User) -> Any:
+    def get_file_version(
+        cls, db: Session, file_id: UUID, version_number: int, current_user: User
+    ) -> Any:
         file = WorkspaceRepository.get_file(db, file_id)
         if not file:
             raise HTTPException(status_code=404, detail="File not found")
         cls._verify_project_access(db, file.project_id, current_user)
-        
+
         version = WorkspaceRepository.get_file_version(db, file_id, version_number)
         if not version:
             raise HTTPException(status_code=404, detail="Version not found")
         return version
 
     @classmethod
-    def restore_version(cls, db: Session, file_id: UUID, version_number: int, current_user: User) -> File:
+    def restore_version(
+        cls, db: Session, file_id: UUID, version_number: int, current_user: User
+    ) -> File:
         file = WorkspaceRepository.get_file(db, file_id)
         if not file:
             raise HTTPException(status_code=404, detail="File not found")
         cls._verify_project_access(db, file.project_id, current_user)
-        
+
         if file.is_read_only:
             raise HTTPException(status_code=403, detail="File is read-only")
 
@@ -402,42 +530,46 @@ class WorkspaceService:
         file.content = version.content
         file.size = version.size
         file.version += 1
-        
+
         # Create new version tracking the restoration
         WorkspaceRepository.create_file_version(db, file, current_user.id)
-        
+
         db.commit()
         db.refresh(file)
         return file
 
     @classmethod
-    def delete_version(cls, db: Session, file_id: UUID, version_number: int, current_user: User) -> None:
+    def delete_version(
+        cls, db: Session, file_id: UUID, version_number: int, current_user: User
+    ) -> None:
         file = WorkspaceRepository.get_file(db, file_id)
         if not file:
             raise HTTPException(status_code=404, detail="File not found")
         cls._verify_project_access(db, file.project_id, current_user)
-        
+
         version = WorkspaceRepository.get_file_version(db, file_id, version_number)
         if not version:
             raise HTTPException(status_code=404, detail="Version not found")
-            
+
         WorkspaceRepository.delete_file_version(db, version)
 
     # ---------------------------------------------------------
     # Tree
     # ---------------------------------------------------------
     @classmethod
-    def get_workspace_tree(cls, db: Session, project_id: UUID, current_user: User) -> WorkspaceTreeResponse:
+    def get_workspace_tree(
+        cls, db: Session, project_id: UUID, current_user: User
+    ) -> WorkspaceTreeResponse:
         project = cls._verify_project_access(db, project_id, current_user)
-        
+
         folders = WorkspaceRepository.get_project_folders(db, project_id)
         files = WorkspaceRepository.get_project_files(db, project_id)
-        
+
         # Build tree representation
         folder_dict = {}
         root_folders = []
         root_files = []
-        
+
         for f in folders:
             folder_dict[f.id] = TreeFolder(
                 id=f.id,
@@ -445,15 +577,15 @@ class WorkspaceService:
                 path=f.path,
                 updated_at=f.updated_at,
                 files=[],
-                children=[]
+                children=[],
             )
-            
+
         for f in folders:
             if f.parent_id and f.parent_id in folder_dict:
                 folder_dict[f.parent_id].children.append(folder_dict[f.id])
             else:
                 root_folders.append(folder_dict[f.id])
-                
+
         for file in files:
             t_file = TreeFile(
                 id=file.id,
@@ -461,18 +593,18 @@ class WorkspaceService:
                 extension=file.extension,
                 language=file.language,
                 size=file.size,
-                updated_at=file.updated_at
+                updated_at=file.updated_at,
             )
             if file.folder_id and file.folder_id in folder_dict:
                 folder_dict[file.folder_id].files.append(t_file)
             else:
                 root_files.append(t_file)
-                
+
         # Sort logic: Folders first (already alpha via DB), then files (alpha via DB)
-        
+
         return WorkspaceTreeResponse(
             project_id=project.id,
             name=project.name,
             folders=root_folders,
-            files=root_files
+            files=root_files,
         )

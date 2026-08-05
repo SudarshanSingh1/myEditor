@@ -1,9 +1,19 @@
 import uuid
 import enum
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Boolean, DateTime, Enum, Uuid, Integer, ForeignKey
+from sqlalchemy import (
+    Column,
+    String,
+    Boolean,
+    DateTime,
+    Enum,
+    Uuid,
+    Integer,
+    ForeignKey,
+)
 from sqlalchemy.orm import relationship
 from app.database.base import Base
+
 
 class RoleEnum(str, enum.Enum):
     USER = "USER"
@@ -11,12 +21,14 @@ class RoleEnum(str, enum.Enum):
     ADMIN = "ADMIN"
     OWNER = "OWNER"
 
+
 class StatusEnum(str, enum.Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
     SUSPENDED = "SUSPENDED"
     BANNED = "BANNED"
     PENDING_VERIFICATION = "PENDING_VERIFICATION"
+
 
 class User(Base):
     __tablename__ = "users"
@@ -33,44 +45,101 @@ class User(Base):
     designation = Column(String(100), nullable=True)
     notes = Column(String(1000), nullable=True)
     permissions_preview = Column(String(1000), nullable=True)
-    
+
     role = Column(Enum(RoleEnum), default=RoleEnum.USER, nullable=False)
-    status = Column(Enum(StatusEnum), default=StatusEnum.PENDING_VERIFICATION, nullable=False)
-    
-    email_verified = Column(Boolean, nullable=False, default=False, server_default="false")
+    status = Column(
+        Enum(StatusEnum), default=StatusEnum.PENDING_VERIFICATION, nullable=False
+    )
+
+    email_verified = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     is_deleted = Column(Boolean, nullable=False, default=False, server_default="false")
     deleted_at = Column(DateTime(timezone=True), nullable=True)
-    deleted_by = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    deleted_by = Column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     restored_at = Column(DateTime(timezone=True), nullable=True)
-    restored_by = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    must_change_password = Column(Boolean, nullable=False, default=False, server_default="false")
+    restored_by = Column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    must_change_password = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     temp_password_expires_at = Column(DateTime(timezone=True), nullable=True)
-    
+
     # RBAC effective permissions cache (list of permission nodes)
     from sqlalchemy import JSON, text
-    effective_permissions = Column(JSON, nullable=True, default=list, server_default="[]")
-    
+
+    effective_permissions = Column(
+        JSON, nullable=True, default=list, server_default="[]"
+    )
+
     # 2FA and Security
     totp_secret = Column(String(255), nullable=True)
-    totp_enabled = Column(Boolean, nullable=False, default=False, server_default="false")
-    recovery_codes = Column(String(1000), nullable=True)  # Legacy plaintext — kept for backward compat
-    totp_backup_codes = Column(String(2000), nullable=True)  # JSON array of SHA-256 hashed backup codes
-    totp_last_used_at = Column(DateTime(timezone=True), nullable=True)  # Last TOTP code timestamp — replay prevention
-    failed_login_attempts = Column(Integer, nullable=False, default=0, server_default="0")
+    totp_enabled = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    recovery_codes = Column(
+        String(1000), nullable=True
+    )  # Legacy plaintext — kept for backward compat
+    totp_backup_codes = Column(
+        String(2000), nullable=True
+    )  # JSON array of SHA-256 hashed backup codes
+    totp_last_used_at = Column(
+        DateTime(timezone=True), nullable=True
+    )  # Last TOTP code timestamp — replay prevention
+    failed_login_attempts = Column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
     account_locked_until = Column(DateTime(timezone=True), nullable=True)
-    
+
     # Profile Extensions
     bio = Column(String(1000), nullable=True)
     timezone = Column(String(50), nullable=True, default="UTC", server_default="'UTC'")
-    theme_preference = Column(String(20), nullable=True, default="system", server_default="'system'")
-    
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    theme_preference = Column(
+        String(20), nullable=True, default="system", server_default="'system'"
+    )
+
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
     last_login = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan", passive_deletes=True)
-    feedback_submissions = relationship("Feedback", foreign_keys="[Feedback.user_id]", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
-    oauth_accounts = relationship("OAuthAccount", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
-    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
-    activities = relationship("UserActivity", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
+    projects = relationship(
+        "Project",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    feedback_submissions = relationship(
+        "Feedback",
+        foreign_keys="[Feedback.user_id]",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    oauth_accounts = relationship(
+        "OAuthAccount",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    sessions = relationship(
+        "UserSession",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    activities = relationship(
+        "UserActivity",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )

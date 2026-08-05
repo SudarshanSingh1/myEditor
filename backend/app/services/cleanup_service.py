@@ -9,6 +9,7 @@ Each job logs what it cleaned up at INFO level.
 
 Runs every 6 hours via the lifespan background task in main.py.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 # Individual cleanup jobs
 # ---------------------------------------------------------------------------
 
+
 def purge_expired_sessions(db: Session) -> int:
     """Delete user_sessions that have passed their expires_at timestamp."""
     now = datetime.now(timezone.utc)
@@ -48,9 +50,7 @@ def purge_expired_sessions(db: Session) -> int:
 def purge_expired_guest_sessions(db: Session) -> int:
     """Delete guest_sessions that have passed their expires_at timestamp."""
     now = datetime.now(timezone.utc)
-    result = db.execute(
-        delete(GuestSession).where(GuestSession.expires_at < now)
-    )
+    result = db.execute(delete(GuestSession).where(GuestSession.expires_at < now))
     db.commit()
     count = result.rowcount
     if count:
@@ -74,7 +74,9 @@ def purge_orphaned_notifications(db: Session, days: int = 90) -> int:
     db.commit()
     count = result.rowcount
     if count:
-        logger.info(f"[Cleanup] Purged {count} orphaned notifications older than {days} days")
+        logger.info(
+            f"[Cleanup] Purged {count} orphaned notifications older than {days} days"
+        )
     return count
 
 
@@ -97,20 +99,25 @@ def purge_old_completed_executions(db: Session, days: int = 30) -> int:
             and_(
                 ExecutionLog.status.in_(terminal_statuses),
                 ExecutionLog.created_at < cutoff,
-                ExecutionLog.project_id.is_(None),  # Guest executions only — keep project-associated logs
+                ExecutionLog.project_id.is_(
+                    None
+                ),  # Guest executions only — keep project-associated logs
             )
         )
     )
     db.commit()
     count = result.rowcount
     if count:
-        logger.info(f"[Cleanup] Purged {count} old guest execution logs older than {days} days")
+        logger.info(
+            f"[Cleanup] Purged {count} old guest execution logs older than {days} days"
+        )
     return count
 
 
 # ---------------------------------------------------------------------------
 # Master cleanup runner
 # ---------------------------------------------------------------------------
+
 
 def run_all_cleanup_jobs() -> dict:
     """
@@ -133,10 +140,10 @@ def run_all_cleanup_jobs() -> dict:
     return summary
 
 
-
 # ---------------------------------------------------------------------------
 # Async background loop (used by main.py lifespan)
 # ---------------------------------------------------------------------------
+
 
 async def cleanup_loop(interval_seconds: int = 21600) -> None:
     """

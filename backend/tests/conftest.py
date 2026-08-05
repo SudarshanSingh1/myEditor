@@ -30,7 +30,9 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 # Monkeypatch SessionLocal so middleware uses the in-memory test DB
 import app.database.session
+
 app.database.session.SessionLocal = TestingSessionLocal
+
 
 @pytest.fixture(autouse=True)
 def setup_database():
@@ -40,6 +42,7 @@ def setup_database():
     # Drop tables
     Base.metadata.drop_all(bind=engine)
 
+
 @pytest.fixture
 def db_session():
     """Returns an sqlalchemy session, and after the test tears down everything properly."""
@@ -47,26 +50,32 @@ def db_session():
     yield session
     session.close()
 
+
 @pytest.fixture
 def client(db_session):
     """Returns a FastAPI TestClient that overrides the get_db dependency."""
+
     def override_get_db():
         yield db_session
 
     from app.core.rate_limit import limiter
+
     limiter.enabled = False
-    
+
     fastapi_app.dependency_overrides[get_db] = override_get_db
-    
+
     # Mock EmailService
     from unittest.mock import patch
-    with patch('app.services.email_service.EmailService.send_verification_email'), \
-         patch('app.services.email_service.EmailService.send_new_login_alert'), \
-         patch('app.services.email_service.EmailService.send_password_reset_email'), \
-         patch('app.services.email_service.EmailService.send_custom_email'), \
-         patch('app.services.email_service.EmailService.send_welcome_email'):
+
+    with patch(
+        "app.services.email_service.EmailService.send_verification_email"
+    ), patch("app.services.email_service.EmailService.send_new_login_alert"), patch(
+        "app.services.email_service.EmailService.send_password_reset_email"
+    ), patch("app.services.email_service.EmailService.send_custom_email"), patch(
+        "app.services.email_service.EmailService.send_welcome_email"
+    ):
         with TestClient(fastapi_app) as test_client:
             yield test_client
-            
+
     fastapi_app.dependency_overrides.clear()
     limiter.enabled = True

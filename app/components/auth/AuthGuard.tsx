@@ -3,13 +3,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserStore } from '../../stores/useUserStore';
 import { useSystemStore } from '../../stores/useSystemStore';
 import { SplashLoader } from '../ui/SplashLoader';
+import { useShallow } from 'zustand/react/shallow';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { authState, user } = useUserStore();
+  const { authState, user } = useUserStore(useShallow(state => ({ authState: state.authState, user: state.user })));
   const { isMaintenanceMode } = useSystemStore();
   const navigate = useNavigate();
   const location = useLocation();

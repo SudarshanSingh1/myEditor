@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 
 import { useUserStore } from "../stores/useUserStore";
+import { authController } from "../services/AuthController";
 
 import { useSystemStore } from "../stores/useSystemStore";
 
@@ -12,6 +13,7 @@ import { fetchApi } from "../lib/api";
 
 import "../styles/enterprise.css";
 import { LayoutDashboard, BarChart3, Users, FolderOpen, PlaySquare, MessageSquare, Bug, Server, Database, Settings, ShieldCheck, ClipboardList, Mail, LogOut, GitBranch, Flag, Bell, TerminalSquare, HardDriveUpload, Rocket, AlertOctagon, Search, ChevronLeft, ChevronRight, X, ArrowRight, ExternalLink } from "lucide-react";
+import { useShallow } from 'zustand/react/shallow';
 /* ─── Navigation Configuration ─────────────────────────────── */
 const moderatorNavGroups = [
   {
@@ -191,7 +193,7 @@ function useServerStatus() {
 
 /* ─── EnterpriseLayout ───────────────────────────────────── */
 export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminLayout?: boolean }) {
-  const { user, logout } = useUserStore();
+  const { user } = useUserStore(useShallow(state => ({ user: state.user })));
   const { isSuperAdmin, isModerator } = useAdminContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -272,7 +274,7 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
   }, []);
 
   const handleLogout = async () => {
-    await logout();
+    await authController.logout();
     navigate("/login");
   };
 

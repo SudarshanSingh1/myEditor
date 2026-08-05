@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSystemStore } from "../../stores/useSystemStore";
 import { useUserStore } from "../../stores/useUserStore";
 import { SplashLoader } from "../ui/SplashLoader";
+import { useShallow } from 'zustand/react/shallow';
 
 export function MaintenanceGuard({ children }: { children: ReactNode }) {
   const {
@@ -14,7 +15,7 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     hasChecked: maintenanceChecked,
     allowAdmin,
   } = useSystemStore();
-  const { isLoading: userLoading, user, permissions = [] } = useUserStore();
+  const { isLoading: userLoading, user, permissions = [] } = useUserStore(useShallow(state => ({ isLoading: state.isLoading, user: state.user, permissions: state.permissions })));
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -25,11 +26,8 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     }
   }, [maintenanceChecked, _maintenanceChecking, checkStatus]);
 
-  // Poll every 30 s so mid-session toggles propagate quickly
-  useEffect(() => {
-    const id = setInterval(() => checkStatus(), 30000);
-    return () => clearInterval(id);
-  }, []);
+  // Maintenance mode is propagated reactively via the maintenance:active window
+  // event (fired by api.ts on any 503 response). No periodic polling needed.
 
   // React to 503 events fired by api.ts on any blocked request
   useEffect(() => {
@@ -38,7 +36,7 @@ export function MaintenanceGuard({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("maintenance:active", handler);
   }, []);
 
-  const isReady = maintenanceChecked && !userLoading;
+  const isReady = maintenanceChecked;
 
   // Define auth, legal, and maintenance routes that must never be blocked by maintenance mode
   // This ensures staff (Owner, Admin, Moderator) can visit /admin-login, /login, or /oauth to sign in!

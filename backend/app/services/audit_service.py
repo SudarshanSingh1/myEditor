@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional
 import uuid
 import datetime
 
+
 class AuditService:
     @staticmethod
     def log_action(
@@ -12,7 +13,7 @@ class AuditService:
         action: str,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ) -> AuditLog:
         """
         Records an administrative action in the AuditLog.
@@ -32,7 +33,7 @@ class AuditService:
             action=action,
             ip_address=ip_address,
             user_agent=user_agent,
-            details=safe_details
+            details=safe_details,
         )
         db.add(log_entry)
         db.commit()

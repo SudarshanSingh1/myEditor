@@ -6,8 +6,8 @@ from fastapi import Request
 logger = logging.getLogger("hamara.perf")
 
 # Thresholds (seconds)
-_SLOW_THRESHOLD      = 0.5   # 500 ms — log a warning
-_VERY_SLOW_THRESHOLD = 2.0   # 2 s   — log an error
+_SLOW_THRESHOLD = 0.5  # 500 ms — log a warning
+_VERY_SLOW_THRESHOLD = 2.0  # 2 s   — log an error
 
 
 class TimingMiddleware(BaseHTTPMiddleware):

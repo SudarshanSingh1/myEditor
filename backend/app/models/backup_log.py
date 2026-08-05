@@ -1,8 +1,9 @@
-from sqlalchemy import Column, String, Integer, DateTime, JSON, Enum
+from sqlalchemy import Column, String, Integer, DateTime, JSON
 from sqlalchemy.sql import func
 import enum
 import uuid
 from app.database.base import Base
+
 
 class BackupStatus(str, enum.Enum):
     PENDING = "PENDING"
@@ -10,9 +11,11 @@ class BackupStatus(str, enum.Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
+
 class BackupType(str, enum.Enum):
     MANUAL = "MANUAL"
     SCHEDULED = "SCHEDULED"
+
 
 class BackupLog(Base):
     __tablename__ = "backup_logs"
@@ -23,6 +26,6 @@ class BackupLog(Base):
     status = Column(String, default=BackupStatus.PENDING)
     type = Column(String, default=BackupType.MANUAL)
     metadata_json = Column(JSON, default={})
-    
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)

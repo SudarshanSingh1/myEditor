@@ -1,3 +1,4 @@
+import React from "react";
 import { ResponsiveContainer, AreaChart, Area, Tooltip, LineChart, Line, BarChart, Bar } from "recharts";
 
 interface SparklineProps {
@@ -11,7 +12,8 @@ interface SparklineProps {
 export function MiniSparkline({ data, color = "#6366f1", height = 40, type = "area", filled = true }: SparklineProps) {
   const chartData = data.map((v, i) => ({ v, i }));
 
-  const gradId = `spark-${color.replace("#", "")}-${Math.random().toString(36).slice(2, 5)}`;
+  const uid = React.useId();
+  const gradId = `spark-${color.replace("#", "")}-${uid.replace(/:/g, "")}`;
 
   if (type === "bar") {
     return (

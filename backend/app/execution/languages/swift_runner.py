@@ -1,6 +1,7 @@
 from typing import Tuple
 from app.execution.languages.base_runner import BaseRunner
 
+
 class SwiftRunner(BaseRunner):
     @property
     def image_name(self) -> str:

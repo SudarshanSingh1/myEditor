@@ -21,7 +21,7 @@ export const useSystemStore = create<SystemState>((set, _get) => ({
   maintenanceEndTime: null,
   allowAdmin: true,
   serverTime: null,
-  isChecking: true,
+  isChecking: false,
   hasChecked: false,
   checkStatus: async (force = false) => {
     if (_statusPromise && !force) return _statusPromise;

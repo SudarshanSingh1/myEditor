@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 
@@ -13,31 +12,91 @@ from app.models.user import RoleEnum
 
 PERMISSION_MATRIX = [
     # General / Projects
-    {"node": "projects.create", "category": "Projects", "description": "Create new projects"},
-    {"node": "projects.edit.self", "category": "Projects", "description": "Edit own projects"},
-    {"node": "projects.delete.any", "category": "Projects", "description": "Delete any project"},
-    
+    {
+        "node": "projects.create",
+        "category": "Projects",
+        "description": "Create new projects",
+    },
+    {
+        "node": "projects.edit.self",
+        "category": "Projects",
+        "description": "Edit own projects",
+    },
+    {
+        "node": "projects.delete.any",
+        "category": "Projects",
+        "description": "Delete any project",
+    },
     # Users
-    {"node": "users.read.basic", "category": "Users", "description": "Read basic user profiles"},
-    {"node": "users.suspend", "category": "Users", "description": "Suspend user accounts"},
+    {
+        "node": "users.read.basic",
+        "category": "Users",
+        "description": "Read basic user profiles",
+    },
+    {
+        "node": "users.suspend",
+        "category": "Users",
+        "description": "Suspend user accounts",
+    },
     {"node": "users.flag", "category": "Users", "description": "Flag user accounts"},
-    {"node": "users.delete", "category": "Users", "description": "Permanently delete user accounts"},
-    
+    {
+        "node": "users.delete",
+        "category": "Users",
+        "description": "Permanently delete user accounts",
+    },
     # Reports
-    {"node": "reports.review", "category": "Moderation", "description": "Review reports"},
-    {"node": "reports.resolve", "category": "Moderation", "description": "Resolve reports"},
-    
+    {
+        "node": "reports.review",
+        "category": "Moderation",
+        "description": "Review reports",
+    },
+    {
+        "node": "reports.resolve",
+        "category": "Moderation",
+        "description": "Resolve reports",
+    },
     # System / Admin
-    {"node": "system.containers.restart", "category": "System", "description": "Restart system containers"},
-    {"node": "system.storage.view", "category": "System", "description": "View system storage metrics"},
-    {"node": "system.maintenance.toggle", "category": "System", "description": "Toggle maintenance mode"},
-    
+    {
+        "node": "system.containers.restart",
+        "category": "System",
+        "description": "Restart system containers",
+    },
+    {
+        "node": "system.storage.view",
+        "category": "System",
+        "description": "View system storage metrics",
+    },
+    {
+        "node": "system.maintenance.toggle",
+        "category": "System",
+        "description": "Toggle maintenance mode",
+    },
     # Owner only
-    {"node": "system.billing.view", "category": "Billing", "description": "View billing details"},
-    {"node": "system.billing.manage", "category": "Billing", "description": "Manage billing subscriptions"},
-    {"node": "system.secrets.manage", "category": "System", "description": "Manage system secrets"},
-    {"node": "database.backup", "category": "Database", "description": "Trigger database backup"},
-    {"node": "database.restore", "category": "Database", "description": "Trigger database restore"},
+    {
+        "node": "system.billing.view",
+        "category": "Billing",
+        "description": "View billing details",
+    },
+    {
+        "node": "system.billing.manage",
+        "category": "Billing",
+        "description": "Manage billing subscriptions",
+    },
+    {
+        "node": "system.secrets.manage",
+        "category": "System",
+        "description": "Manage system secrets",
+    },
+    {
+        "node": "database.backup",
+        "category": "Database",
+        "description": "Trigger database backup",
+    },
+    {
+        "node": "database.restore",
+        "category": "Database",
+        "description": "Trigger database restore",
+    },
 ]
 
 ROLE_ASSIGNMENTS = {
@@ -73,6 +132,7 @@ ROLE_ASSIGNMENTS = {
     # OWNER gets everything
 }
 
+
 def seed_rbac():
     db = SessionLocal()
     try:
@@ -82,31 +142,37 @@ def seed_rbac():
             perm = db.query(Permission).filter_by(node=p["node"]).first()
             if not perm:
                 perm = Permission(
-                    node=p["node"],
-                    category=p["category"],
-                    description=p["description"]
+                    node=p["node"], category=p["category"], description=p["description"]
                 )
                 db.add(perm)
                 db.commit()
                 db.refresh(perm)
             db_permissions[perm.node] = perm
-            
+
         print("Seeding role assignments...")
         for role, nodes in ROLE_ASSIGNMENTS.items():
             for node in nodes:
                 perm = db_permissions[node]
-                existing = db.query(RolePermission).filter_by(role=role, permission_id=perm.id).first()
+                existing = (
+                    db.query(RolePermission)
+                    .filter_by(role=role, permission_id=perm.id)
+                    .first()
+                )
                 if not existing:
                     rp = RolePermission(role=role, permission_id=perm.id)
                     db.add(rp)
-        
+
         # Owner gets all permissions
         for perm in db_permissions.values():
-            existing = db.query(RolePermission).filter_by(role=RoleEnum.OWNER, permission_id=perm.id).first()
+            existing = (
+                db.query(RolePermission)
+                .filter_by(role=RoleEnum.OWNER, permission_id=perm.id)
+                .first()
+            )
             if not existing:
                 rp = RolePermission(role=RoleEnum.OWNER, permission_id=perm.id)
                 db.add(rp)
-                
+
         db.commit()
         print("RBAC seeded successfully.")
     except Exception as e:
@@ -115,6 +181,7 @@ def seed_rbac():
         sys.exit(1)
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     seed_rbac()

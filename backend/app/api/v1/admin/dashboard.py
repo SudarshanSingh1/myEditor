@@ -1,50 +1,34 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, WebSocket, WebSocketDisconnect
-from fastapi.responses import StreamingResponse
-import zipfile
-import io
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, text
-import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import psutil
 import time
-import secrets
-import string
 import smtplib
-from app.core.security import encrypt_string, decrypt_string, get_fernet_key
-from cryptography.fernet import Fernet
 from app.core.config import settings
 
 from app.dependencies.database import get_db
-from app.dependencies.auth import require_permission, require_admin, require_moderator, require_super_admin
-from app.models.user import User, RoleEnum, StatusEnum
-from app.models.project import Project
-from app.models.feedback import Feedback, FeedbackStatus
-from app.models.system_error import SystemError
-from app.models.audit_log import AuditLog
+from app.dependencies.auth import require_permission, require_admin
+from app.models.user import User
 from app.models.workspace import File
-from app.models.execution_log import ExecutionLog
-from app.models.system_settings import SystemSettings
-from app.models.email_log import EmailLog, EmailStatus
-from app.models.user_activity import UserActivity
 from app.schemas.responses import SuccessResponse
-from app.services.audit_service import AuditService
-from app.services.email_service import EmailService
-from app.core.security import get_password_hash
-from pydantic import BaseModel, EmailStr
-
 
 
 from .schemas import *
 
 router = APIRouter()
 
+
 # --- Dashboard & Stats ---
 @router.get("/dashboard", response_model=SuccessResponse)
-def get_dashboard(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
-    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    
+def get_dashboard(
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_permission("users.read.basic")),
+):
+    today = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
     query = text("""
         SELECT 
             (SELECT COUNT(*) FROM users WHERE is_deleted = false) as total_users,
@@ -56,24 +40,33 @@ def get_dashboard(db: Session = Depends(get_db), admin: User = Depends(require_p
             (SELECT COUNT(*) FROM system_errors) as total_errors,
             (SELECT COUNT(*) FROM users WHERE status = 'ACTIVE' AND is_deleted = false) as active_users
     """)
-    
+
     result = db.execute(query, {"today": today}).fetchone()
-    
-    return SuccessResponse(message="Dashboard retrieved", data={
-        "total_users": result.total_users,
-        "users_today": result.users_today,
-        "active_users": result.active_users,
-        "total_projects": result.total_projects,
-        "total_executions": result.total_executions,
-        "executions_today": result.executions_today,
-        "total_feedback": result.total_feedback,
-        "total_errors": result.total_errors,
-    })
+
+    return SuccessResponse(
+        message="Dashboard retrieved",
+        data={
+            "total_users": result.total_users,
+            "users_today": result.users_today,
+            "active_users": result.active_users,
+            "total_projects": result.total_projects,
+            "total_executions": result.total_executions,
+            "executions_today": result.executions_today,
+            "total_feedback": result.total_feedback,
+            "total_errors": result.total_errors,
+        },
+    )
+
 
 @router.get("/statistics", response_model=SuccessResponse)
-def get_statistics(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
-    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    
+def get_statistics(
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_permission("users.read.basic")),
+):
+    today = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
     query = text("""
         SELECT 
             (SELECT COUNT(*) FROM users WHERE is_deleted = false) as total_users,
@@ -84,91 +77,128 @@ def get_statistics(db: Session = Depends(get_db), admin: User = Depends(require_
             (SELECT COUNT(*) FROM feedback) as feedback,
             (SELECT COUNT(*) FROM system_errors WHERE created_at >= :today) as errors_today
     """)
-    
+
     result = db.execute(query, {"today": today}).fetchone()
-    
+
     # Real storage: sum all file sizes actually stored in the DB
     storage_bytes = db.query(func.sum(File.size)).scalar() or 0
 
-    return SuccessResponse(message="Stats retrieved", data={
-        "total_users": result.total_users,
-        "active_users": result.active_users,
-        "admins": result.admins,
-        "projects": result.projects,
-        "files": result.files,
-        "feedback_count": result.feedback,
-        "errors_today": result.errors_today,
-        "storage_used_bytes": storage_bytes
-    })
+    return SuccessResponse(
+        message="Stats retrieved",
+        data={
+            "total_users": result.total_users,
+            "active_users": result.active_users,
+            "admins": result.admins,
+            "projects": result.projects,
+            "files": result.files,
+            "feedback_count": result.feedback,
+            "errors_today": result.errors_today,
+            "storage_used_bytes": storage_bytes,
+        },
+    )
+
 
 @router.get("/server", response_model=SuccessResponse)
-def get_server_status(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    cpu = psutil.cpu_percent(interval=0.5)
+def get_server_status(
+    db: Session = Depends(get_db), admin: User = Depends(require_admin)
+):
+    # interval=None returns the last OS-measured value without sleeping.
+    # interval=0.5 (the old value) blocks the worker thread for 500ms per call.
+    cpu = psutil.cpu_percent(interval=None)
     mem = psutil.virtual_memory()
-    disk = psutil.disk_usage('/')
-    
-    # Docker status via checking if socket is reachable
+    disk = psutil.disk_usage("/")
+
+    # Docker status — reuse the singleton client from server.py if available
     docker_status = "unknown"
     docker_containers = 0
     try:
-        import docker
-        client = docker.from_env(timeout=3)
+        from .server import _get_docker_client
+        client = _get_docker_client()
         containers = client.containers.list()
         docker_containers = len(containers)
         docker_status = "online"
     except Exception as e:
         from app.core.logger import logger
+
         logger.warning(f"Failed to get Docker status: {e}", exc_info=True)
         docker_status = "unavailable"
-    
+
     try:
         net = psutil.net_io_counters()
         net_sent = round(net.bytes_sent / (1024**2), 2)
         net_recv = round(net.bytes_recv / (1024**2), 2)
-    except:
+        total_packets = getattr(net, "packets_sent", 0) + getattr(net, "packets_recv", 0)
+        total_lost = getattr(net, "errin", 0) + getattr(net, "errout", 0) + getattr(net, "dropin", 0) + getattr(net, "dropout", 0)
+        packet_loss = round((total_lost / total_packets * 100), 2) if total_packets > 0 else 0
+    except Exception:
         net_sent, net_recv = 0, 0
-        
+        packet_loss = 0
+
     try:
         uptime = round(time.time() - psutil.boot_time(), 0)
-    except:
+    except Exception:
         uptime = 0
 
-    return SuccessResponse(message="Server status retrieved", data={
-        "cpu_percent": cpu,
-        "ram_percent": mem.percent,
-        "ram_used_gb": round(mem.used / (1024**3), 2),
-        "ram_total_gb": round(mem.total / (1024**3), 2),
-        "disk_percent": disk.percent,
-        "disk_used_gb": round(disk.used / (1024**3), 2),
-        "disk_total_gb": round(disk.total / (1024**3), 2),
-        "api_status": "online",
-        "docker_status": docker_status,
-        "docker_containers": docker_containers,
-        "network_sent_mb": net_sent,
-        "network_recv_mb": net_recv,
-        "uptime_seconds": uptime,
-        "process_count": len(psutil.pids()),
-    })
+    return SuccessResponse(
+        message="Server status retrieved",
+        data={
+            "cpu_percent": cpu,
+            "ram_percent": mem.percent,
+            "ram_used_gb": round(mem.used / (1024**3), 2),
+            "ram_total_gb": round(mem.total / (1024**3), 2),
+            "disk_percent": disk.percent,
+            "disk_used_gb": round(disk.used / (1024**3), 2),
+            "disk_total_gb": round(disk.total / (1024**3), 2),
+            "api_status": "online",
+            "docker_status": docker_status,
+            "docker_containers": docker_containers,
+            "network_sent_mb": net_sent,
+            "network_recv_mb": net_recv,
+            "packet_loss_percent": packet_loss,
+            "uptime_seconds": uptime,
+            "process_count": len(psutil.pids()),
+        },
+    )
+
+
 
 import asyncio
+
 
 @router.websocket("/telemetry/ws")
 async def telemetry_websocket(websocket: WebSocket):
     # TODO: Add authentication checking here using token or cookies
     await websocket.accept()
+
+    async def listen():
+        try:
+            while True:
+                await websocket.receive()
+        except Exception:
+            pass
+
+    listen_task = asyncio.create_task(listen())
+
     try:
         while True:
+            if listen_task.done():
+                break
+
             cpu = psutil.cpu_percent(interval=0)
             mem = psutil.virtual_memory()
-            disk = psutil.disk_usage('/')
-            
+            disk = psutil.disk_usage("/")
+
             try:
                 net = psutil.net_io_counters()
                 net_sent = round(net.bytes_sent / (1024**2), 2)
                 net_recv = round(net.bytes_recv / (1024**2), 2)
+                total_packets = getattr(net, "packets_sent", 0) + getattr(net, "packets_recv", 0)
+                total_lost = getattr(net, "errin", 0) + getattr(net, "errout", 0) + getattr(net, "dropin", 0) + getattr(net, "dropout", 0)
+                packet_loss = round((total_lost / total_packets * 100), 2) if total_packets > 0 else 0
             except:
                 net_sent, net_recv = 0, 0
-                
+                packet_loss = 0
+
             payload = {
                 "cpu_percent": cpu,
                 "ram_percent": mem.percent,
@@ -176,7 +206,8 @@ async def telemetry_websocket(websocket: WebSocket):
                 "disk_percent": disk.percent,
                 "network_sent_mb": net_sent,
                 "network_recv_mb": net_recv,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "packet_loss_percent": packet_loss,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             await websocket.send_json(payload)
             # Send at 1Hz (ping/pong handles heartbeat, this is just data)
@@ -187,47 +218,88 @@ async def telemetry_websocket(websocket: WebSocket):
         pass
     except Exception as e:
         from app.core.logger import logger
+
         logger.error(f"Telemetry websocket error: {e}")
+    finally:
+        listen_task.cancel()
         try:
             await websocket.close()
         except:
             pass
 
+
 @router.websocket("/alerts/ws")
 async def alerts_websocket(websocket: WebSocket):
     await websocket.accept()
+
+    async def listen():
+        try:
+            while True:
+                await websocket.receive()
+        except Exception:
+            pass
+
+    listen_task = asyncio.create_task(listen())
+
     try:
         while True:
+            if listen_task.done():
+                break
+
             # Simulate a push alert based on thresholds
             alerts = []
             cpu = psutil.cpu_percent(interval=0)
             mem = psutil.virtual_memory()
-            
+
             if cpu > 85:
-                alerts.append({"type": "warning", "message": f"High CPU Usage: {cpu}%", "source": "System"})
-            
+                alerts.append(
+                    {
+                        "type": "warning",
+                        "message": f"High CPU Usage: {cpu}%",
+                        "source": "System",
+                    }
+                )
+
             if mem.percent > 90:
-                alerts.append({"type": "critical", "message": f"Memory Exhaustion Warning: {mem.percent}% used", "source": "System"})
-            
+                alerts.append(
+                    {
+                        "type": "critical",
+                        "message": f"Memory Exhaustion Warning: {mem.percent}% used",
+                        "source": "System",
+                    }
+                )
+
             if alerts:
-                await websocket.send_json({"alerts": alerts, "timestamp": datetime.now(timezone.utc).isoformat()})
-                
+                await websocket.send_json(
+                    {
+                        "alerts": alerts,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+
             # Check every 10 seconds
             await asyncio.sleep(10)
     except WebSocketDisconnect:
         pass
     except asyncio.CancelledError:
         pass
-    except Exception as e:
+    except Exception:
+        pass
+    finally:
+        listen_task.cancel()
         try:
             await websocket.close()
         except:
             pass
 
+
 @router.get("/server/health", response_model=SuccessResponse)
-def get_server_health(db: Session = Depends(get_db), admin: User = Depends(require_permission('users.read.basic'))):
+def get_server_health(
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_permission("users.read.basic")),
+):
     items = []
-    
+
     # Check Database
     start = time.time()
     db_status = "online"
@@ -235,30 +307,43 @@ def get_server_health(db: Session = Depends(get_db), admin: User = Depends(requi
         db.execute(text("SELECT 1"))
     except:
         db_status = "offline"
-    items.append({"label": "Database", "status": db_status, "latency": f"{int((time.time()-start)*1000)}ms"})
-    
+    items.append(
+        {
+            "label": "Database",
+            "status": db_status,
+            "latency": f"{int((time.time()-start)*1000)}ms",
+        }
+    )
+
     # Check API (Self)
     items.append({"label": "API Gateway", "status": "online", "latency": "1ms"})
-    
+
     # Check Docker
     docker_status = "online"
     start = time.time()
     try:
         import docker
+
         client = docker.from_env(timeout=1)
         client.ping()
     except:
         docker_status = "offline"
-    items.append({"label": "Docker Engine", "status": docker_status, "latency": f"{int((time.time()-start)*1000)}ms"})
-    
+    items.append(
+        {
+            "label": "Docker Engine",
+            "status": docker_status,
+            "latency": f"{int((time.time()-start)*1000)}ms",
+        }
+    )
+
     # Check Queue Worker — look for a real uvicorn/worker process
     worker_status = "offline"
     worker_latency = "N/A"
     try:
-        for p in psutil.process_iter(['name', 'cmdline']):
+        for p in psutil.process_iter(["name", "cmdline"]):
             try:
-                cmd = " ".join(p.info.get('cmdline', []) or [])
-                if 'uvicorn' in cmd or 'gunicorn' in cmd:
+                cmd = " ".join(p.info.get("cmdline", []) or [])
+                if "uvicorn" in cmd or "gunicorn" in cmd:
                     worker_status = "online"
                     worker_latency = "<1ms"
                     break
@@ -266,13 +351,15 @@ def get_server_health(db: Session = Depends(get_db), admin: User = Depends(requi
                 pass
     except Exception:
         worker_status = "unavailable"
-    items.append({"label": "Queue Worker", "status": worker_status, "latency": worker_latency})
+    items.append(
+        {"label": "Queue Worker", "status": worker_status, "latency": worker_latency}
+    )
 
     # Check SMTP — real TCP connection test
     smtp_status = "offline"
     smtp_latency = "N/A"
-    smtp_host = getattr(settings, 'SMTP_HOST', None)
-    smtp_port = getattr(settings, 'SMTP_PORT', 587)
+    smtp_host = getattr(settings, "SMTP_HOST", None)
+    smtp_port = getattr(settings, "SMTP_PORT", 587)
     if not smtp_host:
         smtp_status = "not_configured"
         smtp_latency = "N/A"
@@ -286,10 +373,11 @@ def get_server_health(db: Session = Depends(get_db), admin: User = Depends(requi
         except Exception:
             smtp_status = "offline"
 
-    items.append({"label": "SMTP Relay", "status": smtp_status, "latency": smtp_latency})
+    items.append(
+        {"label": "SMTP Relay", "status": smtp_status, "latency": smtp_latency}
+    )
 
     # Auth Service — if this endpoint is responding, auth is online
     items.append({"label": "Auth Service", "status": "online", "latency": "<1ms"})
 
     return SuccessResponse(message="Server health retrieved", data={"items": items})
-

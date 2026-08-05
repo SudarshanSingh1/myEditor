@@ -2,6 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useUserStore } from "../../stores/useUserStore";
 import { createContext, useContext, type ReactNode } from "react";
 import { SplashLoader } from "../ui/SplashLoader";
+import { useShallow } from 'zustand/react/shallow';
 
 export type AdminRole = "MODERATOR" | "ADMIN" | "OWNER";
 
@@ -29,7 +30,7 @@ interface AdminAuthGuardProps {
 }
 
 export function AdminAuthGuard({ children, requiredPermission }: AdminAuthGuardProps) {
-  const { user, permissions, authState } = useUserStore();
+  const { user, permissions, authState } = useUserStore(useShallow(state => ({ user: state.user, permissions: state.permissions, authState: state.authState })));
 
   if (authState === 'UNKNOWN' || authState === 'BOOTSTRAPPING') {
     return <SplashLoader variant="admin" message="Loading admin console..." submessage="Securing executive access & permissions" />;

@@ -45,3 +45,22 @@ export default function App() {
 export function HydrateFallback() {
   return <p>Loading...</p>;
 }
+
+export function ErrorBoundary() {
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-zinc-950 text-white">
+      <div className="flex max-w-md flex-col items-center space-y-4 text-center">
+        <h1 className="text-4xl font-bold text-red-500">Critical Error</h1>
+        <p className="text-zinc-400">
+          The application encountered an unexpected error. Please try refreshing the page.
+        </p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-950"
+        >
+          Reload Application
+        </button>
+      </div>
+    </div>
+  );
+}

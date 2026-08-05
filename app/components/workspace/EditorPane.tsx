@@ -8,6 +8,7 @@ import { AlertCircle, FileX } from 'lucide-react';
 import { SudarshanaMandala } from '../ui/SplashLoader';
 import { useSaveStore } from '../../stores/useSaveStore';
 import { useEditorStore } from '../../stores/useEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 
 interface EditorPaneProps {
   fileId: string;
@@ -28,7 +29,7 @@ export const EditorPane: React.FC<EditorPaneProps> = React.memo(({ fileId }) => 
     enabled: !isVirtual,
   });
 
-  const { setFileVersion } = useSaveStore();
+  const { setFileVersion } = useSaveStore(useShallow(state => ({ setFileVersion: state.setFileVersion })));
 
   const fileNode = isVirtual 
     ? { 

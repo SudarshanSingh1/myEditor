@@ -26,12 +26,20 @@ from app.models.system_settings import SystemSettings
 
 logger = logging.getLogger(__name__)
 
+
 class ExecutionService:
+    """
+    Service layer for coordinating code execution within Docker containers.
+    
+    This service maps file extensions to language runners, handles WebSocket-based 
+    interactive I/O sessions, and manages temporary volumes for secure, isolated 
+    code execution environments.
+    """
     def __init__(self, db: Session):
         self.db = db
         self.workspace_repo = WorkspaceRepository
         self.project_repo = ProjectRepository(db)
-        
+
         # Registry of runners
         self.runners: Dict[str, Type[BaseRunner]] = {
             "python": PythonRunner,
@@ -46,7 +54,7 @@ class ExecutionService:
             "php": PhpRunner,
             "kotlin": KotlinRunner,
             "swift": SwiftRunner,
-            "html/css": JsRunner  # Can't truly 'run' HTML/CSS securely in backend out-of-box without a server, but this avoids crashes
+            "html/css": JsRunner,  # Can't truly 'run' HTML/CSS securely in backend out-of-box without a server, but this avoids crashes
         }
 
     def run_code(self, request: ExecutionRequest, user_id: UUID) -> ExecutionResponse:
@@ -60,33 +68,41 @@ class ExecutionService:
         project = self.project_repo.get_by_id(request.project_id)
         if not project or str(project.owner_id) != str(user_id):
             raise ValueError("Project not found or access denied")
-            
+
         # Get file contents — use correct repository method (get_file, not get_file_by_id)
         file = self.workspace_repo.get_file(self.db, request.file_id)
         if not file or file.project_id != request.project_id:
             raise ValueError("File not found")
-            
+
         if not file.content or file.content.strip() == "":
             raise ValueError("File is empty")
-            
+
         # Get runner
         runner_class = self.runners.get(request.language.lower())
         if not runner_class:
             raise ValueError(f"Language '{request.language}' is not supported")
-            
+
         runner = runner_class()
-        
+
         # Get limits
         settings = self.db.query(SystemSettings).first()
         timeout = settings.max_execution_time_seconds if settings else 15
         max_mem = settings.max_memory_mb if settings else 256
-        
+
         try:
-            result = runner.run(file.name, file.content, request.input, timeout=timeout, max_memory_mb=max_mem)
+            result = runner.run(
+                file.name,
+                file.content,
+                request.input,
+                timeout=timeout,
+                max_memory_mb=max_mem,
+            )
             return ExecutionResponse(**result)
         except Exception as e:
             logger.error(f"Execution service failed: {e}")
-            raise RuntimeError("Execution failed. Please check your code and try again.")
+            raise RuntimeError(
+                "Execution failed. Please check your code and try again."
+            )
 
     def stop_execution(self, container_id: str, user_id: UUID):
         # We don't have a reliable way to map internal container_id back to user via the stateless API in this simple implementation
@@ -94,28 +110,39 @@ class ExecutionService:
         # For now, this is a placeholder or we just allow killing by container ID if provided.
         # But wait, our `run` method is synchronous. If it's synchronous, we can't easily cancel it from another request.
         # To truly support cancellation in a simple async FastAPI app without a message queue:
-        raise NotImplementedError("Stopping synchronous execution is currently unsupported.")
+        raise NotImplementedError(
+            "Stopping synchronous execution is currently unsupported."
+        )
 
-    async def run_code_interactive(self, websocket: WebSocket, project_id: str, file_id: str, user_id: UUID) -> None:
+    async def run_code_interactive(
+        self, websocket: WebSocket, project_id: str, file_id: str, user_id: UUID
+    ) -> None:
         """
         Interactive execution via WebSockets.
         """
         try:
-            logger.info(f"Starting run_code_interactive for file: {file_id}, project: {project_id}")
+            logger.info(
+                f"Starting run_code_interactive for file: {file_id}, project: {project_id}"
+            )
             # 1. Fetch File
             try:
                 import uuid
+
                 file_uuid = uuid.UUID(file_id)
                 project_uuid = uuid.UUID(project_id)
             except ValueError as e:
                 logger.error(f"Invalid UUID: {e}")
-                await websocket.send_json({"type": "error", "message": f"Invalid ID format: {e}"})
+                await websocket.send_json(
+                    {"type": "error", "message": f"Invalid ID format: {e}"}
+                )
                 return
 
             file = self.workspace_repo.get_file(self.db, file_uuid)
             if not file or str(file.project_id) != project_id:
                 logger.error("File not found or project mismatch")
-                await websocket.send_json({"type": "error", "message": "File not found"})
+                await websocket.send_json(
+                    {"type": "error", "message": "File not found"}
+                )
                 return
             if not file.content or file.content.strip() == "":
                 logger.error("File is empty")
@@ -126,9 +153,10 @@ class ExecutionService:
 
             # Determine language runner based on file extension
             import os
+
             _, ext = os.path.splitext(file.name)
             ext = ext.lower()
-            
+
             ext_to_runner = {
                 ".py": PythonRunner,
                 ".cpp": CppRunner,
@@ -139,105 +167,112 @@ class ExecutionService:
                 ".js": JsRunner,
                 ".ts": TsRunner,
                 ".go": GoRunner,
-                ".rs": RustRunner
+                ".rs": RustRunner,
             }
-            
+
             runner_class = ext_to_runner.get(ext)
             if not runner_class:
-                logger.info(f"No direct runner for {ext}, falling back to project language")
+                logger.info(
+                    f"No direct runner for {ext}, falling back to project language"
+                )
                 # fallback to project language
                 project = self.project_repo.get_by_id(project_uuid)
                 if project:
-                    runner_class = self.runners.get(project.language.lower() if project.language else "")
-                
+                    runner_class = self.runners.get(
+                        project.language.lower() if project.language else ""
+                    )
+
             if not runner_class:
                 logger.error(f"Language not supported for {file.name}")
-                await websocket.send_json({"type": "error", "message": f"Language not supported for {file.name}"})
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "message": f"Language not supported for {file.name}",
+                    }
+                )
                 return
-            
+
             runner = runner_class()
             logger.info(f"Language detected: {runner.__class__.__name__}")
 
-            # 3. Compile & Run via Temporary Directory
-            with tempfile.TemporaryDirectory() as temp_dir:
-                # FIX: Set permissions so container user can access the directory
-                os.chmod(temp_dir, 0o777)
-                
-                source_file = file.name
-                source_path = os.path.join(temp_dir, source_file)
-                with open(source_path, 'w', encoding='utf-8') as f:
-                    f.write(file.content)
-                # FIX: Set permissions so container user can read the file
-                os.chmod(source_path, 0o666)
+            # 3. Compile & Run via RuntimeManager Warm Pool
+            source_file = file.name
+            files = {source_file: file.content}
+            raw_cmd = runner.get_interactive_command(source_file)
+            
+            from app.execution.docker.runtime_manager import RuntimeManager
+            
+            logger.info(f"Using raw command: {raw_cmd} on warm container pool")
+            
+            start_time = time.time()
+            
+            exit_code = await RuntimeManager.get_instance().execute_interactive(
+                language=runner.language_name,
+                image=runner.image_name,
+                command=raw_cmd,
+                files=files,
+                websocket=websocket,
+            )
 
-                # DEBUG LOGS
-                import stat
-                st = os.stat(temp_dir)
-                logger.debug(f"DEBUG: temp_dir path: {temp_dir}")
-                logger.debug(f"DEBUG: temp_dir permissions: {stat.filemode(st.st_mode)} (uid={st.st_uid}, gid={st.st_gid})")
-                
-                st_file = os.stat(source_path)
-                logger.debug(f"DEBUG: file permissions: {stat.filemode(st_file.st_mode)} (uid={st_file.st_uid}, gid={st_file.st_gid})")
+            end_time = time.time()
+            runtime_ms = int((end_time - start_time) * 1000)
 
-                logger.info(f"Created temporary file: {source_path}")
+            logger.info(
+                f"Container execution finished with exit code: {exit_code} in {runtime_ms}ms"
+            )
 
-                binds = {temp_dir: {"bind": "/execution", "mode": "rw"}}
-                # Use interactive command which combines compile+run if applicable
-                raw_cmd = runner.get_interactive_command(source_file)
-                logger.info(f"Using raw command: {raw_cmd}")
-                
-                from app.execution.docker.container_manager import DockerManager
-                logger.info(f"Creating container using image: {runner.image_name}")
-                
-                start_time = time.time()
-                
-                exit_code = await DockerManager.run_container_interactive(
-                    image=runner.image_name,
-                    command=f"sh -c '{raw_cmd}'",
-                    working_dir="/execution",
-                    binds=binds,
-                    websocket=websocket
-                )
+            import json
+            if exit_code == 0:
+                msg = f"\r\n\x1b[38;5;2m✓ Program finished in {runtime_ms}ms\x1b[0m\r\n"
+                await websocket.send_text(json.dumps({"type": "execution_finished", "exitCode": 0, "runtimeMs": runtime_ms, "message": msg}))
+                await websocket.send_text(json.dumps({"type": "stdout", "data": msg}))
+            else:
+                msg = f"\r\n\x1b[38;5;1m[Runtime Error] Exited with code {exit_code}\x1b[0m\r\n"
+                await websocket.send_text(json.dumps({"type": "error", "message": msg, "exitCode": exit_code}))
+                await websocket.send_text(json.dumps({"type": "stderr", "data": msg}))
 
-                end_time = time.time()
-                runtime_ms = int((end_time - start_time) * 1000)
-
-                logger.info(f"Container execution finished with exit code: {exit_code} in {runtime_ms}ms")
-
-                if exit_code == 0:
-                    await websocket.send_text(f"\r\n\x1b[38;5;2m✓ Program finished in {runtime_ms}ms\x1b[0m\r\n")
-                else:
-                    await websocket.send_text(f"\r\n\x1b[38;5;1m[Runtime Error] Exited with code {exit_code}\x1b[0m\r\n")
-                
                 # Record ExecutionLog
                 try:
                     from app.models.execution_log import ExecutionLog, ExecutionStatus
-                    status_enum = ExecutionStatus.SUCCESS if exit_code == 0 else ExecutionStatus.RUNTIME_ERROR
+
+                    status_enum = (
+                        ExecutionStatus.SUCCESS
+                        if exit_code == 0
+                        else ExecutionStatus.RUNTIME_ERROR
+                    )
                     # Note: we use self.db for the session
                     el = ExecutionLog(
                         project_id=project_uuid,
                         user_id=user_id,
-                        language=ext.replace('.', '') if ext else 'unknown',
+                        language=ext.replace(".", "") if ext else "unknown",
                         status=status_enum,
-                        execution_time_ms=runtime_ms
+                        execution_time_ms=runtime_ms,
                     )
                     self.db.add(el)
                     self.db.commit()
                     logger.info("Recorded ExecutionLog in database")
                 except Exception as e:
                     logger.error(f"Failed to record ExecutionLog: {e}")
-                
+
                 logger.info("Sent final execution status to websocket")
 
         except Exception as e:
             logger.exception(f"Interactive execution failed: {e}")
             try:
-                # Do not leak internal exception details to the client
-                await websocket.send_text("\r\n\x1b[38;5;1m[System] Execution error. Please try again.\x1b[0m\r\n")
+                import json
+                msg = "\r\n\x1b[38;5;1m[System] Execution error. Please try again.\x1b[0m\r\n"
+                await websocket.send_text(json.dumps({"type": "stdout", "data": msg}))
+                await websocket.send_text(json.dumps({"type": "error", "message": "Execution error"}))
             except Exception as ws_e:
                 logger.debug(f"Failed to send error to websocket: {ws_e}")
 
-    async def run_shell_interactive(self, websocket: WebSocket, project_id: str, user_id: UUID, terminal_prompt: str = None) -> None:
+    async def run_shell_interactive(
+        self,
+        websocket: WebSocket,
+        project_id: str,
+        user_id: UUID,
+        terminal_prompt: str = None,
+    ) -> None:
         """
         Interactive Shell session via WebSockets.
         """
@@ -245,70 +280,69 @@ class ExecutionService:
             # 1. Validate Project
             project = self.project_repo.get_by_id(UUID(project_id))
             if not project or str(project.owner_id) != str(user_id):
-                await websocket.send_json({"type": "error", "message": "Project not found or access denied"})
+                await websocket.send_json(
+                    {"type": "error", "message": "Project not found or access denied"}
+                )
                 return
 
             # 2. Get Project Files and setup a temp directory to simulate the workspace
             from app.models.user import User
+
             user = self.db.query(User).filter(User.id == user_id).first()
             first_name = user.first_name.lower() if user and user.first_name else "user"
 
             files = self.workspace_repo.get_project_files(self.db, project.id)
+
+            files_dict = {}
+            if terminal_prompt:
+                files_dict[".bashrc"] = f'export PS1="{terminal_prompt}"\n'
+            else:
+                files_dict[".bashrc"] = f'export PS1="@{first_name} ~$ "\n'
+
+            for file_summary in files:
+                file = self.workspace_repo.get_file(self.db, file_summary.id)
+                if file and file.content:
+                    files_dict[file.name] = file.content
+
+            from app.execution.docker.runtime_manager import RuntimeManager
             
-            with tempfile.TemporaryDirectory() as temp_dir:
-                os.chmod(temp_dir, 0o777)
-                
-                # Write a custom .bashrc for the shell prompt
-                bashrc_path = os.path.join(temp_dir, ".bashrc")
-                with open(bashrc_path, 'w', encoding='utf-8') as f:
-                    if terminal_prompt:
-                        f.write(f'export PS1="{terminal_prompt}"\n')
-                    else:
-                        f.write(f'export PS1="@{first_name} ~$ "\n')
-                os.chmod(bashrc_path, 0o666)
-
-                for file_summary in files:
-                    file = self.workspace_repo.get_file(self.db, file_summary.id)
-                    if file and file.content:
-                        file_path = os.path.join(temp_dir, file.name)
-                        with open(file_path, 'w', encoding='utf-8') as f:
-                            f.write(file.content)
-                        os.chmod(file_path, 0o666)
-
-                binds = {temp_dir: {"bind": "/workspace", "mode": "rw"}}
-                
-                from app.execution.docker.container_manager import DockerManager
-                exit_code = await DockerManager.run_container_interactive(
-                    image="debian:bullseye-slim",
-                    command="bash --rcfile /workspace/.bashrc",
-                    working_dir="/workspace",
-                    binds=binds,
-                    websocket=websocket,
-                    # Security: run shell as nobody, not root
-                    user="nobody",
-                )
+            exit_code = await RuntimeManager.get_instance().execute_shell(
+                language="shell",
+                image="debian:bullseye-slim",
+                files=files_dict,
+                websocket=websocket,
+                terminal_prompt=terminal_prompt
+            )
 
         except Exception as e:
             logger.error(f"Interactive shell failed: {e}")
             try:
-                await websocket.send_text(f"\r\n\x1b[38;5;1m[System] Shell Error: {e}\x1b[0m\r\n")
+                import json
+                msg = f"\r\n\x1b[38;5;1m[System] Shell Error: {e}\x1b[0m\r\n"
+                await websocket.send_text(json.dumps({"type": "stdout", "data": msg}))
+                await websocket.send_text(json.dumps({"type": "error", "message": f"Shell Error: {e}"}))
             except Exception:
                 pass
 
-    async def run_guest_code_interactive(self, websocket: WebSocket, content: str, language: str) -> None:
+    async def run_guest_code_interactive(
+        self, websocket: WebSocket, content: str, language: str
+    ) -> None:
         """
         Interactive execution for guest sessions without DB files.
         """
         try:
             runner_class = self.runners.get(language.lower())
             if not runner_class:
-                await websocket.send_json({"type": "error", "message": f"Language '{language}' is not supported"})
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "message": f"Language '{language}' is not supported",
+                    }
+                )
                 return
-            
+
             runner = runner_class()
-            
-            # Determine file extension
-            # For simplicity, we just use the language name as extension or map it
+
             ext_map = {
                 "python": ".py",
                 "cpp": ".cpp",
@@ -318,43 +352,43 @@ class ExecutionService:
                 "javascript": ".js",
                 "typescript": ".ts",
                 "go": ".go",
-                "rust": ".rs"
+                "rust": ".rs",
             }
             ext = ext_map.get(language.lower(), ".txt")
             source_file = f"main{ext}"
-            
+
             if language.lower() == "java":
                 source_file = "Main.java"
 
-            with tempfile.TemporaryDirectory() as temp_dir:
-                os.chmod(temp_dir, 0o777)
-                
-                source_path = os.path.join(temp_dir, source_file)
-                with open(source_path, 'w', encoding='utf-8') as f:
-                    f.write(content)
-                os.chmod(source_path, 0o666)
+            files = {source_file: content}
+            raw_cmd = runner.get_interactive_command(source_file)
+            
+            from app.execution.docker.runtime_manager import RuntimeManager
+            
+            exit_code = await RuntimeManager.get_instance().execute_interactive(
+                language=runner.language_name,
+                image=runner.image_name,
+                command=raw_cmd,
+                files=files,
+                websocket=websocket,
+            )
 
-                binds = {temp_dir: {"bind": "/execution", "mode": "rw"}}
-                raw_cmd = runner.get_interactive_command(source_file)
-                
-                from app.execution.docker.container_manager import DockerManager
-                exit_code = await DockerManager.run_container_interactive(
-                    image=runner.image_name,
-                    command=f"sh -c '{raw_cmd}'",
-                    working_dir="/execution",
-                    binds=binds,
-                    websocket=websocket
-                )
-
-                if exit_code == 0:
-                    await websocket.send_text("\r\n\x1b[38;5;2m✓ Program finished (0)\x1b[0m\r\n")
-                else:
-                    await websocket.send_text(f"\r\n\x1b[38;5;1m[Runtime Error] Exited with code {exit_code}\x1b[0m\r\n")
+            import json
+            if exit_code == 0:
+                msg = "\r\n\x1b[38;5;2m✓ Program finished (0)\x1b[0m\r\n"
+                await websocket.send_text(json.dumps({"type": "execution_finished", "exitCode": 0, "message": msg}))
+                await websocket.send_text(json.dumps({"type": "stdout", "data": msg}))
+            else:
+                msg = f"\r\n\x1b[38;5;1m[Runtime Error] Exited with code {exit_code}\x1b[0m\r\n"
+                await websocket.send_text(json.dumps({"type": "execution_finished", "exitCode": exit_code, "message": msg}))
+                await websocket.send_text(json.dumps({"type": "stdout", "data": msg}))
 
         except Exception as e:
             logger.exception(f"Guest interactive execution failed: {e}")
             try:
-                await websocket.send_text("\r\n\x1b[38;5;1m[System] Execution error. Please try again.\x1b[0m\r\n")
+                import json
+                msg = "\r\n\x1b[38;5;1m[System] Execution error. Please try again.\x1b[0m\r\n"
+                await websocket.send_text(json.dumps({"type": "stdout", "data": msg}))
+                await websocket.send_text(json.dumps({"type": "error", "message": "Execution error"}))
             except Exception:
                 pass
-

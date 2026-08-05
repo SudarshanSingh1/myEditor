@@ -12,6 +12,7 @@ import { fetchApi } from "../../lib/api";
 import { toast } from "sonner";
 
 import { useUserStore } from "../../stores/useUserStore";
+import { useShallow } from 'zustand/react/shallow';
 
 interface Notification {
   id: string;
@@ -24,7 +25,7 @@ interface Notification {
 
 export function RightPanel() {
   const { isRightPanelOpen, setRightPanelOpen } = useSidebarStore();
-  const { user } = useUserStore();
+  const { user } = useUserStore(useShallow(state => ({ user: state.user })));
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
 

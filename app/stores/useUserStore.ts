@@ -4,9 +4,7 @@ import { fetchApi } from '../lib/api';
 import { useSystemStore } from './useSystemStore';
 import { queryClient } from '../lib/queryClient';
 
-// Share the exact same promise for concurrent callers
-let _bootstrapPromise: Promise<boolean> | null = null;
-let _guestPromise: Promise<void> | null = null;
+
 
 interface User {
   id: string;
@@ -59,8 +57,6 @@ export const useUserStore = create<UserState>()(
       guestQuota: null,
       showGuestConversionModal: false,
 
-      setShowGuestConversionModal: (show) => set({ showGuestConversionModal: show }),
-      
       setAuthState: (state) => set({ authState: state }),
       
       setAuthSuccess: (user, permissions) => set({ 
@@ -88,8 +84,6 @@ export const useUserStore = create<UserState>()(
         set({ guestQuota: { ...quota, executions_used: newUsed } });
       },
 
-      guestQuota: null,
-      showGuestConversionModal: false,
       setShowGuestConversionModal: (show: boolean) => {
         if (show) {
           const quota = get().guestQuota;

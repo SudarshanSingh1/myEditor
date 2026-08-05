@@ -4,7 +4,8 @@ import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { useProjectsStore } from "../../stores/useProjectsStore";
 import type { ProjectVisibility } from "../../lib/api/projects";
-import { Globe, Lock, Link as LinkIcon, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { ProjectIcon, PROJECT_ICON_NAMES } from "./ProjectIcon";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -12,9 +13,11 @@ interface CreateProjectModalProps {
   onSuccess?: (projectId: string) => void;
 }
 
-const LANGUAGES = ["TypeScript", "JavaScript", "Python", "Java", "C", "C++", "Rust", "Go", "HTML/CSS"];
+const LANGUAGES = [
+  "TypeScript", "JavaScript", "Python", "Java", "C", "C++", "Rust", "Go", "HTML/CSS",
+  "PHP", "Ruby", "Swift", "Kotlin", "C#", "Dart", "Scala", "Elixir", "Haskell"
+];
 const _COLORS = ["blue", "green", "purple", "orange", "red", "yellow", "cyan", "pink"];
-const ICONS = ["💻", "📚", "⚡", "🚀", "🧠", "🔥", "✨", "🛠️"];
 
 export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProjectModalProps) {
   const { createProject, isLoading, error } = useProjectsStore();
@@ -24,7 +27,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
   const [language, setLanguage] = useState("TypeScript");
   const [visibility, setVisibility] = useState<ProjectVisibility>("PRIVATE");
   const [color, _setColor] = useState("blue");
-  const [icon, setIcon] = useState("💻");
+  const [icon, setIcon] = useState(PROJECT_ICON_NAMES[0]);
 
   const [validationError, setValidationError] = useState("");
 
@@ -107,49 +110,22 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
             <div className="space-y-1">
               <label className="text-sm font-medium">Icon</label>
               <div className="flex gap-2 p-1 border rounded-md overflow-x-auto bg-background/50">
-                {ICONS.map(i => (
+                {PROJECT_ICON_NAMES.map(i => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => setIcon(i)}
-                    className={`flex-shrink-0 w-7 h-7 rounded flex items-center justify-center text-sm transition-colors ${icon === i ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                    className={`flex-shrink-0 w-8 h-8 rounded flex items-center justify-center text-sm transition-colors ${icon === i ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                    title={i}
                   >
-                    {i}
+                    <ProjectIcon name={i} className="w-4 h-4" />
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Visibility</label>
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => setVisibility("PRIVATE")}
-                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-lg border text-sm transition-all ${visibility === "PRIVATE" ? 'border-primary bg-primary/5 text-primary' : 'hover:border-primary/50 text-muted-foreground'}`}
-              >
-                <Lock className="w-5 h-5" />
-                <span className="font-medium">Private</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setVisibility("UNLISTED")}
-                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-lg border text-sm transition-all ${visibility === "UNLISTED" ? 'border-primary bg-primary/5 text-primary' : 'hover:border-primary/50 text-muted-foreground'}`}
-              >
-                <LinkIcon className="w-5 h-5" />
-                <span className="font-medium">Unlisted</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setVisibility("PUBLIC")}
-                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-lg border text-sm transition-all ${visibility === "PUBLIC" ? 'border-primary bg-primary/5 text-primary' : 'hover:border-primary/50 text-muted-foreground'}`}
-              >
-                <Globe className="w-5 h-5" />
-                <span className="font-medium">Public</span>
-              </button>
-            </div>
-          </div>
+
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t">

@@ -3,17 +3,21 @@ from uuid import UUID
 from datetime import datetime
 from typing import Optional, List
 
+
 # Folders
 class FolderBase(BaseModel):
     name: str = Field(..., max_length=255)
     parent_id: Optional[UUID] = None
 
+
 class FolderCreate(FolderBase):
     project_id: UUID
+
 
 class FolderUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=255)
     parent_id: Optional[UUID] = None
+
 
 class FolderResponse(FolderBase):
     id: UUID
@@ -27,10 +31,12 @@ class FolderResponse(FolderBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # Files
 class FileBase(BaseModel):
     name: str = Field(..., max_length=255)
     folder_id: Optional[UUID] = None
+
 
 class FileCreate(FileBase):
     project_id: UUID
@@ -38,10 +44,12 @@ class FileCreate(FileBase):
     language: Optional[str] = None
     extension: Optional[str] = None
 
+
 class FileUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=255)
     folder_id: Optional[UUID] = None
     content: Optional[str] = None
+
 
 class FileResponse(FileBase):
     id: UUID
@@ -58,8 +66,10 @@ class FileResponse(FileBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class FileWithContentResponse(FileResponse):
     content: Optional[str] = None
+
 
 class FileVersionResponse(BaseModel):
     id: UUID
@@ -69,19 +79,23 @@ class FileVersionResponse(BaseModel):
     hash: Optional[str] = None
     created_by: Optional[UUID] = None
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class FileVersionWithContentResponse(FileVersionResponse):
     content: Optional[str] = None
+
 
 class FileSaveRequest(BaseModel):
     id: UUID
     content: str
     expected_version: int
 
+
 class FileSaveBatchRequest(BaseModel):
     files: List[FileSaveRequest]
+
 
 # Tree structure for the frontend
 class TreeFile(BaseModel):
@@ -91,8 +105,9 @@ class TreeFile(BaseModel):
     language: Optional[str] = None
     size: int
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class TreeFolder(BaseModel):
     id: UUID
@@ -100,11 +115,13 @@ class TreeFolder(BaseModel):
     path: str
     updated_at: datetime
     files: List[TreeFile] = []
-    children: List['TreeFolder'] = []
-    
+    children: List["TreeFolder"] = []
+
     model_config = ConfigDict(from_attributes=True)
 
+
 TreeFolder.model_rebuild()
+
 
 class WorkspaceTreeResponse(BaseModel):
     project_id: UUID
@@ -112,13 +129,14 @@ class WorkspaceTreeResponse(BaseModel):
     folders: List[TreeFolder] = []
     files: List[TreeFile] = []
 
+
 class GuestFileItem(BaseModel):
     name: str = Field(..., max_length=255)
     content: str
     language: Optional[str] = None
     extension: Optional[str] = None
 
+
 class GuestMigrationRequest(BaseModel):
     project_name: str = Field(..., max_length=100)
     files: List[GuestFileItem]
-

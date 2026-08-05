@@ -54,11 +54,11 @@ interface ServerData {
   disk_percent: number;
   network_sent_mb: number;
   network_recv_mb: number;
+  packet_loss_percent: number;
   uptime_seconds: number;
 }
 
-const _CHART_MOCK: any[] = [];
-const _systemHealth: any[] = [];
+
 
 const adminQuickLinks = [
   { label: "User Management",  to: "/app/admin/users",         icon: Users,        color: "var(--e-accent)",   desc: "Manage accounts, roles" },
@@ -265,8 +265,8 @@ export default function AdminDashboardPage() {
               {/* Row 2: Packet Loss + Hardware Health + Network Speed + Used Memory */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 12 }}>
                 <GaugeCard
-                  value={server ? (100 - (server.network_recv_mb / (server.network_recv_mb + server.network_sent_mb + 0.01)) * 100) : 0}
-                  label="Packet Loses"
+                  value={server?.packet_loss_percent ?? 0}
+                  label="Packet Loss"
                   theme="auto"
                 />
                 <HardwareHealthCard

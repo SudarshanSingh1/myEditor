@@ -6,6 +6,7 @@ from app.schemas.responses import SuccessResponse
 
 router = APIRouter()
 
+
 @router.get("/", response_model=SuccessResponse)
 def get_system_settings_public(db: Session = Depends(get_db)):
     settings = db.query(SystemSettings).first()
@@ -14,7 +15,7 @@ def get_system_settings_public(db: Session = Depends(get_db)):
         db.add(settings)
         db.commit()
         db.refresh(settings)
-    
+
     # Return only public-safe fields
     safe_settings = {
         "maintenance_mode": settings.maintenance_mode,
@@ -25,7 +26,7 @@ def get_system_settings_public(db: Session = Depends(get_db)):
         "announcement_enabled": settings.announcement_enabled,
         "announcement_message": settings.announcement_message,
         "announcement_color": settings.announcement_color,
-        "feature_flags": settings.feature_flags
+        "feature_flags": settings.feature_flags,
     }
-    
+
     return SuccessResponse(message="Settings retrieved.", data=safe_settings)

@@ -38,22 +38,22 @@ dropping the type (which would require dropping and recreating the column).
 The downgrade() is intentionally a no-op. The added values are purely
 additive and harmless if unused.
 """
+
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'g002b3c4d5e6'
-down_revision: Union[str, None] = 'f001a2b3c4d5'
+revision: str = "g002b3c4d5e6"
+down_revision: Union[str, None] = "f001a2b3c4d5"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 # The complete set of values the Python enum declares, in addition to the
 # original 5 that already exist in PostgreSQL.
-_MISSING_VALUES = ['QUEUED', 'RUNNING', 'CANCELLED']
+_MISSING_VALUES = ["QUEUED", "RUNNING", "CANCELLED"]
 
 
 def upgrade() -> None:
@@ -65,7 +65,7 @@ def upgrade() -> None:
     bind = op.get_bind()
     dialect_name = bind.dialect.name
 
-    if dialect_name == 'postgresql':
+    if dialect_name == "postgresql":
         # Each ADD VALUE is its own statement to comply with PostgreSQL's
         # restriction on ALTER TYPE inside an explicit transaction prior to v12.
         # Neon runs PostgreSQL 15/16 so this is safe, but we keep them separate
@@ -74,9 +74,7 @@ def upgrade() -> None:
             # Use raw SQL via op.execute so we can use IF NOT EXISTS cleanly.
             # Alembic's op.sync_enum_values() doesn't support IF NOT EXISTS.
             op.execute(
-                sa.text(
-                    f"ALTER TYPE executionstatus ADD VALUE IF NOT EXISTS '{value}'"
-                )
+                sa.text(f"ALTER TYPE executionstatus ADD VALUE IF NOT EXISTS '{value}'")
             )
     else:
         # SQLite / other dialects: enum is stored as VARCHAR, no DDL needed.

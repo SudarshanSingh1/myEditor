@@ -3,51 +3,80 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, Foreign
 from sqlalchemy.dialects.postgresql import UUID
 from app.database.base import Base
 
+
 class SystemSettings(Base):
     __tablename__ = "system_settings"
 
     id = Column(Integer, primary_key=True, default=1)
-    
+
     # Maintenance
-    maintenance_mode = Column(Boolean, nullable=False, default=False, server_default="false")
+    maintenance_mode = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     maintenance_message = Column(String, nullable=True)
     maintenance_end_time = Column(DateTime(timezone=True), nullable=True)
     maintenance_type = Column(String, nullable=True)
-    maintenance_allow_admin_access = Column(Boolean, nullable=False, default=True, server_default="true")
-    maintenance_show_countdown = Column(Boolean, nullable=False, default=True, server_default="true")
-    
+    maintenance_allow_admin_access = Column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+    maintenance_show_countdown = Column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+
     # Core Toggles
-    registration_enabled = Column(Boolean, nullable=False, default=True, server_default="true")
+    registration_enabled = Column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
     login_enabled = Column(Boolean, nullable=False, default=True, server_default="true")
-    read_only_mode = Column(Boolean, nullable=False, default=False, server_default="false")
-    
+    read_only_mode = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+
     # Announcements
-    announcement_enabled = Column(Boolean, nullable=False, default=False, server_default="false")
+    announcement_enabled = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     announcement_message = Column(String, nullable=True)
     announcement_color = Column(String, nullable=True)
-    
+
     # General Options
-    app_name = Column(String, nullable=False, default="Hamara Editor", server_default="'Hamara Editor'")
-    default_timezone = Column(String, nullable=False, default="UTC", server_default="'UTC'")
+    app_name = Column(
+        String,
+        nullable=False,
+        default="Hamara Editor",
+        server_default="'Hamara Editor'",
+    )
+    default_timezone = Column(
+        String, nullable=False, default="UTC", server_default="'UTC'"
+    )
     default_theme = Column(String, default="system")
     supported_languages = Column(JSON, default=lambda: ["en"])
-    
+
     # Feature Flags
-    feature_flags = Column(JSON, default=lambda: {
-        "ai_enabled": False,
-        "github_enabled": False,
-        "live_collaboration": False,
-        "compiler_enabled": False,
-        "plugins_enabled": False
-    })
+    feature_flags = Column(
+        JSON,
+        default=lambda: {
+            "ai_enabled": False,
+            "github_enabled": False,
+            "live_collaboration": False,
+            "compiler_enabled": False,
+            "plugins_enabled": False,
+        },
+    )
 
     # Resource Limits
-    max_execution_time_seconds = Column(Integer, nullable=False, default=30, server_default="30")
+    max_execution_time_seconds = Column(
+        Integer, nullable=False, default=30, server_default="30"
+    )
     max_memory_mb = Column(Integer, nullable=False, default=256, server_default="256")
     max_file_size_mb = Column(Integer, nullable=False, default=20, server_default="20")
-    max_projects_per_user = Column(Integer, nullable=False, default=10, server_default="10")
-    rate_limit_per_minute = Column(Integer, nullable=False, default=100, server_default="100")
-    
+    max_projects_per_user = Column(
+        Integer, nullable=False, default=10, server_default="10"
+    )
+    rate_limit_per_minute = Column(
+        Integer, nullable=False, default=100, server_default="100"
+    )
+
     queue_limits = Column(Integer, nullable=False, default=1000, server_default="1000")
     worker_limits = Column(Integer, nullable=False, default=10, server_default="10")
     retention_days = Column(Integer, nullable=False, default=30, server_default="30")
@@ -57,19 +86,36 @@ class SystemSettings(Base):
     smtp_port = Column(Integer, nullable=False, default=587, server_default="587")
     smtp_user = Column(String, nullable=True)
     smtp_pass = Column(String, nullable=True)
-    smtp_from_name = Column(String, nullable=False, default="Hamara Editor", server_default="'Hamara Editor'")
+    smtp_from_name = Column(
+        String,
+        nullable=False,
+        default="Hamara Editor",
+        server_default="'Hamara Editor'",
+    )
     smtp_from_email = Column(String, nullable=True)
     smtp_tls = Column(Boolean, nullable=False, default=True, server_default="true")
     smtp_ssl = Column(Boolean, nullable=False, default=False, server_default="false")
-    
-    # OAuth Settings
-    oauth_google_enabled = Column(Boolean, nullable=False, default=False, server_default="false")
-    oauth_google_client_id = Column(String, nullable=True)
-    oauth_google_client_secret = Column(String, nullable=True) # Encrypted
-    oauth_github_enabled = Column(Boolean, nullable=False, default=False, server_default="false")
-    oauth_github_client_id = Column(String, nullable=True)
-    oauth_github_client_secret = Column(String, nullable=True) # Encrypted
 
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    updated_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    # OAuth Settings
+    oauth_google_enabled = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    oauth_google_client_id = Column(String, nullable=True)
+    oauth_google_client_secret = Column(String, nullable=True)  # Encrypted
+    oauth_github_enabled = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    oauth_github_client_id = Column(String, nullable=True)
+    oauth_github_client_secret = Column(String, nullable=True)  # Encrypted
+
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    updated_by_id = Column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )

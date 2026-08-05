@@ -4,6 +4,7 @@ from datetime import datetime
 import uuid
 from app.models.feedback import FeedbackCategory, FeedbackPriority, FeedbackStatus
 
+
 class FeedbackCreate(BaseModel):
     category: FeedbackCategory
     priority: FeedbackPriority
@@ -14,9 +15,11 @@ class FeedbackCreate(BaseModel):
     app_version: Optional[str] = Field(None, max_length=64)
     current_route: Optional[str] = Field(None, max_length=2048)
 
+
 class FeedbackUpdateStatus(BaseModel):
     status: FeedbackStatus
     admin_reply: Optional[str] = None
+
 
 class FeedbackResponse(BaseModel):
     id: uuid.UUID
@@ -33,5 +36,5 @@ class FeedbackResponse(BaseModel):
     status: FeedbackStatus
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)

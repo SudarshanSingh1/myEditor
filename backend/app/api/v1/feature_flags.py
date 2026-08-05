@@ -12,6 +12,7 @@ from app.services.admin_audit_service import AdminAuditService
 
 router = APIRouter()
 
+
 class FeatureFlagCreate(BaseModel):
     name: str
     key: str
@@ -19,6 +20,7 @@ class FeatureFlagCreate(BaseModel):
     enabled: bool = False
     environment: str = "production"
     rollout_percentage: int = 100
+
 
 @router.get("/", dependencies=[Depends(require_permission("system.settings.view"))])
 def list_flags(db: Session = Depends(get_db)):
@@ -35,52 +37,63 @@ def list_flags(db: Session = Depends(get_db)):
                     "enabled": f.enabled,
                     "environment": f.environment,
                     "rollout_percentage": f.rollout_percentage,
-                    "updated_at": f.updated_at
-                } for f in flags
+                    "updated_at": f.updated_at,
+                }
+                for f in flags
             ]
-        }
+        },
     }
+
 
 @router.post("/", dependencies=[Depends(require_permission("system.settings.edit"))])
 def create_flag(
     data: FeatureFlagCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     if db.query(FeatureFlag).filter(FeatureFlag.key == data.key).first():
-        raise HTTPException(status_code=400, detail="Feature flag with this key already exists")
-        
+        raise HTTPException(
+            status_code=400, detail="Feature flag with this key already exists"
+        )
+
     flag = FeatureFlag(
         name=data.name,
         key=data.key,
         description=data.description,
         enabled=data.enabled,
         environment=data.environment,
-        rollout_percentage=data.rollout_percentage
+        rollout_percentage=data.rollout_percentage,
     )
     db.add(flag)
     db.commit()
-    
+
     AdminAuditService.log_action(
         db=db,
         actor_id=current_user.id,
         action="CREATE_FEATURE_FLAG",
-        metadata_json={"key": flag.key, "target_type": "FEATURE_FLAG", "flag_id": flag.id}
+        metadata_json={
+            "key": flag.key,
+            "target_type": "FEATURE_FLAG",
+            "flag_id": flag.id,
+        },
     )
-    
+
     return {"success": True, "message": "Feature flag created"}
 
-@router.put("/{flag_id}", dependencies=[Depends(require_permission("system.settings.edit"))])
+
+@router.put(
+    "/{flag_id}", dependencies=[Depends(require_permission("system.settings.edit"))]
+)
 def update_flag(
     flag_id: str,
     data: FeatureFlagCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     flag = db.query(FeatureFlag).filter(FeatureFlag.id == flag_id).first()
     if not flag:
         raise HTTPException(status_code=404, detail="Feature flag not found")
-        
+
     flag.name = data.name
     flag.key = data.key
     flag.description = data.description
@@ -88,34 +101,46 @@ def update_flag(
     flag.environment = data.environment
     flag.rollout_percentage = data.rollout_percentage
     db.commit()
-    
+
     AdminAuditService.log_action(
         db=db,
         actor_id=current_user.id,
         action="UPDATE_FEATURE_FLAG",
-        metadata_json={"key": flag.key, "enabled": flag.enabled, "target_type": "FEATURE_FLAG", "flag_id": flag.id}
+        metadata_json={
+            "key": flag.key,
+            "enabled": flag.enabled,
+            "target_type": "FEATURE_FLAG",
+            "flag_id": flag.id,
+        },
     )
-    
+
     return {"success": True, "message": "Feature flag updated"}
 
-@router.delete("/{flag_id}", dependencies=[Depends(require_permission("system.settings.edit"))])
+
+@router.delete(
+    "/{flag_id}", dependencies=[Depends(require_permission("system.settings.edit"))]
+)
 def delete_flag(
     flag_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     flag = db.query(FeatureFlag).filter(FeatureFlag.id == flag_id).first()
     if not flag:
         raise HTTPException(status_code=404, detail="Feature flag not found")
-        
+
     db.delete(flag)
     db.commit()
-    
+
     AdminAuditService.log_action(
         db=db,
         actor_id=current_user.id,
         action="DELETE_FEATURE_FLAG",
-        metadata_json={"key": flag.key, "target_type": "FEATURE_FLAG", "flag_id": flag_id}
+        metadata_json={
+            "key": flag.key,
+            "target_type": "FEATURE_FLAG",
+            "flag_id": flag_id,
+        },
     )
-    
+
     return {"success": True, "message": "Feature flag deleted"}

@@ -44,7 +44,7 @@ export function NotificationCenter() {
           if (d.alerts && Array.isArray(d.alerts)) {
             const newAlerts = d.alerts.map((a: any) => ({
               ...a,
-              id: Math.random().toString(36).substr(2, 9),
+              id: crypto.randomUUID(),
               timestamp: a.timestamp || new Date().toISOString()
             }));
             

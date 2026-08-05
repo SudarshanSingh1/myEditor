@@ -13,6 +13,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { SplashLoader } from "../components/ui/SplashLoader";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { useShallow } from 'zustand/react/shallow';
 
 // --- Matrix Rain Component ---
 const MATRIX_CHARSET = "01";
@@ -211,7 +212,7 @@ const STAGES = [
 
 export function MaintenancePage() {
   const { isMaintenanceMode, maintenanceMessage, maintenanceEndTime, checkStatus, isChecking, hasChecked, _allowAdmin } = useSystemStore();
-  const { isAuthenticated } = useUserStore();
+  const { isAuthenticated } = useUserStore(useShallow(state => ({ isAuthenticated: state.isAuthenticated })));
   const prefersReducedMotion = useReducedMotion();
   const _location = useLocation();
 

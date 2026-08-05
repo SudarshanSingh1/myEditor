@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { fetchApi, resetUnauthorizedFlag } from "../../lib/api";
+import { fetchApi } from "../../lib/api";
 import { useUserStore } from "../../stores/useUserStore";
 import { useSystemStore } from "../../stores/useSystemStore";
 import { Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { SudarshanaMandala } from "../../components/ui/SplashLoader";
+import { useShallow } from 'zustand/react/shallow';
 
 interface LoginProps {
   isAdminPortal?: boolean;
@@ -19,7 +20,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
   const [searchParams] = useSearchParams();
   const isExpired = searchParams.get("expired") === "true";
 
-  const { login, isAuthenticated, user, isLoading: isUserLoading } = useUserStore();
+  const { isAuthenticated, user, isLoading: isUserLoading } = useUserStore(useShallow(state => ({ isAuthenticated: state.isAuthenticated, user: state.user, isLoading: state.isLoading })));
   const { _isMaintenanceMode, _allowAdmin } = useSystemStore();
   const [email, setEmail] = useState("");
 
@@ -89,7 +90,6 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
         });
         
         if (response.success) {
-            resetUnauthorizedFlag();
             // Get profile and login
             const { authController } = await import('../../services/AuthController');
             await authController.bootstrap(true);
@@ -189,8 +189,6 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
             navigate("/maintenance", { replace: true });
             return;
           }
-
-          resetUnauthorizedFlag();
 
           if (isSuperAdmin) {
             navigate("/super-admin", { replace: true });

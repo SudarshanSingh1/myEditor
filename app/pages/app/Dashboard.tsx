@@ -28,11 +28,12 @@ import { workspaceApi } from "../../lib/api/workspace";
 import { fetchApi } from "../../lib/api";
 
 import { useQuery } from "@tanstack/react-query";
+import { useShallow } from 'zustand/react/shallow';
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  const { user } = useUserStore();
+  const { user } = useUserStore(useShallow(state => ({ user: state.user })));
 
   const {
     projects,

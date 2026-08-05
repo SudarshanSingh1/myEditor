@@ -19,6 +19,7 @@ from app.api.v1.router import router as api_v1_router
 from app.api.v1 import health
 from app.schemas.responses import SuccessResponse
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -60,13 +61,14 @@ async def lifespan(app: FastAPI):
     lock_file = "/tmp/hamara_scheduler.lock"
     lock_fd = None
     cleanup_task = None
-    
+
     try:
         lock_fd = os.open(lock_file, os.O_CREAT | os.O_RDWR)
         fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        
+
         # We got the lock! Start the scheduler.
         from app.services.cleanup_service import cleanup_loop
+
         cleanup_task = asyncio.create_task(cleanup_loop())
         _log.info("Background scheduler started.")
     except (BlockingIOError, OSError):
@@ -76,7 +78,7 @@ async def lifespan(app: FastAPI):
         _log.error(f"[Lifespan] Failed to acquire scheduler lock: {exc}", exc_info=True)
 
     _log.info("Application startup complete.")
-    
+
     yield  # ← application serves traffic here
 
     # ── Shutdown ──────────────────────────────────────────────────────────────
@@ -88,7 +90,7 @@ async def lifespan(app: FastAPI):
         except asyncio.CancelledError:
             pass
         _log.info("[Lifespan] Cleanup scheduler stopped.")
-        
+
     if lock_fd is not None:
         try:
             fcntl.flock(lock_fd, fcntl.LOCK_UN)
@@ -119,6 +121,7 @@ app.add_middleware(TimingMiddleware)
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 from urllib.parse import urlparse
+
 frontend_host = urlparse(settings.FRONTEND_URL).hostname or "localhost"
 
 app.add_middleware(
@@ -128,25 +131,37 @@ app.add_middleware(
         "localhost",
         "127.0.0.1",
         "testserver",
-        "*.testserver",
-        "*",
-    ]
+    ],
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        settings.FRONTEND_URL,
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Accept", "Accept-Language", "Content-Language", "Content-Type", "Authorization", "X-Requested-With", "X-Request-ID"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "X-Request-ID",
+    ],
 )
 
 # Routes
 app.include_router(health.router, prefix="/api")
 app.include_router(api_v1_router, prefix="/api/v1")
 
+
 @app.get("/", response_model=SuccessResponse[dict])
 async def root():
     return SuccessResponse(message="Hamara Editor API", data={})
+
 
 @app.get("/health", response_model=SuccessResponse[dict])
 async def health_check():

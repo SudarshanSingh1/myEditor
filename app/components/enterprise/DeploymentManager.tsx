@@ -20,9 +20,9 @@ export function DeploymentManager() {
   const [newVersion, setNewVersion] = useState<string | null>(null);
   const [hasUnsaved, setHasUnsaved] = useState(false);
 
-  // Initialize server version on mount
+  // Initialize server version on mount — endpoint is at /api/version (health router prefix)
   useEffect(() => {
-    fetch("/api/v1/version")
+    fetch("/api/version")
       .then((r) => r.json())
       .then((data) => {
         if (data?.data?.build_number) {
@@ -60,7 +60,7 @@ export function DeploymentManager() {
       if (!isMounted) return;
       try {
         setIsReconnecting(true);
-        const res = await fetch("/api/v1/version", {
+        const res = await fetch("/api/version", {
           cache: "no-store",
           headers: { "Cache-Control": "no-cache" }
         });

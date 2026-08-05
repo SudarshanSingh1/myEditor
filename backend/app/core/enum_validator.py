@@ -16,6 +16,7 @@ Usage (in main.py lifespan):
     from app.core.enum_validator import validate_db_enums
     validate_db_enums(db)
 """
+
 from __future__ import annotations
 
 import logging

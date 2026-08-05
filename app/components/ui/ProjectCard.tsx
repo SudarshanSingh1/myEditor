@@ -10,6 +10,7 @@ import { useProjectsStore } from "../../stores/useProjectsStore"
 import { useConfirm } from "../../components/ui/ConfirmProvider"
 import { Modal } from "./Modal"
 import { Input } from "./Input"
+import { ProjectIcon } from "../projects/ProjectIcon"
 
 interface ProjectCardProps {
   id: string;
@@ -62,7 +63,7 @@ export function ProjectCard({
       <CardHeader className="flex flex-row items-start justify-between space-y-0 p-4 pb-2">
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            {icon && <span>{icon}</span>}
+            {icon && <ProjectIcon name={icon} className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
             <h3 className="font-semibold leading-none tracking-tight truncate flex-1">{name}</h3>
           </div>
           <p className="text-xs text-muted-foreground">Edited {date}</p>

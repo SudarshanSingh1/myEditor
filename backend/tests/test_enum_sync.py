@@ -17,7 +17,7 @@ Test strategy:
 
 The tests are dialect-aware so they work in both environments without mocking.
 """
-import enum
+
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -27,23 +27,27 @@ from sqlalchemy.orm import sessionmaker
 # The authoritative set of values that were in the ORIGINAL PostgreSQL enum
 # as created by migration b6d06df803b6. This is the historical baseline.
 # ---------------------------------------------------------------------------
-_ORIGINAL_PG_VALUES: frozenset[str] = frozenset({
-    "SUCCESS",
-    "COMPILE_ERROR",
-    "RUNTIME_ERROR",
-    "TIMEOUT",
-    "SYSTEM_ERROR",
-})
+_ORIGINAL_PG_VALUES: frozenset[str] = frozenset(
+    {
+        "SUCCESS",
+        "COMPILE_ERROR",
+        "RUNTIME_ERROR",
+        "TIMEOUT",
+        "SYSTEM_ERROR",
+    }
+)
 
 # ---------------------------------------------------------------------------
 # The values that were intentionally added AFTER the original migration.
 # Every value here must have a corresponding ADD VALUE migration.
 # ---------------------------------------------------------------------------
-_INTENTIONALLY_ADDED: frozenset[str] = frozenset({
-    "QUEUED",       # Added: execution queue support (migration g002b3c4d5e6)
-    "RUNNING",      # Added: execution queue support (migration g002b3c4d5e6)
-    "CANCELLED",    # Added: stop-execution feature   (migration g002b3c4d5e6)
-})
+_INTENTIONALLY_ADDED: frozenset[str] = frozenset(
+    {
+        "QUEUED",  # Added: execution queue support (migration g002b3c4d5e6)
+        "RUNNING",  # Added: execution queue support (migration g002b3c4d5e6)
+        "CANCELLED",  # Added: stop-execution feature   (migration g002b3c4d5e6)
+    }
+)
 
 # The complete expected set = original + intentional additions
 _EXPECTED_ALL: frozenset[str] = _ORIGINAL_PG_VALUES | _INTENTIONALLY_ADDED
@@ -188,7 +192,7 @@ class TestExecutionStatusEnumSync:
 
     @pytest.mark.skipif(
         True,  # Skip by default — enabled in PostgreSQL CI via env override
-        reason="PostgreSQL-only test: set ENUM_PG_TEST=1 to enable"
+        reason="PostgreSQL-only test: set ENUM_PG_TEST=1 to enable",
     )
     def test_pg_enum_exact_match(self, db_session):
         """
@@ -198,6 +202,7 @@ class TestExecutionStatusEnumSync:
         Enable with: ENUM_PG_TEST=1 pytest tests/test_enum_sync.py -k pg_enum
         """
         import os
+
         if not os.getenv("ENUM_PG_TEST"):
             pytest.skip("ENUM_PG_TEST env var not set")
 

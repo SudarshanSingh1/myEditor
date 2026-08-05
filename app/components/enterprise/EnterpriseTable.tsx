@@ -55,7 +55,7 @@ export function EnterpriseTable<T extends { id: string | number }>({
                       className="e-skeleton"
                       style={{
                         height: 14,
-                        width: `${55 + Math.random() * 30}%`,
+                        width: `${55 + ((i * 7 + j * 3) % 30)}%`,
                       }}
                     />
                   </td>

@@ -2,6 +2,7 @@ from typing import Tuple
 import os
 from app.execution.languages.base_runner import BaseRunner
 
+
 class JavaRunner(BaseRunner):
     @property
     def image_name(self) -> str:

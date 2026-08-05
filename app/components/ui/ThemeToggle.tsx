@@ -1,9 +1,10 @@
 import { Moon, Sun } from "lucide-react";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { Button } from "./Button";
+import { useShallow } from 'zustand/react/shallow';
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme } = useThemeStore(useShallow(state => ({ theme: state.theme, setTheme: state.setTheme })));
 
   return (
     <Button

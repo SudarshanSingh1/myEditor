@@ -89,24 +89,17 @@ const AdminLoader = () => <SplashLoader variant="admin" message="Securing admin 
 
 import { useUserStore } from "../stores/useUserStore";
 import { authController } from "../services/AuthController";
+import { BootstrapManager } from "../components/layout/BootstrapManager";
 
 export default function AppRouter() {
   const location = useLocation();
-
-  useEffect(() => {
-    if (location.pathname.startsWith("/maintenance")) {
-      return;
-    }
-    // Only check auth ONCE on app mount — not on every route change.
-    authController.bootstrap();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <ErrorBoundary>
       <ThemeProvider>
         <DeploymentManager />
         <Suspense fallback={<PageLoader />}>
+        <BootstrapManager>
         <MaintenanceGuard>
         <Routes location={location}>
           {/* Public Landing */}
@@ -224,6 +217,7 @@ export default function AppRouter() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         </MaintenanceGuard>
+        </BootstrapManager>
         </Suspense>
       </ThemeProvider>
     </ErrorBoundary>

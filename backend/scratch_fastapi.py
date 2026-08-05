@@ -4,11 +4,14 @@ from fastapi.testclient import TestClient
 app = FastAPI()
 
 logs_router = APIRouter()
+
+
 @logs_router.websocket("/ws")
 async def websocket_logs(websocket: WebSocket):
     await websocket.accept()
     await websocket.send_text("Hello")
     await websocket.close()
+
 
 admin_router = APIRouter()
 admin_router.include_router(logs_router)

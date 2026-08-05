@@ -1,5 +1,3 @@
-import sys
-import uuid
 from app.database.session import SessionLocal
 from app.models.user import User
 from app.models.project import Project
@@ -7,6 +5,7 @@ from app.models.workspace import File, FileVersion, Folder
 from app.models.audit_log import AuditLog
 
 import pytest
+
 
 @pytest.mark.skip(reason="Manual test script requiring live DB")
 def test_cascade_manual():
@@ -49,7 +48,7 @@ def test_cascade_manual():
         db.delete(u)
         db.commit()
         print("Success")
-    except Exception as e:
+    except Exception:
         import traceback
-        traceback.print_exc()
 
+        traceback.print_exc()

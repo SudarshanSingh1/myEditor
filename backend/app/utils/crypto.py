@@ -13,13 +13,16 @@ except Exception:
     # we derive one using a deterministic hash for safety.
     derived = hashlib.sha256(_SECRET_KEY.encode()).digest()
     import base64
+
     b64_key = base64.urlsafe_b64encode(derived)
     _fernet = Fernet(b64_key)
+
 
 def encrypt_value(value: str) -> str:
     if not value:
         return value
     return _fernet.encrypt(value.encode()).decode()
+
 
 def decrypt_value(encrypted_value: str) -> str:
     if not encrypted_value:
@@ -29,6 +32,7 @@ def decrypt_value(encrypted_value: str) -> str:
     except Exception:
         # If decryption fails (e.g. key changed), return empty or raw
         return ""
+
 
 def mask_secret(value: str) -> str:
     if not value:

@@ -24,7 +24,7 @@ def create_admin_user_and_token(db_session):
 
 @pytest.fixture
 def mock_docker():
-    with patch("app.api.v1.docker.get_docker_client") as mock:
+    with patch("docker.from_env") as mock:
         client = MagicMock()
         mock.return_value = client
         

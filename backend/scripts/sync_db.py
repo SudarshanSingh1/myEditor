@@ -1,7 +1,6 @@
 import os
 import sys
 import psycopg
-from urllib.parse import urlparse
 
 database_url = os.environ.get("DATABASE_URL")
 if not database_url:
@@ -43,7 +42,7 @@ try:
                 "ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS oauth_github_client_id VARCHAR;",
                 "ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS oauth_github_client_secret VARCHAR;",
             ]
-            
+
             for stmt in statements:
                 print(f"Executing: {stmt}")
                 try:
@@ -53,7 +52,7 @@ try:
                     conn.rollback()
                     continue
                 conn.commit()
-            
+
             print("Successfully synced columns!")
 except Exception as e:
     print(f"Connection error: {e}")

@@ -15,8 +15,9 @@ _maintenance_config = {
     "message": "System is under maintenance.",
     "end_time": None,
     "allow_admin": True,
-    "show_countdown": True
+    "show_countdown": True,
 }
+
 
 def _get_maintenance_status(db):
     global _maintenance_cache_time, _maintenance_config
@@ -25,7 +26,7 @@ def _get_maintenance_status(db):
         settings_obj = db.query(SystemSettings).first()
         if settings_obj:
             is_enabled = settings_obj.maintenance_mode
-            
+
             # Auto recovery
             if is_enabled and settings_obj.maintenance_end_time:
                 end_time = settings_obj.maintenance_end_time
@@ -33,18 +34,24 @@ def _get_maintenance_status(db):
                     end_time = end_time.replace(tzinfo=timezone.utc)
                 if datetime.now(timezone.utc) > end_time:
                     is_enabled = False
-                    
+
             _maintenance_config = {
                 "enabled": is_enabled,
-                "message": settings_obj.maintenance_message or "System is under maintenance.",
+                "message": settings_obj.maintenance_message
+                or "System is under maintenance.",
                 "end_time": settings_obj.maintenance_end_time,
-                "allow_admin": getattr(settings_obj, "maintenance_allow_admin_access", True),
-                "show_countdown": getattr(settings_obj, "maintenance_show_countdown", True)
+                "allow_admin": getattr(
+                    settings_obj, "maintenance_allow_admin_access", True
+                ),
+                "show_countdown": getattr(
+                    settings_obj, "maintenance_show_countdown", True
+                ),
             }
         else:
             _maintenance_config["enabled"] = False
         _maintenance_cache_time = now
     return _maintenance_config
+
 
 class MaintenanceMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -65,27 +72,33 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
             # RBAC – users need to be able to fetch their permissions to bypass maintenance
             "/api/v1/rbac/my-permissions",
         ]
-        
+
         if not any(request.url.path.startswith(path) for path in excluded_paths):
             from app.database.session import SessionLocal
+
             db = SessionLocal()
             try:
                 config = _get_maintenance_status(db)
                 if config["enabled"]:
                     is_admin_allowed = False
-                    
+
                     token = request.cookies.get("access_token")
                     if not token:
                         auth_header = request.headers.get("Authorization")
                         if auth_header and auth_header.startswith("Bearer "):
                             token = auth_header.split(" ")[1]
-                    
+
                     if token:
                         try:
-                            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+                            payload = jwt.decode(
+                                token,
+                                settings.SECRET_KEY,
+                                algorithms=[settings.JWT_ALGORITHM],
+                            )
                             user_id = payload.get("sub")
                             if user_id:
                                 import uuid
+
                                 try:
                                     uid = uuid.UUID(user_id)
                                     user = db.query(User).filter(User.id == uid).first()
@@ -95,13 +108,20 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
                                     if user.role == RoleEnum.OWNER:
                                         is_admin_allowed = True
                                     elif config.get("allow_admin", True):
-                                        if user.role in (RoleEnum.ADMIN, RoleEnum.MODERATOR):
+                                        if user.role in (
+                                            RoleEnum.ADMIN,
+                                            RoleEnum.MODERATOR,
+                                        ):
                                             is_admin_allowed = True
-                                        elif user.effective_permissions and ("system.maintenance.bypass" in user.effective_permissions or "*" in user.effective_permissions):
+                                        elif user.effective_permissions and (
+                                            "system.maintenance.bypass"
+                                            in user.effective_permissions
+                                            or "*" in user.effective_permissions
+                                        ):
                                             is_admin_allowed = True
                         except JWTError:
                             pass
-                                
+
                     if not is_admin_allowed:
                         return JSONResponse(
                             status_code=503,
@@ -109,12 +129,16 @@ class MaintenanceMiddleware(BaseHTTPMiddleware):
                                 "success": False,
                                 "message": config["message"],
                                 "maintenance_info": {
-                                    "end_time": config["end_time"].isoformat() if config["end_time"] and config["show_countdown"] else None,
-                                    "server_time": datetime.now(timezone.utc).isoformat()
-                                }
-                            }
+                                    "end_time": config["end_time"].isoformat()
+                                    if config["end_time"] and config["show_countdown"]
+                                    else None,
+                                    "server_time": datetime.now(
+                                        timezone.utc
+                                    ).isoformat(),
+                                },
+                            },
                         )
             finally:
                 db.close()
-                
+
         return await call_next(request)

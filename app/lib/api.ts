@@ -1,14 +1,10 @@
 import { toast } from 'sonner';
 import { useSystemStore } from '../stores/useSystemStore';
-import { useUserStore } from '../stores/useUserStore';
 import { useDeploymentStore } from '../stores/useDeploymentStore';
 
 const API_BASE_URL = '/api/v1';
 
-export function resetUnauthorizedFlag() {
-  // Now handled by AuthController state machine.
-  useUserStore.getState().setAuthInvalid(false);
-}
+
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -27,18 +23,10 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   };
 
   try {
-    const userStore = useUserStore.getState();
-    if (userStore.authInvalid && endpoint !== '/auth/login' && endpoint !== '/guest/init') {
-      throw new Error('Session terminated.');
-    }
-
     let response = await fetch(url, config);
 
-    // Basic 401 logic: just throw if unauthorized, let AuthController handle it.
-    if (response.status === 401) {
-       // We can optionally dispatch an event here if we wanted to loosely couple, 
-       // but AuthController handles explicit calls. Just throw for standard API queries.
-    }
+
+    // 401s are handled by AuthController — let them propagate as thrown errors.
 
     const data = await response.json().catch(() => null);
     

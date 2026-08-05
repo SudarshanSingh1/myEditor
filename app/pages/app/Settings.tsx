@@ -8,11 +8,12 @@ import { Button } from "../../components/ui/Button";
 import { useNavigate } from "react-router-dom";
 import { SecuritySettings } from "../../components/settings/SecuritySettings";
 import { ConnectedAccounts } from "../../components/settings/ConnectedAccounts";
+import { useShallow } from 'zustand/react/shallow';
 
 export default function Settings() {
-  const { editor, updateEditorSettings, notifications, updateNotificationSettings } = useSettingsStore();
-  const { settings: editorSettings, updateSettings: updateEditorSettingsStore } = useEditorStore();
-  const { user } = useUserStore();
+  const { editor, updateEditorSettings, notifications, updateNotificationSettings } = useSettingsStore(useShallow(state => ({ editor: state.editor, updateEditorSettings: state.updateEditorSettings, notifications: state.notifications, updateNotificationSettings: state.updateNotificationSettings })));
+  const { settings: editorSettings, updateSettings: updateEditorSettingsStore } = useEditorStore(useShallow(state => ({ settings: state.settings, updateSettings: state.updateSettings })));
+  const { user } = useUserStore(useShallow(state => ({ user: state.user })));
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("general");
 

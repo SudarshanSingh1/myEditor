@@ -6,21 +6,24 @@ from sqlalchemy import select, func, desc
 
 from app.models.project import Project
 
+
 class ProjectRepository:
     def __init__(self, db: Session):
         self.db = db
 
     def get_by_id(self, project_id: UUID) -> Optional[Project]:
-        return self.db.query(Project).filter(
-            Project.id == project_id
-        ).first()
+        return self.db.query(Project).filter(Project.id == project_id).first()
 
     def get_by_slug(self, owner_id: UUID, slug: str) -> Optional[Project]:
-        return self.db.query(Project).filter(
-            Project.owner_id == owner_id,
-            Project.slug == slug,
-            Project.deleted_at == None
-        ).first()
+        return (
+            self.db.query(Project)
+            .filter(
+                Project.owner_id == owner_id,
+                Project.slug == slug,
+                Project.deleted_at == None,
+            )
+            .first()
+        )
 
     def get_user_projects(
         self,
@@ -31,11 +34,10 @@ class ProjectRepository:
         language: Optional[str] = None,
         favorite: Optional[bool] = None,
         sort_by: str = "updated_at",
-        deleted: bool = False
+        deleted: bool = False,
     ) -> Tuple[List[Project], int]:
-        
         query = select(Project).where(Project.owner_id == owner_id)
-        
+
         if deleted:
             query = query.where(Project.deleted_at != None)
         else:
@@ -43,10 +45,10 @@ class ProjectRepository:
 
         if search:
             query = query.where(Project.name.ilike(f"%{search}%"))
-            
+
         if language:
             query = query.where(Project.language == language)
-            
+
         if favorite is not None:
             query = query.where(Project.favorite == favorite)
 
@@ -68,7 +70,7 @@ class ProjectRepository:
 
         # Pagination
         query = query.offset(skip).limit(limit)
-        
+
         projects = self.db.execute(query).scalars().all()
         return list(projects), total
 
@@ -105,19 +107,23 @@ class ProjectRepository:
 
         # Manually delete child records to avoid IntegrityError with circular/self-referencing folders
         # 1. Delete Execution Logs
-        self.db.execute(delete(ExecutionLog).where(ExecutionLog.project_id == project.id))
-        
+        self.db.execute(
+            delete(ExecutionLog).where(ExecutionLog.project_id == project.id)
+        )
+
         # 2. Delete File Versions (they reference Files)
         # We need a subquery for files in this project
         file_ids_subquery = select(File.id).where(File.project_id == project.id)
-        self.db.execute(delete(FileVersion).where(FileVersion.file_id.in_(file_ids_subquery)))
-        
+        self.db.execute(
+            delete(FileVersion).where(FileVersion.file_id.in_(file_ids_subquery))
+        )
+
         # 3. Delete Files
         self.db.execute(delete(File).where(File.project_id == project.id))
-        
+
         # 4. Delete Folders (to handle self-referencing parent_id, just delete all by project_id)
         self.db.execute(delete(Folder).where(Folder.project_id == project.id))
-        
+
         # 5. Delete the Project itself bypassing ORM relationship cascade
         self.db.execute(delete(Project).where(Project.id == project.id))
         self.db.commit()

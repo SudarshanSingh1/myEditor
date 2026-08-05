@@ -13,6 +13,7 @@ from app.core.security import decrypt_string
 
 logger = logging.getLogger(__name__)
 
+
 class EmailService:
     @staticmethod
     def _get_base_template(subject: str, body_html: str) -> str:
@@ -90,11 +91,13 @@ class EmailService:
             "host": getattr(sys_settings, "smtp_host", None) or settings.SMTP_HOST,
             "port": getattr(sys_settings, "smtp_port", None) or settings.SMTP_PORT,
             "user": getattr(sys_settings, "smtp_user", None) or settings.SMTP_USER,
-            "from_name": getattr(sys_settings, "smtp_from_name", None) or settings.SMTP_FROM_NAME,
-            "from_email": getattr(sys_settings, "smtp_from_email", None) or settings.SMTP_FROM,
+            "from_name": getattr(sys_settings, "smtp_from_name", None)
+            or settings.SMTP_FROM_NAME,
+            "from_email": getattr(sys_settings, "smtp_from_email", None)
+            or settings.SMTP_FROM,
             "tls": getattr(sys_settings, "smtp_tls", True),
             "ssl": getattr(sys_settings, "smtp_ssl", False),
-            "password": None
+            "password": None,
         }
         db_smtp_pass = getattr(sys_settings, "smtp_pass", None)
         if db_smtp_pass:
@@ -104,49 +107,53 @@ class EmailService:
         return config
 
     @staticmethod
-    def _send_email_core(db, to_email: str, subject: str, html_content: str, user_role: str = None) -> None:
+    def _send_email_core(
+        db, to_email: str, subject: str, html_content: str, user_role: str = None
+    ) -> None:
         """Core method to log and send an email via SMTP. Raises Exception on failure."""
         config = EmailService._get_smtp_config(db)
-        
+
         email_log = EmailLog(
             recipient=to_email,
             subject=subject,
             user_role=user_role,
             status=EmailStatus.PENDING,
-            provider="SMTP" if config["host"] else "MOCK"
+            provider="SMTP" if config["host"] else "MOCK",
         )
         db.add(email_log)
         db.commit()
         db.refresh(email_log)
-        
+
         if config["host"]:
             try:
-                msg = MIMEMultipart('alternative')
-                msg['Subject'] = subject
-                msg['From'] = f"{config['from_name']} <{config['from_email']}>"
-                msg['To'] = to_email
-                
-                part = MIMEText(html_content, 'html')
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = subject
+                msg["From"] = f"{config['from_name']} <{config['from_email']}>"
+                msg["To"] = to_email
+
+                part = MIMEText(html_content, "html")
                 msg.attach(part)
-                
+
                 if config["ssl"]:
-                    server = smtplib.SMTP_SSL(config["host"], config["port"], timeout=10)
+                    server = smtplib.SMTP_SSL(
+                        config["host"], config["port"], timeout=10
+                    )
                 else:
                     server = smtplib.SMTP(config["host"], config["port"], timeout=10)
                     if config["tls"]:
                         server.starttls()
-                        
+
                 if config["user"] and config["password"]:
                     server.login(config["user"], config["password"])
-                    
+
                 server.send_message(msg)
                 server.quit()
-                
+
                 email_log.status = EmailStatus.SENT
                 email_log.sent_at = datetime.now(timezone.utc)
                 db.commit()
                 logger.info(f"Email sent successfully to {to_email}")
-                
+
             except Exception as e:
                 logger.error(f"SMTP failed to send to {to_email}: {str(e)}")
                 email_log.status = EmailStatus.FAILED
@@ -164,12 +171,13 @@ class EmailService:
         """Send a test email synchronously. Raises on error."""
         db = SessionLocal()
         import uuid
+
         try:
             parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
             user = db.query(User).filter(User.id == parsed_id).first()
             if not user:
                 raise Exception("Admin user not found.")
-            
+
             subject = f"Test Email from {settings.APP_NAME}"
             body = f"""
             <div style="font-size: 18px; font-weight: 500; margin-bottom: 24px;">
@@ -181,7 +189,9 @@ class EmailService:
             </div>
             """
             html_content = EmailService._get_base_template(subject, body)
-            EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
+            EmailService._send_email_core(
+                db, user.email, subject, html_content, user.role.value
+            )
         finally:
             db.close()
 
@@ -190,15 +200,16 @@ class EmailService:
         """Send a welcome email with credentials."""
         db = SessionLocal()
         import uuid
+
         try:
             parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
             user = db.query(User).filter(User.id == parsed_id).first()
             if not user:
                 raise Exception("User not found.")
-                
+
             subject = f"Welcome to {settings.APP_NAME}"
             name = user.first_name or user.username
-            
+
             body = f"""
             <div style="font-size: 18px; font-weight: 500; margin-bottom: 24px;">
                 Hello {name},
@@ -236,13 +247,17 @@ class EmailService:
             </div>
             """
             html_content = EmailService._get_base_template(subject, body)
-            EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
+            EmailService._send_email_core(
+                db, user.email, subject, html_content, user.role.value
+            )
         finally:
             db.close()
+
     @staticmethod
     def send_verification_email(user_id: str, otp: str):
         """Send an email verification OTP to a new user."""
         import uuid
+
         db = SessionLocal()
         try:
             if isinstance(user_id, str):
@@ -252,10 +267,10 @@ class EmailService:
             user = db.query(User).filter(User.id == user_id_obj).first()
             if not user:
                 raise Exception("User not found.")
-                
+
             subject = f"Verify Your Email - {settings.APP_NAME}"
             name = user.first_name or user.username
-            
+
             body = f"""
             <div style="font-size: 19px; font-weight: 600; color: #ffffff; margin-bottom: 24px;">
                 Hello {name},
@@ -278,25 +293,27 @@ class EmailService:
             </div>
             """
             html_content = EmailService._get_base_template(subject, body)
-            EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
+            EmailService._send_email_core(
+                db, user.email, subject, html_content, user.role.value
+            )
         finally:
             db.close()
-
 
     @staticmethod
     def send_password_reset_email(user_id: str, otp: str):
         """Send a password reset email."""
         db = SessionLocal()
         import uuid
+
         try:
             parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
             user = db.query(User).filter(User.id == parsed_id).first()
             if not user:
                 raise Exception("User not found.")
-                
+
             subject = f"Reset Your Password - {settings.APP_NAME}"
             name = user.first_name or user.username
-            
+
             body = f"""
             <div style="font-size: 19px; font-weight: 600; color: #ffffff; margin-bottom: 24px;">
                 Hello {name},
@@ -318,7 +335,9 @@ class EmailService:
             </div>
             """
             html_content = EmailService._get_base_template(subject, body)
-            EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
+            EmailService._send_email_core(
+                db, user.email, subject, html_content, user.role.value
+            )
         finally:
             db.close()
 
@@ -327,17 +346,20 @@ class EmailService:
         """Send a custom manual email via SMTP."""
         db = SessionLocal()
         import uuid
+
         try:
             parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
             user = db.query(User).filter(User.id == parsed_id).first()
             if not user:
                 raise Exception("User not found.")
-            
+
             body = f"""
             <div style="color: #e4e4e7; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">{message}</div>
             """
             html_content = EmailService._get_base_template(subject, body)
-            EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
+            EmailService._send_email_core(
+                db, user.email, subject, html_content, user.role.value
+            )
         finally:
             db.close()
 
@@ -345,15 +367,16 @@ class EmailService:
     def send_new_login_alert(user_id: str, ip_address: str, device: str):
         db = SessionLocal()
         import uuid
+
         try:
             parsed_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
             user = db.query(User).filter(User.id == parsed_id).first()
             if not user:
                 return
-            
+
             subject = "New Login to Your Account"
             name = user.first_name if user.first_name else user.username
-            
+
             body = f"""
             <div style="font-size: 19px; font-weight: 600; color: #ffffff; margin-bottom: 24px;">
                 Hello {name},
@@ -372,6 +395,8 @@ class EmailService:
             </div>
             """
             html_content = EmailService._get_base_template(subject, body)
-            EmailService._send_email_core(db, user.email, subject, html_content, user.role.value)
+            EmailService._send_email_core(
+                db, user.email, subject, html_content, user.role.value
+            )
         finally:
             db.close()

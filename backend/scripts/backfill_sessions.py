@@ -7,38 +7,51 @@ Run from inside the backend container or venv:
   cd /path/to/backend
   python scripts/backfill_sessions.py
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.database.session import engine, SessionLocal
+from app.database.session import engine
 from sqlalchemy.orm import Session
 from app.models.user_session import UserSession
 from user_agents import parse
 
+
 def _clean(val: str):
     return val if val and val.lower() not in ("other", "", "none") else None
+
 
 def _detect_device(ua) -> str:
     raw = ua.device.family
     if raw != "Other":
         return raw
-    if ua.is_mobile: return "Mobile"
-    if ua.is_tablet: return "Tablet"
-    if ua.is_bot:    return "Bot"
+    if ua.is_mobile:
+        return "Mobile"
+    if ua.is_tablet:
+        return "Tablet"
+    if ua.is_bot:
+        return "Bot"
     return "Desktop"
 
+
 with Session(engine) as db:
-    sessions = db.query(UserSession).filter(
-        (UserSession.device_type == "Other") |
-        (UserSession.browser == "Other") |
-        (UserSession.os == "Other") |
-        (UserSession.device_type == None) |
-        (UserSession.browser == None) |
-        (UserSession.os == None)
-    ).all()
+    sessions = (
+        db.query(UserSession)
+        .filter(
+            (UserSession.device_type == "Other")
+            | (UserSession.browser == "Other")
+            | (UserSession.os == "Other")
+            | (UserSession.device_type == None)
+            | (UserSession.browser == None)
+            | (UserSession.os == None)
+        )
+        .all()
+    )
 
     print(f"Found {len(sessions)} sessions to backfill...")
     updated = 0
@@ -49,8 +62,8 @@ with Session(engine) as db:
             continue
         ua = parse(raw_ua)
         s.device_type = _detect_device(ua)
-        s.browser     = _clean(ua.browser.family) or "Unknown"
-        s.os          = _clean(ua.os.family) or "Unknown"
+        s.browser = _clean(ua.browser.family) or "Unknown"
+        s.os = _clean(ua.os.family) or "Unknown"
         updated += 1
 
     db.commit()

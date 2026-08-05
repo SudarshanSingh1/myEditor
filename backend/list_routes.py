@@ -1,5 +1,5 @@
-import asyncio
 from app.main import app
+
 
 def print_routes(routes, prefix=""):
     for route in routes:
@@ -13,7 +13,10 @@ def print_routes(routes, prefix=""):
             inc_prefix = getattr(route.include_context, "prefix", "")
             print_routes(route.original_router.routes, prefix + inc_prefix)
         else:
-            print(f"OTHER: {type(route).__name__} {getattr(route, 'path', repr(route))}")
+            print(
+                f"OTHER: {type(route).__name__} {getattr(route, 'path', repr(route))}"
+            )
+
 
 print("=== FASTAPI REGISTERED ROUTES ===")
 print_routes(app.routes)

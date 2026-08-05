@@ -6,9 +6,10 @@ import { useEditorStore } from '../../stores/useEditorStore';
 
 import { History, Clock, Search, X, ArrowLeftRight, Trash2 } from 'lucide-react';
 import { useConfirm } from "../../components/ui/ConfirmProvider";
+import { useShallow } from 'zustand/react/shallow';
 
 export function VersionHistoryPanel({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { activeFileId, tabs } = useEditorStore();
+  const { activeFileId, tabs } = useEditorStore(useShallow(state => ({ activeFileId: state.activeFileId, tabs: state.tabs })));
   const { confirm } = useConfirm();
   const { versions, fetchVersions, fetchVersionContent, selectedVersion, clearSelectedVersion, deleteVersion } = useVersionStore();
   const [search, setSearch] = useState('');

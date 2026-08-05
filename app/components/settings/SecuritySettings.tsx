@@ -16,9 +16,10 @@ import { Shield, Smartphone, Laptop, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 import { QRCodeSVG } from "qrcode.react";
+import { useShallow } from 'zustand/react/shallow';
 
 export function SecuritySettings() {
-  const { user, updateProfile } = useUserStore();
+  const { user, updateProfile } = useUserStore(useShallow(state => ({ user: state.user, updateProfile: state.updateProfile })));
   const [sessions, setSessions] = useState<any[]>([]);
   const [_isLoading, _setIsLoading] = useState(false);
   const [show2FAModal, setShow2FAModal] = useState(false);

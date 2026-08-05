@@ -1,5 +1,9 @@
 import { useUserStore } from '../stores/useUserStore';
 import { useSystemStore } from '../stores/useSystemStore';
+import { useEditorStore } from '../stores/useEditorStore';
+import { useExecutionStore } from '../stores/useExecutionStore';
+import { useSaveStore } from '../stores/useSaveStore';
+import { useOutputStore } from '../stores/useOutputStore';
 import { fetchApi } from '../lib/api';
 import { queryClient } from '../lib/queryClient';
 
@@ -32,17 +36,18 @@ class AuthController {
 
       try {
         console.log("[AUTH] AUTH_ME_REQUEST");
-        const response = await fetchApi('/auth/me');
+        // Fetch user profile and permissions in parallel — both require an
+        // authenticated session but are independent of each other.
+        const [response, permResp] = await Promise.all([
+          fetchApi('/auth/me'),
+          fetchApi('/rbac/my-permissions').catch(() => null),
+        ]);
+
         if (response.success && response.data) {
-          let perms: string[] = response.data.effective_permissions || [];
-          try {
-            const permResp = await fetchApi('/rbac/my-permissions');
-            if (permResp && permResp.permissions) {
-              perms = permResp.permissions;
-            }
-          } catch (e) {
-            console.error("Failed to fetch permissions", e);
-          }
+          const perms: string[] =
+            (permResp && permResp.permissions) ||
+            response.data.effective_permissions ||
+            [];
           const userWithPerms = { ...response.data, effective_permissions: perms };
           useUserStore.getState().setAuthSuccess(userWithPerms, perms);
           console.log("[AUTH] AUTH_STATE_CHANGED", "AUTHENTICATED");
@@ -65,16 +70,22 @@ class AuthController {
   private async handleBootstrapFailure(): Promise<boolean> {
     const refreshed = await this.refresh();
     if (refreshed) {
-      // Retry auth/me once after refresh
+      // Retry auth/me + permissions in parallel once after refresh
       console.log("[AUTH] AUTH_ME_REQUEST (Retry after refresh)");
       try {
-        const retryResp = await fetchApi('/auth/me');
+        const [retryResp, permResp] = await Promise.all([
+          fetchApi('/auth/me'),
+          fetchApi('/rbac/my-permissions').catch(() => null),
+        ]);
         if (retryResp.success && retryResp.data) {
-           let perms = retryResp.data.effective_permissions || [];
-           useUserStore.getState().setAuthSuccess({ ...retryResp.data, effective_permissions: perms }, perms);
-           console.log("[AUTH] AUTH_STATE_CHANGED", "AUTHENTICATED");
-           console.log("[AUTH] AUTH_BOOTSTRAP_END");
-           return true;
+          const perms: string[] =
+            (permResp && permResp.permissions) ||
+            retryResp.data.effective_permissions ||
+            [];
+          useUserStore.getState().setAuthSuccess({ ...retryResp.data, effective_permissions: perms }, perms);
+          console.log("[AUTH] AUTH_STATE_CHANGED", "AUTHENTICATED");
+          console.log("[AUTH] AUTH_BOOTSTRAP_END");
+          return true;
         }
       } catch (e) {}
     }
@@ -163,6 +174,10 @@ class AuthController {
 
     // 2. Clear state
     useUserStore.getState().clearAuth();
+    useEditorStore.getState().reset();
+    useExecutionStore.getState().reset();
+    useSaveStore.getState().reset();
+    useOutputStore.getState().clearLogs();
     
     // 3. Cancel queries
     queryClient.cancelQueries();

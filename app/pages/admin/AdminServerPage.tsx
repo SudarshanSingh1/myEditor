@@ -29,6 +29,7 @@ interface ServerData {
   docker_containers: number;
   network_sent_mb: number;
   network_recv_mb: number;
+  packet_loss_percent: number;
   uptime_seconds: number;
   process_count: number;
   service_health: string;
@@ -63,7 +64,12 @@ export default function AdminServerPage() {
 
   const poll = async () => {
     try {
-      const resp = await fetchApi("/admin/server");
+      // Fire both requests in parallel — don't serialize what can run concurrently.
+      const [resp, wResp] = await Promise.all([
+        fetchApi("/admin/server"),
+        fetchApi("/admin/server/workers"),
+      ]);
+
       if (resp?.success) {
         const d = resp.data as ServerData;
         setData(d);
@@ -78,11 +84,11 @@ export default function AdminServerPage() {
           return next.slice(-24);
         });
       }
-      const wResp = await fetchApi("/admin/server/workers");
       if (wResp?.success) setWorkers(wResp.data.items || []);
     } catch { /* silent */ }
     finally { setLoading(false); }
   };
+
 
   useEffect(() => {
     poll();
