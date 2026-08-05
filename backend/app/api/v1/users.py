@@ -28,13 +28,12 @@ def get_activity_heatmap(
 
     result = db.execute(
         select(
-            func.date(ExecutionLog.created_at).label("exec_date"),
-            func.count(ExecutionLog.id),
+            UserActivity.activity_date.label("exec_date"),
+            UserActivity.count,
         )
-        .where(ExecutionLog.user_id == current_user.id)
-        .where(func.date(ExecutionLog.created_at) >= one_year_ago)
-        .group_by(func.date(ExecutionLog.created_at))
-        .order_by(func.date(ExecutionLog.created_at).asc())
+        .where(UserActivity.user_id == current_user.id)
+        .where(UserActivity.activity_date >= one_year_ago)
+        .order_by(UserActivity.activity_date.asc())
     )
     activities = result.all()
 

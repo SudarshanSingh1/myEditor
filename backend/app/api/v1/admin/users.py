@@ -34,7 +34,7 @@ def get_users(
     search: str = None,
     role: str = None,
     status: str = None,
-    is_deleted: bool = None,
+    is_deleted: bool = False,
     sort_by: str = "created_at",
     sort_dir: str = "desc",
     db: Session = Depends(get_db),

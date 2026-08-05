@@ -3,6 +3,9 @@ import logging
 import random
 import string
 import hashlib
+import threading
+import urllib.request
+import json
 from datetime import datetime, timedelta, timezone
 from typing import Tuple
 from sqlalchemy.orm import Session
@@ -31,6 +34,33 @@ from app.schemas.auth import (
 from app.services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
+
+
+def fetch_and_update_location(session_id: uuid.UUID, ip_address: str):
+    if not ip_address or ip_address in ("127.0.0.1", "localhost", "::1"):
+        return
+    if ip_address.startswith("172.") or ip_address.startswith("192.168.") or ip_address.startswith("10."):
+        return
+    try:
+        url = f"http://ip-api.com/json/{ip_address}?fields=country,city,status"
+        req = urllib.request.Request(url, headers={'User-Agent': 'HamaraEditor/1.0'})
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode())
+            if data.get("status") == "success":
+                loc = f"{data.get('city', '')}, {data.get('country', '')}".strip(", ")
+                if loc:
+                    from app.database.session import SessionLocal
+                    from app.models.user_session import UserSession
+                    db = SessionLocal()
+                    try:
+                        session = db.query(UserSession).filter(UserSession.id == session_id).first()
+                        if session:
+                            session.country = loc
+                            db.commit()
+                    finally:
+                        db.close()
+    except Exception as e:
+        logger.warning(f"Failed to fetch IP location: {e}")
 
 
 def _hash_token(token: str) -> str:
@@ -400,12 +430,17 @@ class AuthService:
         )
         db.add(log)
         db.commit()
-
         # Notification
         try:
             EmailService.send_new_login_alert(user.id, ip_address, ua.device.family)
         except Exception:
             pass
+
+        db.commit()
+
+        if ip_address:
+            import threading
+            threading.Thread(target=fetch_and_update_location, args=(new_session.id, ip_address), daemon=True).start()
 
         return user, access_token, refresh_token_val
 
@@ -618,6 +653,9 @@ class AuthService:
         )
         db.add(log)
         db.commit()
+
+        if ip_address:
+            threading.Thread(target=fetch_and_update_location, args=(new_session.id, ip_address), daemon=True).start()
 
         return user, access_token, refresh_token
 

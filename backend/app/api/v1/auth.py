@@ -106,6 +106,15 @@ def resend_verification(
     )
 
 
+def _get_client_ip(request: Request) -> str:
+    forwarded_for = request.headers.get("x-forwarded-for")
+    real_ip = request.headers.get("x-real-ip")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    if real_ip:
+        return real_ip
+    return request.client.host if request.client else None
+
 @router.post("/login", response_model=SuccessResponse)
 @limiter.limit("5/minute")
 def login(
@@ -114,11 +123,7 @@ def login(
     response: Response,
     db: Session = Depends(get_db),
 ):
-    forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        ip_address = forwarded_for.split(",")[0].strip()
-    else:
-        ip_address = request.client.host if request.client else None
+    ip_address = _get_client_ip(request)
 
     user_agent = request.headers.get("user-agent", "")
     user, access_token, refresh_token = AuthService.authenticate_user(
@@ -318,12 +323,7 @@ def verify_2fa(
     db: Session = Depends(get_db),
 ):
     """Complete 2FA login flow: validate pre_auth_token + TOTP code, issue full session."""
-    forwarded_for = request.headers.get("x-forwarded-for")
-    ip_address = (
-        forwarded_for.split(",")[0].strip()
-        if forwarded_for
-        else (request.client.host if request.client else None)
-    )
+    ip_address = _get_client_ip(request)
     user_agent = request.headers.get("user-agent", "")
 
     user, access_token, refresh_token_val = AuthService.complete_2fa_login(
@@ -365,12 +365,7 @@ def recover_2fa(
     db: Session = Depends(get_db),
 ):
     """Recover 2FA access using a backup code. The backup code is consumed (single-use)."""
-    forwarded_for = request.headers.get("x-forwarded-for")
-    ip_address = (
-        forwarded_for.split(",")[0].strip()
-        if forwarded_for
-        else (request.client.host if request.client else None)
-    )
+    ip_address = _get_client_ip(request)
     user_agent = request.headers.get("user-agent", "")
 
     user, access_token, refresh_token_val = AuthService.complete_2fa_login(
