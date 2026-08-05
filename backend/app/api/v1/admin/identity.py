@@ -61,6 +61,8 @@ def get_identity_sessions(
     sessions = (
         db.query(UserSession, User.username)
         .join(User, UserSession.user_id == User.id)
+        .filter(UserSession.is_active == True)
+        .filter(User.is_deleted == False)
         .order_by(UserSession.created_at.desc())
         .limit(100)
         .all()
@@ -70,21 +72,30 @@ def get_identity_sessions(
     for s, un in sessions:
 
         def _clean(val: str) -> str:
-            """Safety-net: map user-agents library's 'Other' placeholder to 'Unknown'.
-            Real values (Desktop, Chrome, Windows, etc.) pass through unchanged."""
-            return (
-                val if val and val.lower() not in ("other", "", "none") else "Unknown"
-            )
+            """Safety-net: map user-agents library's 'Other' placeholder to 'Unknown'."""
+            return val if val and val.lower() not in ("other", "", "none") else "Unknown"
+
+        device_type = s.device_type
+        browser = s.browser
+        os_name = s.os
+
+        # Fallback for legacy sessions that only have user_agent string
+        if not device_type or not browser or not os_name:
+            from user_agents import parse
+            ua = parse(s.user_agent or "")
+            device_type = device_type or ("Mobile" if ua.is_mobile else "Tablet" if ua.is_tablet else "Bot" if ua.is_bot else "Desktop" if getattr(ua.device, 'family', '') == "Other" else getattr(ua.device, 'family', "Unknown"))
+            browser = browser or _clean(getattr(ua.browser, 'family', "Unknown"))
+            os_name = os_name or _clean(getattr(ua.os, 'family', "Unknown"))
 
         items.append(
             {
                 "id": str(s.id),
                 "user": un,
-                "device": _clean(getattr(s, "device_type", None) or ""),
-                "browser": _clean(getattr(s, "browser", None) or ""),
-                "os": _clean(getattr(s, "os", None) or ""),
+                "device": _clean(device_type or ""),
+                "browser": _clean(browser or ""),
+                "os": _clean(os_name or ""),
                 "ip_address": s.ip_address,
-                "country": "Unknown",
+                "country": s.country or "Unknown",
                 "login_time": s.created_at,
                 "last_activity": s.last_active_at,
                 "status": "Active" if s.is_active else "Revoked",

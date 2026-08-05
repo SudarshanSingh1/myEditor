@@ -115,6 +115,9 @@ export const useExecutionStore = create<ExecutionState>()(
         
         usersApi.recordActivity(todayStr).then((res) => {
           if (res && res.count === 1) {
+            import('../lib/queryClient').then(({ queryClient }) => {
+                queryClient.invalidateQueries({ queryKey: ['activity-heatmap'] });
+            });
             const duration = 3 * 1000;
             const animationEnd = Date.now() + duration;
             const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
@@ -133,6 +136,11 @@ export const useExecutionStore = create<ExecutionState>()(
                 origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
               }));
             }, 250);
+          } else {
+             // Still invalidate to refresh streak data
+             import('../lib/queryClient').then(({ queryClient }) => {
+                queryClient.invalidateQueries({ queryKey: ['activity-heatmap'] });
+             });
           }
         }).catch(console.error);
       }
