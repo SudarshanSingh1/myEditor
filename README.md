@@ -14,7 +14,7 @@ The Open-Source, Enterprise-Grade Cloud Code Editor
 
 ---
 
-<img src="docs/images/landing-light.jpg" alt="Hamara Editor Hero">
+![Hamara Editor Hero](docs/images/landing-light.jpg)
 
 ## Project Overview
 
