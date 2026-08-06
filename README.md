@@ -2,6 +2,9 @@
 
 The Open-Source, Enterprise-Grade Cloud Code Editor
 
+<img width="1271" height="798" alt="image" src="https://github.com/user-attachments/assets/25e96b94-7a15-4b27-826a-4dde998f93c5" />
+
+
 <p>
   <a href="https://github.com/hamara/editor/actions"><img src="https://img.shields.io/github/actions/workflow/status/hamara/editor/ci.yml" alt="Build Status"></a>
   <a href="https://github.com/hamara/editor/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
