@@ -1,6 +1,6 @@
 # 🌐 Production Deployment Guide
 
-Hamara Editor is architected for secure, zero-downtime production deployment using **Docker Compose**, **Nginx Reverse Proxy (SSL/HTTPS)**, **PostgreSQL**, and automated **CI/CD via GitHub Actions**.
+Hamara Editor is architected for secure, zero-downtime production deployment using **Docker Compose**, **Nginx Reverse Proxy (SSL/HTTPS)**, and **PostgreSQL**.
 
 > **Note:** Our deployment documentation has been modularized and upgraded into our dedicated official documentation suite. Please follow the comprehensive guides below based on your deployment requirements:
 
@@ -19,7 +19,7 @@ Hamara Editor is architected for secure, zero-downtime production deployment usi
 - Full production architecture diagram (Client ──> Nginx SSL ──> FastAPI ──> Docker Socket ──> Neon PostgreSQL)
 - Nginx reverse proxy configuration with Let's Encrypt SSL certificates
 - Production environment variables and security hardening
-- Automated Continuous Deployment (CD) pipeline setup via GitHub Actions (`.github/workflows/deploy.yml`)
+- Manual Continuous Deployment (CD) via CLI orchestration.
 - Health check endpoints (`/api/v1/health/live`, `/api/v1/health/ready`) & PostgreSQL backup/restore workflows
 
 ### 3. 🔐 [Security Architecture & RBAC Guide](docs/SECURITY_AND_RBAC.md)

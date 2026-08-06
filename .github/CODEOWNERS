@@ -1,0 +1,20 @@
+# These owners will be the default reviewers for pull requests in these directories
+
+*       @core-team
+
+# Backend
+/backend/           @backend-team
+/alembic/           @backend-team
+
+# Frontend
+/app/               @frontend-team
+/public/            @frontend-team
+
+# Infrastructure
+/docker-compose*.yml @devops-team
+/nginx.conf          @devops-team
+/scripts/docker/     @devops-team
+
+# Documentation
+/docs/              @docs-team
+/README.md          @docs-team

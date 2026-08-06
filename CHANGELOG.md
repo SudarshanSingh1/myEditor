@@ -1,19 +1,23 @@
-# CHANGELOG
+# Changelog
 
-## v1.0.0-rc1 (Release Candidate 1)
+All notable changes to this project will be documented in this file.
 
-### Added
-- Feedback Modal for user bug reports and feature requests.
-- System Error telemetry capturing crashes, stack traces, browser info, and routes.
-- Admin Dashboard tabs for System Settings, User Feedback, and System Errors.
-- `health`, `version`, and `status` API endpoints for system monitoring.
-- `About` page with technology stack information.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.1] - 2024-05-05
 
 ### Changed
-- Integrated global error boundaries with automatic backend crash reporting.
-- Enhanced Admin Settings panel.
+- Refactored repository structure to align with enterprise open-source standards.
+- Removed automated CI/CD deployment workflows in favor of manual deployment processes.
+- Updated core documentation and provided comprehensive project structure mapping.
+- Enhanced README with actual application mockups and precise technical badging.
 
-### Fixed
-- Stabilized database migrations (resolved duplicate keys in `file_versions`).
-- Eliminated console errors and React runtime errors.
-- Improved error handling in `api.ts`  .
+## [1.0.0] - 2024-05-01
+
+### Added
+- Initial release of Hamara Editor.
+- React 19 + Vite frontend.
+- FastAPI backend with Code Execution Engine.
+- OAuth integration.
+- PostgreSQL integration with Alembic migrations.
