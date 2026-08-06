@@ -20,8 +20,6 @@ The Open-Source, Enterprise-Grade Cloud Code Editor
 
 <img width="1280" height="832" alt="image" src="https://github.com/user-attachments/assets/2db33c83-3e65-4d8f-af3e-00c78dc5a361" />
 
-<img width="1280" height="832" alt="image" src="https://github.com/user-attachments/assets/567d1922-5270-4497-b1f7-2fcbc46d34cb" />
-
 ---
 
 ![Hamara Editor Hero](docs/images/landing-light.jpg)
