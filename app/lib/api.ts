@@ -6,7 +6,7 @@ const API_BASE_URL = '/api/v1';
 
 
 
-export async function fetchApi(endpoint: string, options: RequestInit = {}) {
+export async function fetchApi(endpoint: string, options: RequestInit & { _retry?: boolean } = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   
   // Create headers object, defaulting to JSON if not specified
@@ -16,7 +16,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   }
 
   // Ensure cookies are sent with every request
-  const config: RequestInit = {
+  const config: RequestInit & { _retry?: boolean } = {
     ...options,
     headers,
     credentials: 'include',
@@ -30,6 +30,31 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
 
     const data = await response.json().catch(() => null);
     
+    // 401 Interceptor: if it's a 401 and we haven't retried yet, and it's not an auth endpoint
+    if (response.status === 401 && !options._retry) {
+      const isAuthEndpoint = endpoint.includes('/auth/login') || 
+                             endpoint.includes('/auth/register') || 
+                             endpoint.includes('/auth/refresh') || 
+                             endpoint.includes('/auth/logout') ||
+                             endpoint.includes('/auth/me');
+      if (!isAuthEndpoint) {
+        config._retry = true;
+        const { authController } = await import('../services/AuthController');
+        const refreshed = await authController.refresh();
+        if (refreshed) {
+          // Retry the original request
+          return fetchApi(endpoint, config);
+        } else {
+          // If refresh fails, explicitly move to UNAUTHENTICATED to trigger clean session-expiry UX
+          const { useUserStore } = await import('../stores/useUserStore');
+          if (useUserStore.getState().authState !== 'GUEST') {
+            useUserStore.getState().setAuthState('UNAUTHENTICATED');
+          }
+          throw new Error('Authentication failed.');
+        }
+      }
+    }
+
     if (!response.ok) {
       let errorMsg = data?.detail || data?.message || `API request failed (${response.status})`;
       

@@ -25,6 +25,7 @@ class UserRegisterRequest(BaseModel):
 class UserLoginRequest(BaseModel):
     email: EmailStr
     password: str
+    force_new_session: bool = False
 
 
 class RefreshTokenRequest(BaseModel):

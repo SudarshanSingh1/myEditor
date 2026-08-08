@@ -87,7 +87,7 @@ export const useExecutionStore = create<ExecutionState>()(
   setStatus: (status) => set({ status }),
   setPendingExecution: (exec) => set({ pendingExecution: exec }),
   setExecutionFinished: (exitCode) => {
-    const { pendingExecution, history } = get();
+    const { pendingExecution, history, isCancelling } = get();
     const isSuccess = exitCode === 0;
     
     // Instantly update dashboard data across all charts when execution finishes
@@ -96,20 +96,22 @@ export const useExecutionStore = create<ExecutionState>()(
     queryClient.invalidateQueries({ queryKey: ['execution-summary-today'] });
     queryClient.invalidateQueries({ queryKey: ['execution-summary-total'] });
     
+    const finalStatus = isCancelling ? 'Cancelled' : (isSuccess ? 'Completed' : 'Failed');
+    
     if (pendingExecution) {
       const newHistoryItem: ExecutionHistoryItem = {
         id: Math.random().toString(36).substring(7),
         timestamp: Date.now(),
-        errorCategory: isSuccess ? 'None' : 'Runtime Error',
-        status: isSuccess ? 'Completed' : 'Failed',
-        exit_code: exitCode,
+        errorCategory: isCancelling ? 'None' : (isSuccess ? 'None' : 'Runtime Error'),
+        status: finalStatus,
+        exit_code: isCancelling ? -1 : exitCode,
         output: '',
         language: pendingExecution.language,
         compile_time_ms: 0,
         execution_time_ms: 0,
         memory_used_kb: 0
       };
-      if (isSuccess) {
+      if (isSuccess && !isCancelling) {
         const todayDate = new Date();
         const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
         
@@ -147,9 +149,9 @@ export const useExecutionStore = create<ExecutionState>()(
 
       // Keep only last 20 items
       const newHistory = [newHistoryItem, ...history].slice(0, 20);
-      set({ isRunning: false, isCancelling: false, status: isSuccess ? 'Completed' : 'Failed', history: newHistory });
+      set({ isRunning: false, isCancelling: false, status: finalStatus, history: newHistory });
     } else {
-      set({ isRunning: false, isCancelling: false, status: isSuccess ? 'Completed' : 'Failed' });
+      set({ isRunning: false, isCancelling: false, status: finalStatus });
     }
   },
   reset: () => set({
@@ -204,13 +206,9 @@ export const useExecutionStore = create<ExecutionState>()(
     const { appendLog } = useOutputStore.getState();
     appendLog('[System] Stop signal dispatched. Terminating container...', 'System');
     
-    try {
-      // Normally we'd pass the container_id, but the backend doesn't return it until done currently.
-      // A robust implementation would return container_id immediately and use WebSockets.
-      await executionApi.stop("current"); // Dummy ID for now
-    } catch {
-      // Ignore stop errors if container already died
-    }
+    // WebSocket in TerminalPanel.tsx listens for isCancelling and sends SIGKILL + closes connection,
+    // which effectively forces the backend to kill the container.
+    // We no longer need to call the dummy REST API.
   },
 
   clearHistory: () => set({ history: [] })

@@ -364,7 +364,7 @@ class EmailService:
             db.close()
 
     @staticmethod
-    def send_new_login_alert(user_id: str, ip_address: str, device: str):
+    def send_new_login_alert(user_id: str, ip_address: str, device: str, browser: str, os_name: str, login_time: datetime):
         db = SessionLocal()
         import uuid
 
@@ -388,7 +388,9 @@ class EmailService:
                 <div style="color: #71717a; font-size: 13px; margin-bottom: 8px;">Login Details:</div>
                 <div style="color: #e4e4e7; font-size: 14px;"><strong>IP Address:</strong> {ip_address or 'Unknown'}</div>
                 <div style="color: #e4e4e7; font-size: 14px;"><strong>Device:</strong> {device or 'Unknown'}</div>
-                <div style="color: #e4e4e7; font-size: 14px;"><strong>Time:</strong> {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}</div>
+                <div style="color: #e4e4e7; font-size: 14px;"><strong>Browser:</strong> {browser or 'Unknown'}</div>
+                <div style="color: #e4e4e7; font-size: 14px;"><strong>OS:</strong> {os_name or 'Unknown'}</div>
+                <div style="color: #e4e4e7; font-size: 14px;"><strong>Time:</strong> {login_time.strftime("%Y-%m-%d %H:%M:%S UTC") if login_time else datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}</div>
             </div>
             <div style="color: #d4d4d8; font-size: 15px; line-height: 1.6; margin-bottom: 36px;">
                 If this was you, you can safely ignore this email. If you don't recognize this activity, please reset your password immediately and secure your account.

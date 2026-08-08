@@ -7,9 +7,10 @@ import { Input } from "../../components/ui/Input";
 import { fetchApi } from "../../lib/api";
 import { useUserStore } from "../../stores/useUserStore";
 import { useSystemStore } from "../../stores/useSystemStore";
-import { Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff, LogOut } from "lucide-react";
 import { SudarshanaMandala } from "../../components/ui/SplashLoader";
 import { useShallow } from 'zustand/react/shallow';
+import { Modal } from "../../components/ui/Modal";
 
 interface LoginProps {
   isAdminPortal?: boolean;
@@ -63,6 +64,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
   const [totpCode, setTotpCode] = useState("");
   const [twoFaToken, setTwoFaToken] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
   
   // Clear error when user types
   useEffect(() => {
@@ -152,7 +154,7 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
     try {
       const response = await fetchApi("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, force_new_session: false }),
       });
       
       if (response.success) {
@@ -200,6 +202,11 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
         }
       }
     } catch (err: any) {
+      if (err.message === "SESSION_ALREADY_ACTIVE") {
+        setShowConflictModal(true);
+        return;
+      }
+      
       if (err.message === "2FA_REQUIRED") {
         setIs2FA(true);
         setTwoFaToken(err.data?.detail?.token || "");
@@ -228,7 +235,74 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
     }
   };
 
+  const handleForceLogin = async () => {
+    setShowConflictModal(false);
+    setError("");
+    setIsLoading(true);
+    
+    try {
+      const response = await fetchApi("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password, force_new_session: true }),
+      });
+      
+      if (response.success) {
+        const { authController } = await import('../../services/AuthController');
+        await authController.bootstrap(true);
+        const userState = useUserStore.getState().user;
+        
+        if (userState) {
+          const role: string = (userState.role || "").toUpperCase();
+          const isSuperAdmin = role === "OWNER";
+          const isAdmin = role === "ADMIN";
+          const isMod = role === "MODERATOR";
+
+          await useSystemStore.getState().checkStatus(true);
+          const isMaint = useSystemStore.getState().isMaintenanceMode;
+          const allowAdmin = useSystemStore.getState().allowAdmin;
+          const perms: string[] = userState.effective_permissions || useUserStore.getState().permissions || [];
+          const canBypass = isSuperAdmin || perms.includes("*") || perms.includes("system.maintenance.bypass") || ((isAdmin || isMod) && allowAdmin);
+          const isStaff = isSuperAdmin || isAdmin || isMod || canBypass;
+
+          if (isAdminPortal && !isStaff) {
+            await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            setError("Access Denied: Restricted to Administrators, Moderators, and Owners only.");
+            return;
+          }
+
+          if (isMaint && !canBypass) {
+            await fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            navigate("/maintenance", { replace: true });
+            return;
+          }
+
+          if (isSuperAdmin) {
+            navigate("/super-admin", { replace: true });
+          } else if (isAdmin || isMod) {
+            navigate("/app/admin", { replace: true });
+          } else {
+            navigate("/app/dashboard", { replace: true });
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.message === "2FA_REQUIRED") {
+        setIs2FA(true);
+        setTwoFaToken(err.data?.detail?.token || "");
+        return;
+      }
+      setError(err.message || "Failed to sign in. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
+    <>
     <div className="w-full space-y-8 p-8 sm:p-10 rounded-2xl bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
       <div className="space-y-2 text-center">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{is2FA ? "Two-Factor Authentication" : isAdminPortal ? "Administrator Portal" : "Welcome back"}</h2>
@@ -445,5 +519,28 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
         </div>
       )}
     </div>
+
+    <Modal
+      isOpen={showConflictModal}
+      onClose={() => setShowConflictModal(false)}
+      title="Already signed in elsewhere"
+    >
+      <div className="space-y-4">
+        <p className="text-zinc-600 dark:text-zinc-400">
+          Your account is already signed in on another device or browser.
+          Continuing will log you out of the other session.
+        </p>
+        <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-white/10">
+          <Button variant="outline" onClick={() => setShowConflictModal(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleForceLogin} className="bg-red-600 hover:bg-red-700 text-white">
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign out everywhere else & Continue
+          </Button>
+        </div>
+      </div>
+    </Modal>
+    </>
   );
 }

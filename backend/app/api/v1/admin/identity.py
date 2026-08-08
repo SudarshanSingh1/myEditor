@@ -26,14 +26,41 @@ def get_identity_dashboard(
     from app.models.user_session import UserSession
     from app.models.oauth_account import OAuthAccount
 
-    total_users = db.query(User).count()
-    active_sessions = db.query(UserSession).count()
-    online_users = (
-        db.query(func.count(func.distinct(UserSession.user_id))).scalar() or 0
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+
+    total_users = db.query(User).filter(User.is_deleted == False).count()
+    active_sessions = (
+        db.query(UserSession)
+        .join(User, UserSession.user_id == User.id)
+        .filter(
+            UserSession.is_active == True,
+            UserSession.expires_at > now,
+            User.is_deleted == False,
+        )
+        .count()
     )
-    mfa_enabled = db.query(User).filter(User.totp_enabled == True).count()
+    online_users = (
+        db.query(func.count(func.distinct(UserSession.user_id)))
+        .join(User, UserSession.user_id == User.id)
+        .filter(
+            UserSession.is_active == True,
+            UserSession.expires_at > now,
+            UserSession.last_active_at >= now - timedelta(minutes=15),
+            User.is_deleted == False,
+        )
+        .scalar()
+        or 0
+    )
+    mfa_enabled = (
+        db.query(User).filter(User.totp_enabled == True, User.is_deleted == False).count()
+    )
     oauth_users = (
-        db.query(func.count(func.distinct(OAuthAccount.user_id))).scalar() or 0
+        db.query(func.count(func.distinct(OAuthAccount.user_id)))
+        .join(User, OAuthAccount.user_id == User.id)
+        .filter(User.is_deleted == False)
+        .scalar()
+        or 0
     )
 
     failed_logins = db.query(AuditLog).filter(AuditLog.action == "LOGIN_FAILED").count()
@@ -58,10 +85,13 @@ def get_identity_sessions(
 ):
     from app.models.user_session import UserSession
 
+    from datetime import datetime, timezone
+    
     sessions = (
         db.query(UserSession, User.username)
         .join(User, UserSession.user_id == User.id)
         .filter(UserSession.is_active == True)
+        .filter(UserSession.expires_at > datetime.now(timezone.utc))
         .filter(User.is_deleted == False)
         .order_by(UserSession.created_at.desc())
         .limit(100)

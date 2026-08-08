@@ -21,6 +21,7 @@ from app.core.security import (
     validate_password_strength,
 )
 from app.models.user import User, StatusEnum, RoleEnum
+from app.models.user_session import UserSession
 from app.models.system_settings import SystemSettings
 from app.models.audit_log import AuditLog
 from app.schemas.auth import (
@@ -236,7 +237,7 @@ class AuthService:
         req: UserLoginRequest,
         ip_address: str = None,
         user_agent_string: str = None,
-    ) -> Tuple[User, str, str]:
+    ) -> Tuple[User, str, str, "UserSession"]:
         email_normalized = req.email.lower().strip()
         logger.info(f"Login attempt for email: {email_normalized}")
 
@@ -373,6 +374,23 @@ class AuthService:
         from app.models.user_session import UserSession
         from user_agents import parse
 
+        active_sessions = db.query(UserSession).filter(
+            UserSession.user_id == user.id,
+            UserSession.is_active == True,
+            UserSession.expires_at > datetime.now(timezone.utc)
+        ).all()
+
+        if active_sessions:
+            if not req.force_new_session:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="SESSION_ALREADY_ACTIVE",
+                )
+            else:
+                for s in active_sessions:
+                    s.is_active = False
+                db.commit()
+
         session_token_jti = str(uuid.uuid4())
         ua = parse(user_agent_string or "")
 
@@ -400,7 +418,7 @@ class AuthService:
         os_name = _ua_clean(ua.os.family if hasattr(ua, "os") else "") or "Unknown"
 
         # Generate tokens first so we can hash the refresh token for storage
-        access_token = create_access_token(subject=user.id)
+        access_token = create_access_token(subject=user.id, jti=session_token_jti)
         refresh_token_val = create_refresh_token(subject=user.id, jti=session_token_jti)
         refresh_hash = _hash_token(refresh_token_val)
 
@@ -430,19 +448,12 @@ class AuthService:
         )
         db.add(log)
         db.commit()
-        # Notification
-        try:
-            EmailService.send_new_login_alert(user.id, ip_address, ua.device.family)
-        except Exception:
-            pass
-
-        db.commit()
 
         if ip_address:
             import threading
             threading.Thread(target=fetch_and_update_location, args=(new_session.id, ip_address), daemon=True).start()
 
-        return user, access_token, refresh_token_val
+        return user, access_token, refresh_token_val, new_session
 
     # ------------------------------------------------------------------ #
     # TOTP Helpers                                                          #
@@ -626,7 +637,7 @@ class AuthService:
         os_name = _ua_clean(ua.os.family if hasattr(ua, "os") else "") or "Unknown"
 
         # Generate tokens first so we can hash the refresh token
-        access_token = create_access_token(subject=user.id)
+        access_token = create_access_token(subject=user.id, jti=session_token_jti)
         refresh_token = create_refresh_token(subject=user.id, jti=session_token_jti)
         refresh_hash = _hash_token(refresh_token)
 
@@ -657,7 +668,7 @@ class AuthService:
         if ip_address:
             threading.Thread(target=fetch_and_update_location, args=(new_session.id, ip_address), daemon=True).start()
 
-        return user, access_token, refresh_token
+        return user, access_token, refresh_token, new_session
 
     @staticmethod
     def refresh_token(db: Session, refresh_token: str) -> tuple:
@@ -755,14 +766,14 @@ class AuthService:
                 session.last_active_at = datetime.now(timezone.utc)
                 db.commit()
 
-                access_token = create_access_token(subject=user.id)
+                access_token = create_access_token(subject=user.id, jti=new_jti)
                 return access_token, new_refresh_token
 
             else:
                 # Legacy token without jti — issue new access token + new refresh token
                 new_jti = str(uuid.uuid4())
                 new_refresh_token = create_refresh_token(subject=user.id, jti=new_jti)
-                access_token = create_access_token(subject=user.id)
+                access_token = create_access_token(subject=user.id, jti=new_jti)
                 return access_token, new_refresh_token
 
         except JWTError:
@@ -799,11 +810,34 @@ class AuthService:
                 detail="Invalid token subject.",
             )
 
-        user = db.query(User).filter(User.id == uid).first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found."
+        jti = payload.get("jti")
+        if jti:
+            from app.models.user_session import UserSession
+            from sqlalchemy.orm import joinedload
+            
+            session = (
+                db.query(UserSession)
+                .options(joinedload(UserSession.user))
+                .filter(UserSession.session_token_jti == jti)
+                .first()
             )
+            
+            if not session or not session.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Session has been revoked."
+                )
+            
+            user = session.user
+            if not user or user.id != uid:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session user."
+                )
+        else:
+            user = db.query(User).filter(User.id == uid).first()
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found."
+                )
 
         # Re-check account status on every request — a banned user's token may still be valid
         # within the access token lifetime (30 min). This check prevents that window.

@@ -17,7 +17,9 @@ _WS_HEARTBEAT_INTERVAL = 30  # seconds between ping frames
 _WS_IDLE_TIMEOUT = 300  # seconds before an idle connection is closed
 
 
-async def _heartbeat_loop(websocket: WebSocket) -> None:
+from app.api.v1.safe_websocket import SafeWebSocket
+
+async def _heartbeat_loop(websocket: SafeWebSocket, jti: str = None) -> None:
     """Send a ping every 30 s; close the socket if the client goes dark for 5 min.
 
     This task is cancelled by the caller when execution finishes normally.
@@ -29,6 +31,21 @@ async def _heartbeat_loop(websocket: WebSocket) -> None:
     try:
         while True:
             await asyncio.sleep(_WS_HEARTBEAT_INTERVAL)
+            
+            # Enforce immediate session revocation for active websockets
+            if jti:
+                from app.database.session import SessionLocal
+                from app.models.user_session import UserSession
+                db = SessionLocal()
+                try:
+                    is_active = db.query(UserSession.is_active).filter(UserSession.session_token_jti == jti).scalar()
+                    if not is_active:
+                        logger.warning("[WS] Session revoked mid-execution — closing connection")
+                        await websocket.close(code=1008)
+                        return
+                finally:
+                    db.close()
+            
             try:
                 await websocket.send_json({"type": "ping"})
                 silent_cycles = 0
@@ -58,22 +75,26 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
         from jose import jwt
         from app.core.config import settings
 
+        safe_ws = SafeWebSocket(websocket)
+
         # 1. Authenticate via cookie
-        token = websocket.cookies.get("access_token")
+        token = safe_ws.cookies.get("access_token")
         if not token:
-            await websocket.send_json(
+            await safe_ws.send_json(
                 {"type": "error", "message": "Authentication failed: No token"}
             )
-            await websocket.close()
+            await safe_ws.close()
             return
 
         is_guest = False
         user_id = None
+        jti = None
 
         try:
             payload = jwt.decode(
                 token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
             )
+            jti = payload.get("jti")
             if payload.get("type") == "guest":
                 is_guest = True
                 user_id = payload.get("sub")
@@ -84,10 +105,10 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
                 logger.info(f"User authenticated successfully: {user_id}")
         except Exception as e:
             logger.warning(f"WebSocket authentication warning: {e}")
-            await websocket.send_json(
+            await safe_ws.send_json(
                 {"type": "error", "message": "Authentication failed"}
             )
-            await websocket.close()
+            await safe_ws.close()
             return
 
         # Check Maintenance Mode (only for actual users, or guests)
@@ -108,15 +129,15 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
                             sys_settings.maintenance_message
                             or "System is under maintenance."
                         )
-                        await websocket.send_json(
+                        await safe_ws.send_json(
                             {"type": "error", "message": f"MAINTENANCE: {maint_msg}"}
                         )
-                        await websocket.close()
+                        await safe_ws.close()
                         return
 
         # 2. Wait for initialization message
         logger.info("Waiting for initialization message from frontend...")
-        init_message = await websocket.receive_text()
+        init_message = await safe_ws.receive_text()
         init_data = json.loads(init_message)
 
         mode = init_data.get("mode", "execute")
@@ -124,17 +145,17 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
 
         # Start heartbeat after successful auth + init — keeps connection alive
         # and automatically closes stale/zombie connections after idle timeout.
-        heartbeat_task = asyncio.create_task(_heartbeat_loop(websocket))
+        heartbeat_task = asyncio.create_task(_heartbeat_loop(safe_ws, jti=jti))
 
         try:
             if mode == "execute_guest":
                 content = init_data.get("content")
                 language = init_data.get("language")
                 if not content or not language:
-                    await websocket.send_json(
+                    await safe_ws.send_json(
                         {"type": "error", "message": "Missing content or language"}
                     )
-                    await websocket.close()
+                    await safe_ws.close()
                     return
 
                 if is_guest:
@@ -150,20 +171,20 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
                     if not session_model or session_model.expires_at < datetime.now(
                         timezone.utc
                     ):
-                        await websocket.send_json(
+                        await safe_ws.send_json(
                             {"type": "error", "message": "Guest session expired"}
                         )
-                        await websocket.close()
+                        await safe_ws.close()
                         return
 
                     if session_model.execution_count >= 15:
-                        await websocket.send_json(
+                        await safe_ws.send_json(
                             {
                                 "type": "error",
                                 "message": "Guest execution quota exceeded. Please sign up.",
                             }
                         )
-                        await websocket.close()
+                        await safe_ws.close()
                         return
 
                     # Increment quota
@@ -171,14 +192,14 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
                     db.commit()
 
                 # Run Guest Code (for both real users and guests)
-                await service.run_guest_code_interactive(websocket, content, language)
+                await service.run_guest_code_interactive(safe_ws, content, language)
 
             else:
                 if is_guest:
-                    await websocket.send_json(
+                    await safe_ws.send_json(
                         {"type": "error", "message": "Guests cannot access projects"}
                     )
-                    await websocket.close()
+                    await safe_ws.close()
                     return
 
                 project_id = init_data.get("projectId")
@@ -186,18 +207,18 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
                 if mode == "shell":
                     terminal_prompt = init_data.get("terminalPrompt")
                     await service.run_shell_interactive(
-                        websocket, project_id, user_id, terminal_prompt
+                        safe_ws, project_id, user_id, terminal_prompt
                     )
                 else:
                     file_id = init_data.get("fileId")
                     if not file_id:
-                        await websocket.send_json(
+                        await safe_ws.send_json(
                             {"type": "error", "message": "Missing fileId for execution"}
                         )
-                        await websocket.close()
+                        await safe_ws.close()
                         return
                     await service.run_code_interactive(
-                        websocket, project_id, file_id, user_id
+                        safe_ws, project_id, file_id, user_id
                     )
         finally:
             # Always cancel the heartbeat when execution ends (success or error)
@@ -212,9 +233,9 @@ async def websocket_execution(websocket: WebSocket, db: Session = Depends(get_db
     except Exception as e:
         logger.error(f"WebSocket execution error: {e}")
         try:
-            await websocket.send_json(
+            await safe_ws.send_json(
                 {"type": "error", "message": "An internal server error occurred."}
             )
-            await websocket.close()
+            await safe_ws.close()
         except Exception:
             pass

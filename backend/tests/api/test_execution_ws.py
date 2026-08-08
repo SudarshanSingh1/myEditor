@@ -87,3 +87,45 @@ def test_websocket_execution_guest_code(mock_exec_service, client, db_session):
         )
 
     assert mock_instance.run_guest_code_interactive.called
+
+import asyncio
+import pytest
+from unittest.mock import AsyncMock
+from app.api.v1.safe_websocket import SafeWebSocket
+from fastapi import WebSocket
+
+@pytest.mark.asyncio
+async def test_safe_websocket_locking():
+    mock_ws = MagicMock(spec=WebSocket)
+    mock_ws.send_text = AsyncMock()
+    mock_ws.send_json = AsyncMock()
+    
+    safe_ws = SafeWebSocket(mock_ws)
+    
+    # Run multiple sends concurrently
+    await asyncio.gather(
+        safe_ws.send_text("test1"),
+        safe_ws.send_text("test2"),
+        safe_ws.send_json({"test": 3}),
+    )
+    
+    assert mock_ws.send_text.call_count == 2
+    assert mock_ws.send_json.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_loop_cancellation():
+    from app.api.v1.execution_ws import _heartbeat_loop
+    mock_ws = MagicMock()
+    mock_ws.send_json = AsyncMock()
+    
+    task = asyncio.create_task(_heartbeat_loop(mock_ws))
+    
+    # Let it run briefly
+    await asyncio.sleep(0.1)
+    
+    # Cancel it
+    task.cancel()
+    
+    # Should not raise CancelledError since _heartbeat_loop catches it
+    await task

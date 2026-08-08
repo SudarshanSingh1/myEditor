@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Cookie
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Cookie, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -17,6 +17,7 @@ from app.schemas.auth import (
     ResendVerificationResponse,
 )
 from app.services.auth_service import AuthService
+from app.services.email_service import EmailService
 from app.core.config import settings
 from app.core.rate_limit import limiter
 
@@ -106,14 +107,41 @@ def resend_verification(
     )
 
 
+import ipaddress
+
+def _is_trusted_proxy(ip: str) -> bool:
+    if not ip:
+        return False
+    try:
+        client_ip = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+
+    trusted_cidrs_str = getattr(settings, "TRUSTED_PROXY_CIDRS", "")
+    if not trusted_cidrs_str:
+        return False
+    
+    trusted_cidrs = [cidr.strip() for cidr in trusted_cidrs_str.split(",") if cidr.strip()]
+    for cidr in trusted_cidrs:
+        try:
+            if client_ip in ipaddress.ip_network(cidr):
+                return True
+        except ValueError:
+            continue
+    return False
+
 def _get_client_ip(request: Request) -> str:
-    forwarded_for = request.headers.get("x-forwarded-for")
-    real_ip = request.headers.get("x-real-ip")
-    if forwarded_for:
-        return forwarded_for.split(",")[0].strip()
-    if real_ip:
-        return real_ip
-    return request.client.host if request.client else None
+    direct_ip = request.client.host if request.client else None
+    
+    if _is_trusted_proxy(direct_ip):
+        forwarded_for = request.headers.get("x-forwarded-for")
+        real_ip = request.headers.get("x-real-ip")
+        if forwarded_for:
+            return forwarded_for.split(",")[0].strip()
+        if real_ip:
+            return real_ip
+            
+    return direct_ip
 
 @router.post("/login", response_model=SuccessResponse)
 @limiter.limit("5/minute")
@@ -121,13 +149,24 @@ def login(
     req: UserLoginRequest,
     request: Request,
     response: Response,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     ip_address = _get_client_ip(request)
 
     user_agent = request.headers.get("user-agent", "")
-    user, access_token, refresh_token = AuthService.authenticate_user(
+    user, access_token, refresh_token, session = AuthService.authenticate_user(
         db, req, ip_address, user_agent
+    )
+
+    background_tasks.add_task(
+        EmailService.send_new_login_alert,
+        str(user.id),
+        session.ip_address,
+        session.device_type,
+        session.browser,
+        session.os,
+        session.created_at
     )
 
     # Prepare HTTPOnly cookies architecture
@@ -320,19 +359,30 @@ def verify_2fa(
     req: TwoFactorVerifyRequest,
     request: Request,
     response: Response,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """Complete 2FA login flow: validate pre_auth_token + TOTP code, issue full session."""
     ip_address = _get_client_ip(request)
     user_agent = request.headers.get("user-agent", "")
 
-    user, access_token, refresh_token_val = AuthService.complete_2fa_login(
+    user, access_token, refresh_token_val, session = AuthService.complete_2fa_login(
         db=db,
         pre_auth_token=req.token,
         code=req.code,
         ip_address=ip_address,
         user_agent_string=user_agent,
         is_backup_code=False,
+    )
+
+    background_tasks.add_task(
+        EmailService.send_new_login_alert,
+        str(user.id),
+        session.ip_address,
+        session.device_type,
+        session.browser,
+        session.os,
+        session.created_at
     )
 
     response.set_cookie(
@@ -362,19 +412,30 @@ def recover_2fa(
     req: TwoFactorRecoverRequest,
     request: Request,
     response: Response,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """Recover 2FA access using a backup code. The backup code is consumed (single-use)."""
     ip_address = _get_client_ip(request)
     user_agent = request.headers.get("user-agent", "")
 
-    user, access_token, refresh_token_val = AuthService.complete_2fa_login(
+    user, access_token, refresh_token_val, session = AuthService.complete_2fa_login(
         db=db,
         pre_auth_token=req.token,
         code=req.backup_code,
         ip_address=ip_address,
         user_agent_string=user_agent,
         is_backup_code=True,
+    )
+
+    background_tasks.add_task(
+        EmailService.send_new_login_alert,
+        str(user.id),
+        session.ip_address,
+        session.device_type,
+        session.browser,
+        session.os,
+        session.created_at
     )
 
     response.set_cookie(

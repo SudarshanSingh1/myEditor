@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { authController } from './services/AuthController';
 import {
   Links,
   Meta,
@@ -39,6 +41,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        authController.checkSessionHealth();
+      }
+    };
+    
+    const handleOnline = () => {
+      authController.checkSessionHealth();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
   return <Outlet />;
 }
 

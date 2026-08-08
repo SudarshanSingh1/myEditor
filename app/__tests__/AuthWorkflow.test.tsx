@@ -40,10 +40,10 @@ describe('Authentication Runtime Workflow Verification', () => {
         return new Response(JSON.stringify({ status: 'healthy', maintenance_mode: false, version: '1.0' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       if (urlStr.includes('/auth/me')) {
-        return new Response(JSON.stringify({ id: 1, email: 'test@example.com' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ success: true, data: { id: 1, email: 'test@example.com' } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       if (urlStr.includes('/rbac/my-permissions')) {
-        return new Response(JSON.stringify({ roles: ['user'], permissions: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ success: true, permissions: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       return new Response(JSON.stringify({}), { status: 404, headers: { 'Content-Type': 'application/json' } });
     });
@@ -89,13 +89,13 @@ describe('Authentication Runtime Workflow Verification', () => {
         if (meCount === 1) {
           return new Response(JSON.stringify({ detail: 'Token expired' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
         }
-        return new Response(JSON.stringify({ id: 1, email: 'test@example.com' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ success: true, data: { id: 1, email: 'test@example.com' } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       if (urlStr.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ access_token: 'new-token' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ success: true, access_token: 'new-token' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       if (urlStr.includes('/rbac/my-permissions')) {
-        return new Response(JSON.stringify({ roles: ['user'], permissions: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ success: true, permissions: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       return new Response(JSON.stringify({}), { status: 404, headers: { 'Content-Type': 'application/json' } });
     });
@@ -143,7 +143,7 @@ describe('Authentication Runtime Workflow Verification', () => {
         return new Response(JSON.stringify({ access_token: 'guest-token' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       if (urlStr.includes('/rbac/my-permissions')) {
-        return new Response(JSON.stringify({ roles: ['guest'], permissions: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ success: true, permissions: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       return new Response(JSON.stringify({}), { status: 404, headers: { 'Content-Type': 'application/json' } });
     });

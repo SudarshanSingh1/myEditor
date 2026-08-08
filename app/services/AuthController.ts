@@ -11,6 +11,33 @@ class AuthController {
   private bootstrapPromise: Promise<boolean> | null = null;
   private refreshPromise: Promise<boolean> | null = null;
   private guestPromise: Promise<boolean> | null = null;
+  private lastHealthCheck: number = 0;
+
+  async checkSessionHealth(): Promise<boolean> {
+    const state = useUserStore.getState();
+    if (state.authState !== 'AUTHENTICATED') return false;
+
+    // Only check if it's been more than 5 minutes since the last check
+    const now = Date.now();
+    if (now - this.lastHealthCheck < 5 * 60 * 1000) {
+      return true;
+    }
+
+    this.lastHealthCheck = now;
+    
+    // Instead of forcing a full me request, try to refresh if needed or just ping /auth/me
+    try {
+      const resp = await fetchApi('/auth/me');
+      if (resp.success) {
+        return true;
+      }
+    } catch (e) {
+      // The fetchApi 401 interceptor will handle the refresh and return true if it works
+      // If it throws, it means it failed after retrying.
+      return false;
+    }
+    return false;
+  }
 
   async bootstrap(force = false): Promise<boolean> {
     if (this.bootstrapPromise && !force) return this.bootstrapPromise;
@@ -50,6 +77,7 @@ class AuthController {
             [];
           const userWithPerms = { ...response.data, effective_permissions: perms };
           useUserStore.getState().setAuthSuccess(userWithPerms, perms);
+          this.lastHealthCheck = Date.now();
           console.log("[AUTH] AUTH_STATE_CHANGED", "AUTHENTICATED");
           console.log("[AUTH] AUTH_BOOTSTRAP_END");
           return true;
@@ -83,6 +111,7 @@ class AuthController {
             retryResp.data.effective_permissions ||
             [];
           useUserStore.getState().setAuthSuccess({ ...retryResp.data, effective_permissions: perms }, perms);
+          this.lastHealthCheck = Date.now();
           console.log("[AUTH] AUTH_STATE_CHANGED", "AUTHENTICATED");
           console.log("[AUTH] AUTH_BOOTSTRAP_END");
           return true;
@@ -111,6 +140,7 @@ class AuthController {
         const response = await fetchApi('/auth/refresh', { method: 'POST' });
         if (response.success) {
           console.log("[AUTH] AUTH_REFRESH_SUCCESS");
+          this.lastHealthCheck = Date.now();
           return true;
         }
         console.log("[AUTH] AUTH_REFRESH_FAILED");

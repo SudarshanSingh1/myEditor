@@ -30,9 +30,10 @@ describe('AuthController', () => {
   });
 
   it('should transition to AUTHENTICATED on successful bootstrap', async () => {
-    vi.mocked(api.fetchApi).mockResolvedValueOnce({
-      success: true,
-      data: { id: 1, email: 'test@test.com' }
+    vi.mocked(api.fetchApi).mockImplementation(async (url: string) => {
+      if (url === '/auth/me') return { success: true, data: { id: 1, email: 'test@test.com' } };
+      if (url === '/rbac/my-permissions') return { success: true, permissions: ['read'] };
+      return { success: true };
     });
 
     const result = await authController.bootstrap();
@@ -43,9 +44,10 @@ describe('AuthController', () => {
   });
 
   it('should singleton multiple concurrent bootstrap calls', async () => {
-    vi.mocked(api.fetchApi).mockImplementation(async () => {
+    vi.mocked(api.fetchApi).mockImplementation(async (url: string) => {
       await new Promise(r => setTimeout(r, 50));
-      return { success: true, data: { id: 1 } };
+      if (url === '/auth/me') return { success: true, data: { id: 1 } };
+      return { success: true };
     });
 
     const p1 = authController.bootstrap();
@@ -60,35 +62,37 @@ describe('AuthController', () => {
   });
 
   it('should refresh and retry if auth/me returns 401', async () => {
-    // 1. auth/me fails
-    vi.mocked(api.fetchApi).mockRejectedValueOnce({ status: 401 });
-    // 2. refresh succeeds
-    vi.mocked(api.fetchApi).mockResolvedValueOnce({ success: true });
-    // 3. auth/me retry succeeds
-    vi.mocked(api.fetchApi).mockResolvedValueOnce({
-      success: true,
-      data: { id: 2, email: 'retry@test.com' }
+    let meCalls = 0;
+    vi.mocked(api.fetchApi).mockImplementation(async (url: string) => {
+      if (url === '/auth/me') {
+        meCalls++;
+        if (meCalls === 1) throw { status: 401 };
+        return { success: true, data: { id: 2, email: 'retry@test.com' } };
+      }
+      if (url === '/auth/refresh') return { success: true };
+      if (url === '/rbac/my-permissions') return { success: true, permissions: [] };
+      return { success: true };
     });
 
     const result = await authController.bootstrap();
     
     expect(result).toBe(true);
-    expect(api.fetchApi).toHaveBeenCalledTimes(3);
-    expect(api.fetchApi).toHaveBeenNthCalledWith(2, '/auth/refresh', expect.anything());
+    // /auth/me (fail), /rbac (fail/succ), /auth/refresh (succ), /auth/me (succ), /rbac (succ)
+    expect(api.fetchApi).toHaveBeenCalledTimes(5);
     expect(useUserStore.getState().authState).toBe('AUTHENTICATED');
   });
 
   it('should fallback to guest if refresh fails', async () => {
-    // 1. auth/me fails
-    vi.mocked(api.fetchApi).mockRejectedValueOnce({ status: 401 });
-    // 2. refresh fails
-    vi.mocked(api.fetchApi).mockRejectedValueOnce({ status: 401 });
-    // 3. guest init succeeds
-    vi.mocked(api.fetchApi).mockResolvedValueOnce({
-      access_token: 'guest_token',
-      executions_used: 0,
-      executions_max: 10,
-      expires_at: new Date(Date.now() + 86400000).toISOString()
+    vi.mocked(api.fetchApi).mockImplementation(async (url: string) => {
+      if (url === '/auth/me') throw { status: 401 };
+      if (url === '/auth/refresh') throw { status: 401 };
+      if (url === '/guest/init') return {
+        access_token: 'guest_token',
+        executions_used: 0,
+        executions_max: 10,
+        expires_at: new Date(Date.now() + 86400000).toISOString()
+      };
+      return { success: true };
     });
 
     const result = await authController.bootstrap();
