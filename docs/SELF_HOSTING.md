@@ -172,9 +172,25 @@ Navigate to your GitHub Repository ──> **Settings** ──> **Secrets and va
 | `VPS_HOST` | Public IP or domain name of your VPS | `198.51.100.24` |
 | `VPS_PORT` | SSH port on your VPS (Optional, defaults to 22) | `22` (or `2222`) |
 | `VPS_USERNAME` | SSH username on your VPS | `root` (or `ubuntu`) |
-| `VPS_SSH_KEY` | Private SSH Key (`~/.ssh/id_rsa` or `id_ed25519`) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
+| `VPS_SSH_KEY` | Private SSH Key (`$HOME/.ssh/id_ed25519`) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
 
 *(Optional Repository Variable: Add `VPS_PROJECT_PATH` under Actions Variables if your project is located somewhere other than `/opt/myEditor`).*
+
+### Adding the SSH Key to the VPS
+If you receive a `Permission denied (publickey,password)` error, your SSH public key is not authorized on the VPS. 
+You must perform the following manual step on the VPS console:
+
+1. Display your local public key:
+   ```bash
+   cat $HOME/.ssh/id_ed25519.pub
+   ```
+2. Log in to your VPS console (e.g., via your hosting provider's web console).
+3. Append the public key output from step 1 into the `authorized_keys` file for the deployment user (e.g., `root`):
+   ```bash
+   mkdir -p /root/.ssh
+   echo "YOUR_PUBLIC_KEY_CONTENT_HERE" >> /root/.ssh/authorized_keys
+   chmod 600 /root/.ssh/authorized_keys
+   ```
 
 ### How the CD Pipeline Works
 1. **Automated Verification:** Runs linting, type-checking, and unit test suites first. If any test fails, deployment is aborted immediately to protect production.
