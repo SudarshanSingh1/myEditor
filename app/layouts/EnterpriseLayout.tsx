@@ -205,9 +205,9 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
 
   // Tablet: Resizable sidebar
   const [sidebarWidth, setSidebarWidth] = useState(() => {
-    if (typeof window === "undefined") return 220;
+    if (typeof window === "undefined") return 232;
     const saved = localStorage.getItem("hamara-enterprise-sidebar-width");
-    return saved ? parseInt(saved, 10) : 220;
+    return saved ? parseInt(saved, 10) : 232;
   });
   const [isDragging, setIsDragging] = useState(false);
 
@@ -297,15 +297,15 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
       to={to}
       end={exact}
       onClick={() => setMobileOpen(false)}
-      title={collapsed ? label : undefined}
+      title={label}
       className={({ isActive }) =>
         `e-nav-item ${isActive ? "active" : ""}`
       }
     >
       {({ isActive }) => (
         <>
-          <Icon className="e-nav-icon" size={16} strokeWidth={isActive ? 2 : 1.5} />
-          <span className="e-nav-label" style={{ opacity: collapsed ? 0 : 1, transition: "opacity 200ms" }}>
+          <Icon className="e-nav-icon" size={15} strokeWidth={isActive ? 2 : 1.5} />
+          <span className="e-nav-label" style={{ opacity: collapsed ? 0 : 1, transition: "opacity 180ms", lineHeight: 1.3 }}>
             {label}
           </span>
         </>
@@ -325,17 +325,17 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
       {/* Logo */}
       <div className="e-sidebar-logo">
         <div style={{
-          width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+          width: 26, height: 26, borderRadius: 7, flexShrink: 0,
           background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontWeight: 800, fontSize: 13,
-          boxShadow: "0 0 16px rgba(99,102,241,0.4)",
+          color: "#fff", fontWeight: 800, fontSize: 12,
+          boxShadow: "0 0 14px rgba(99,102,241,0.35)",
         }}>H</div>
         <div className="e-sidebar-text" style={{ overflow: "hidden" }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", whiteSpace: "nowrap" }}>
+          <p style={{ fontSize: 12.5, fontWeight: 700, color: "#ffffff", whiteSpace: "nowrap" }}>
             Hamara
           </p>
-          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>
+          <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.40)", whiteSpace: "nowrap" }}>
             {isSuperAdminLayout ? "Owner Console" : isModerator ? "Moderator Portal" : "Admin Portal"}
           </p>
         </div>
@@ -344,7 +344,7 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
       {/* Nav Groups */}
       <div className="e-nav-scroll">
         {navGroups.map(group => (
-          <div key={group.label} style={{ marginBottom: 8 }}>
+          <div key={group.label} style={{ marginBottom: 4 }}>
             <div className="e-nav-group-label">{group.label}</div>
             {group.items.map(item => (
               <NavItem key={item.to} {...item} />
@@ -354,13 +354,13 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
 
         {/* Cross-portal links */}
         {!isSuperAdminLayout && isSuperAdmin && (
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 4 }}>
             <div className="e-nav-group-label">Owner</div>
             <NavItem icon={ShieldCheck} label="Owner Console" to="/super-admin" />
           </div>
         )}
         {isSuperAdminLayout && (
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 4 }}>
             <div className="e-nav-group-label">Admin</div>
             <NavItem icon={LayoutDashboard} label="Admin Dashboard" to="/app/admin" />
           </div>
@@ -368,22 +368,22 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
       </div>
 
       {/* User Footer */}
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: "10px 8px", flexShrink: 0 }}>
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "7px 6px", flexShrink: 0 }}>
         {!collapsed && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 6px 8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "2px 4px 5px" }}>
             <div style={{
-              width: 28, height: 28, borderRadius: "50%",
+              width: 26, height: 26, borderRadius: "50%",
               background: "linear-gradient(135deg, #6366f1, #a855f7)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff", fontSize: 11, fontWeight: 700, flexShrink: 0,
+              color: "#fff", fontSize: 10, fontWeight: 700, flexShrink: 0,
             }}>
               {user?.username?.slice(0, 2).toUpperCase() || "A"}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: "#ffffff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <p style={{ fontSize: 11.5, fontWeight: 600, color: "#ffffff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {user?.username}
               </p>
-              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.38)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {user?.email}
               </p>
             </div>
@@ -392,10 +392,10 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
         <button
           onClick={handleLogout}
           className="e-nav-item"
+          title="Logout"
           style={{ width: "100%", background: "none", border: "none", cursor: "pointer", justifyContent: collapsed ? "center" : undefined }}
-          title={collapsed ? "Logout" : undefined}
         >
-          <LogOut className="e-nav-icon" size={15} />
+          <LogOut className="e-nav-icon" size={14} />
           <span className="e-nav-label">Logout</span>
         </button>
       </div>
@@ -434,7 +434,7 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
           onDoubleClick={() => {
             if (collapsed) {
               setCollapsed(false);
-              setSidebarWidth(220);
+              setSidebarWidth(232);
             } else {
               setCollapsed(true);
             }
