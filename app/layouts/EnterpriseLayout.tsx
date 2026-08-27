@@ -12,7 +12,7 @@ import { useAdminContext } from "../components/auth/AdminAuthGuard";
 import { fetchApi } from "../lib/api";
 
 import "../styles/enterprise.css";
-import { LayoutDashboard, BarChart3, Users, FolderOpen, PlaySquare, MessageSquare, Bug, Server, Database, Settings, ShieldCheck, ClipboardList, Mail, LogOut, GitBranch, Flag, Bell, TerminalSquare, HardDriveUpload, Rocket, AlertOctagon, Search, ChevronLeft, ChevronRight, X, ArrowRight, ExternalLink } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, FolderOpen, PlaySquare, MessageSquare, Bug, Server, Database, Settings, ShieldCheck, ClipboardList, Mail, LogOut, GitBranch, Flag, Bell, TerminalSquare, HardDriveUpload, Rocket, AlertOctagon, Search, ChevronLeft, ChevronRight, X, ArrowRight, ExternalLink, PenSquare } from "lucide-react";
 import { useShallow } from 'zustand/react/shallow';
 /* ─── Navigation Configuration ─────────────────────────────── */
 const moderatorNavGroups = [
@@ -73,8 +73,9 @@ const ownerNavGroups = [
     label: "Platform",
     items: [
       { icon: GitBranch,       label: "GitHub",       to: "/super-admin/github" },
-      { icon: Mail,            label: "Emails",       to: "/super-admin/emails" },
-      { icon: ClipboardList,   label: "Audit Logs",   to: "/super-admin/audit" },
+      { icon: Mail,            label: "Emails",          to: "/super-admin/emails" },
+      { icon: PenSquare,       label: "Template Studio", to: "/super-admin/email-templates" },
+      { icon: ClipboardList,   label: "Audit Logs",      to: "/super-admin/audit" },
       { icon: TerminalSquare,  label: "Live Logs",    to: "/super-admin/logs" },
       { icon: Settings,        label: "Settings",     to: "/super-admin/settings" },
       { icon: AlertOctagon,    label: "Factory Reset",to: "/super-admin/factory-reset" },

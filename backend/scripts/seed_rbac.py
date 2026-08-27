@@ -97,6 +97,17 @@ PERMISSION_MATRIX = [
         "category": "Database",
         "description": "Trigger database restore",
     },
+    # Email Template Studio
+    {
+        "node": "system.email_templates.view",
+        "category": "System",
+        "description": "View email templates in the Email Template Studio",
+    },
+    {
+        "node": "system.email_templates.manage",
+        "category": "System",
+        "description": "Create, edit, activate, and delete email templates",
+    },
 ]
 
 ROLE_ASSIGNMENTS = {
@@ -128,6 +139,8 @@ ROLE_ASSIGNMENTS = {
         "system.containers.restart",
         "system.storage.view",
         "system.maintenance.toggle",
+        "system.email_templates.view",
+        "system.email_templates.manage",
     ],
     # OWNER gets everything
 }

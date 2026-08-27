@@ -34,6 +34,7 @@ from app.models.secret import Secret
 from app.models.feature_flag import FeatureFlag
 from app.models.backup_log import BackupLog
 from app.models.deployment_log import DeploymentLog
+from app.models.email_template import EmailTemplate, EmailTemplateType
 
 __all__ = [
     "Base",
@@ -72,4 +73,6 @@ __all__ = [
     "ApiKey",
     "Secret",
     "FeatureFlag",
+    "EmailTemplate",
+    "EmailTemplateType",
 ]

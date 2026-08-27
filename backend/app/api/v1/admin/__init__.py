@@ -13,6 +13,7 @@ from .server import router as server_router
 from .system import router as system_router
 from .users import router as users_router
 from .logs import router as logs_router
+from .email_templates import router as email_templates_router
 
 admin_router = APIRouter()
 
@@ -28,3 +29,4 @@ admin_router.include_router(security_router)
 admin_router.include_router(server_router)
 admin_router.include_router(github_router)
 admin_router.include_router(docker_router, prefix="/docker")
+admin_router.include_router(email_templates_router, prefix="/email-templates-studio")

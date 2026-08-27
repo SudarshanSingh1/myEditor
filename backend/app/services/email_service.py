@@ -178,8 +178,25 @@ class EmailService:
             if not user:
                 raise Exception("Admin user not found.")
 
-            subject = f"Test Email from {settings.APP_NAME}"
-            body = f"""
+            # --- Try DB template first ---
+            try:
+                from app.services.email_template_service import EmailTemplateService
+                from app.models.email_template import EmailTemplateType
+                db_template = EmailTemplateService.get_active_template(db, EmailTemplateType.SMTP_TEST)
+            except Exception:
+                db_template = None
+
+            if db_template:
+                variables = {
+                    "app_name": settings.APP_NAME,
+                    "user_name": user.first_name or user.username,
+                    "user_email": user.email,
+                }
+                rendered_subject, html_content = EmailTemplateService.render_template(db_template, variables)
+            else:
+                # --- Fallback: existing hardcoded template (unchanged) ---
+                rendered_subject = f"Test Email from {settings.APP_NAME}"
+                body = f"""
             <div style="font-size: 18px; font-weight: 500; margin-bottom: 24px;">
                 Hello {user.first_name or user.username},
             </div>
@@ -188,9 +205,10 @@ class EmailService:
                 If you received this, your email settings are properly configured!
             </div>
             """
-            html_content = EmailService._get_base_template(subject, body)
+                html_content = EmailService._get_base_template(rendered_subject, body)
+
             EmailService._send_email_core(
-                db, user.email, subject, html_content, user.role.value
+                db, user.email, rendered_subject, html_content, user.role.value
             )
         finally:
             db.close()
@@ -207,10 +225,31 @@ class EmailService:
             if not user:
                 raise Exception("User not found.")
 
-            subject = f"Welcome to {settings.APP_NAME}"
             name = user.first_name or user.username
 
-            body = f"""
+            # --- Try DB template first ---
+            try:
+                from app.services.email_template_service import EmailTemplateService
+                from app.models.email_template import EmailTemplateType
+                db_template = EmailTemplateService.get_active_template(db, EmailTemplateType.WELCOME)
+            except Exception:
+                db_template = None
+
+            if db_template:
+                variables = {
+                    "app_name": settings.APP_NAME,
+                    "user_name": name,
+                    "user_email": user.email,
+                    "username": user.username,
+                    "temporary_password": temp_password,
+                    "role": user.role.value.replace("_", " "),
+                    "frontend_url": login_url,
+                }
+                rendered_subject, html_content = EmailTemplateService.render_template(db_template, variables)
+            else:
+                # --- Fallback: existing hardcoded template (unchanged) ---
+                rendered_subject = f"Welcome to {settings.APP_NAME}"
+                body = f"""
             <div style="font-size: 18px; font-weight: 500; margin-bottom: 24px;">
                 Hello {name},
             </div>
@@ -246,9 +285,10 @@ class EmailService:
                 {settings.APP_NAME} Team
             </div>
             """
-            html_content = EmailService._get_base_template(subject, body)
+                html_content = EmailService._get_base_template(rendered_subject, body)
+
             EmailService._send_email_core(
-                db, user.email, subject, html_content, user.role.value
+                db, user.email, rendered_subject, html_content, user.role.value
             )
         finally:
             db.close()
@@ -268,10 +308,28 @@ class EmailService:
             if not user:
                 raise Exception("User not found.")
 
-            subject = f"Verify Your Email - {settings.APP_NAME}"
             name = user.first_name or user.username
 
-            body = f"""
+            # --- Try DB template first ---
+            try:
+                from app.services.email_template_service import EmailTemplateService
+                from app.models.email_template import EmailTemplateType
+                db_template = EmailTemplateService.get_active_template(db, EmailTemplateType.VERIFICATION)
+            except Exception:
+                db_template = None
+
+            if db_template:
+                variables = {
+                    "app_name": settings.APP_NAME,
+                    "user_name": name,
+                    "user_email": user.email,
+                    "otp": otp,
+                }
+                rendered_subject, html_content = EmailTemplateService.render_template(db_template, variables)
+            else:
+                # --- Fallback: existing hardcoded template (unchanged) ---
+                rendered_subject = f"Verify Your Email - {settings.APP_NAME}"
+                body = f"""
             <div style="font-size: 19px; font-weight: 600; color: #ffffff; margin-bottom: 24px;">
                 Hello {name},
             </div>
@@ -292,9 +350,10 @@ class EmailService:
                 The {settings.APP_NAME} Team
             </div>
             """
-            html_content = EmailService._get_base_template(subject, body)
+                html_content = EmailService._get_base_template(rendered_subject, body)
+
             EmailService._send_email_core(
-                db, user.email, subject, html_content, user.role.value
+                db, user.email, rendered_subject, html_content, user.role.value
             )
         finally:
             db.close()
@@ -311,10 +370,28 @@ class EmailService:
             if not user:
                 raise Exception("User not found.")
 
-            subject = f"Reset Your Password - {settings.APP_NAME}"
             name = user.first_name or user.username
 
-            body = f"""
+            # --- Try DB template first ---
+            try:
+                from app.services.email_template_service import EmailTemplateService
+                from app.models.email_template import EmailTemplateType
+                db_template = EmailTemplateService.get_active_template(db, EmailTemplateType.PASSWORD_RESET)
+            except Exception:
+                db_template = None
+
+            if db_template:
+                variables = {
+                    "app_name": settings.APP_NAME,
+                    "user_name": name,
+                    "user_email": user.email,
+                    "otp": otp,
+                }
+                rendered_subject, html_content = EmailTemplateService.render_template(db_template, variables)
+            else:
+                # --- Fallback: existing hardcoded template (unchanged) ---
+                rendered_subject = f"Reset Your Password - {settings.APP_NAME}"
+                body = f"""
             <div style="font-size: 19px; font-weight: 600; color: #ffffff; margin-bottom: 24px;">
                 Hello {name},
             </div>
@@ -334,9 +411,10 @@ class EmailService:
                 The {settings.APP_NAME} Team
             </div>
             """
-            html_content = EmailService._get_base_template(subject, body)
+                html_content = EmailService._get_base_template(rendered_subject, body)
+
             EmailService._send_email_core(
-                db, user.email, subject, html_content, user.role.value
+                db, user.email, rendered_subject, html_content, user.role.value
             )
         finally:
             db.close()
@@ -353,12 +431,34 @@ class EmailService:
             if not user:
                 raise Exception("User not found.")
 
-            body = f"""
+            # --- Try DB template first ---
+            try:
+                from app.services.email_template_service import EmailTemplateService
+                from app.models.email_template import EmailTemplateType
+                db_template = EmailTemplateService.get_active_template(db, EmailTemplateType.CUSTOM)
+            except Exception:
+                db_template = None
+
+            if db_template:
+                variables = {
+                    "app_name": settings.APP_NAME,
+                    "user_name": user.first_name or user.username,
+                    "user_email": user.email,
+                    "username": user.username,
+                    "subject": subject,
+                    "message": message,
+                }
+                rendered_subject, html_content = EmailTemplateService.render_template(db_template, variables)
+            else:
+                # --- Fallback: existing hardcoded template (unchanged) ---
+                rendered_subject = subject
+                body = f"""
             <div style="color: #e4e4e7; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">{message}</div>
             """
-            html_content = EmailService._get_base_template(subject, body)
+                html_content = EmailService._get_base_template(rendered_subject, body)
+
             EmailService._send_email_core(
-                db, user.email, subject, html_content, user.role.value
+                db, user.email, rendered_subject, html_content, user.role.value
             )
         finally:
             db.close()
@@ -374,10 +474,33 @@ class EmailService:
             if not user:
                 return
 
-            subject = "New Login to Your Account"
             name = user.first_name if user.first_name else user.username
+            formatted_time = login_time.strftime("%Y-%m-%d %H:%M:%S UTC") if login_time else datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
-            body = f"""
+            # --- Try DB template first ---
+            try:
+                from app.services.email_template_service import EmailTemplateService
+                from app.models.email_template import EmailTemplateType
+                db_template = EmailTemplateService.get_active_template(db, EmailTemplateType.LOGIN_ALERT)
+            except Exception:
+                db_template = None
+
+            if db_template:
+                variables = {
+                    "app_name": settings.APP_NAME,
+                    "user_name": name,
+                    "user_email": user.email,
+                    "ip_address": ip_address or "Unknown",
+                    "device": device or "Unknown",
+                    "browser": browser or "Unknown",
+                    "operating_system": os_name or "Unknown",
+                    "login_time": formatted_time,
+                }
+                rendered_subject, html_content = EmailTemplateService.render_template(db_template, variables)
+            else:
+                # --- Fallback: existing hardcoded template (unchanged) ---
+                rendered_subject = "New Login to Your Account"
+                body = f"""
             <div style="font-size: 19px; font-weight: 600; color: #ffffff; margin-bottom: 24px;">
                 Hello {name},
             </div>
@@ -390,15 +513,16 @@ class EmailService:
                 <div style="color: #e4e4e7; font-size: 14px;"><strong>Device:</strong> {device or 'Unknown'}</div>
                 <div style="color: #e4e4e7; font-size: 14px;"><strong>Browser:</strong> {browser or 'Unknown'}</div>
                 <div style="color: #e4e4e7; font-size: 14px;"><strong>OS:</strong> {os_name or 'Unknown'}</div>
-                <div style="color: #e4e4e7; font-size: 14px;"><strong>Time:</strong> {login_time.strftime("%Y-%m-%d %H:%M:%S UTC") if login_time else datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}</div>
+                <div style="color: #e4e4e7; font-size: 14px;"><strong>Time:</strong> {formatted_time}</div>
             </div>
             <div style="color: #d4d4d8; font-size: 15px; line-height: 1.6; margin-bottom: 36px;">
                 If this was you, you can safely ignore this email. If you don't recognize this activity, please reset your password immediately and secure your account.
             </div>
             """
-            html_content = EmailService._get_base_template(subject, body)
+                html_content = EmailService._get_base_template(rendered_subject, body)
+
             EmailService._send_email_core(
-                db, user.email, subject, html_content, user.role.value
+                db, user.email, rendered_subject, html_content, user.role.value
             )
         finally:
             db.close()

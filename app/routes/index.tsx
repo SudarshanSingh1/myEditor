@@ -71,6 +71,7 @@ const AdminReportsPage = lazy(() => import("../pages/admin/AdminReportsPage"));
 const AdminDockerPage = lazy(() => import("../pages/admin/AdminDockerPage"));
 const AdminNotificationsPage = lazy(() => import("../pages/admin/AdminNotificationsPage"));
 const AdminLogsPage = lazy(() => import("../pages/admin/AdminLogsPage"));
+const EmailTemplateStudioPage = lazy(() => import("../pages/admin/EmailTemplateStudioPage"));
 
 // Error Pages (Lazy)
 const NotFound = lazy(() => import("../pages/error/NotFound"));
@@ -201,6 +202,7 @@ export default function AppRouter() {
             <Route path="backups" element={<AdminBackupsPage />} />
             <Route path="deployments" element={<AdminDeploymentsPage />} />
             <Route path="emails" element={<AdminEmailsPage />} />
+            <Route path="email-templates" element={<EmailTemplateStudioPage />} />
             <Route path="github" element={<AdminGithubPage />} />
             <Route path="factory-reset" element={<AdminFactoryResetPage />} />
           </Route>
