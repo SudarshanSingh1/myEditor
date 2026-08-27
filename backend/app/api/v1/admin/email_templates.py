@@ -38,7 +38,7 @@ from app.services.admin_audit_service import AdminAuditService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(redirect_slashes=False)
 
 # Permission shortcuts
 _VIEW_PERM = "system.email_templates.view"
@@ -127,7 +127,7 @@ def render_draft(
 # GET /  — list templates
 # ---------------------------------------------------------------------------
 
-@router.get("/", response_model=SuccessResponse)
+@router.get("", response_model=SuccessResponse)
 def list_templates(
     template_type: EmailTemplateType | None = Query(default=None),
     skip: int = Query(default=0, ge=0),
@@ -150,7 +150,7 @@ def list_templates(
 # POST /  — create template
 # ---------------------------------------------------------------------------
 
-@router.post("/", response_model=SuccessResponse)
+@router.post("", response_model=SuccessResponse)
 def create_template(
     body: EmailTemplateCreate,
     request: Request,
