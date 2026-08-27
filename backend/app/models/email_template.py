@@ -6,13 +6,13 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
-    Enum,
     Uuid,
     Text,
     ForeignKey,
     JSON,
     Index,
 )
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.orm import relationship
 from app.database.base import Base
 
@@ -27,6 +27,15 @@ class EmailTemplateType(str, enum.Enum):
     SMTP_TEST = "SMTP_TEST"
 
 
+# PostgreSQL ENUM type — created/dropped exclusively via Alembic migrations.
+# create_type=False tells SQLAlchemy never to emit CREATE TYPE automatically.
+_email_template_type_pg = PgEnum(
+    *[e.value for e in EmailTemplateType],
+    name="emailtemplatetype",
+    create_type=False,
+)
+
+
 class EmailTemplate(Base):
     __tablename__ = "email_templates"
 
@@ -36,7 +45,7 @@ class EmailTemplate(Base):
     name = Column(String(100), nullable=False)
     slug = Column(String(100), unique=True, nullable=False, index=True)
     template_type = Column(
-        Enum(EmailTemplateType), nullable=False, index=True
+        _email_template_type_pg, nullable=False, index=True
     )
     description = Column(Text, nullable=True)
 

@@ -5,16 +5,26 @@ Revises: p001_performance_indexes
 Create Date: 2026-08-27
 
 Changes:
-1. Creates EmailTemplateType PostgreSQL ENUM
+1. Creates EmailTemplateType PostgreSQL ENUM (via postgresql.ENUM, checkfirst=True)
 2. Creates email_templates table with full schema
 3. Adds composite index on (template_type, is_active) for fast fallback lookup
 4. Additive only — zero existing data touched.
+
+FIX NOTE (2026-08-27):
+  Original migration used `sa.Enum(..., create_type=False)` inside op.create_table().
+  `create_type=False` is ONLY recognized by `sqlalchemy.dialects.postgresql.ENUM`,
+  NOT by `sqlalchemy.sa.Enum`. When `sa.Enum` ignores that kwarg, SQLAlchemy's
+  PostgreSQL DDL visitor auto-emits a second CREATE TYPE within the same transaction,
+  causing `psycopg.errors.DuplicateObject: type "emailtemplatetype" already exists`.
+  Fix: use `postgresql.ENUM(..., create_type=False)` throughout, matching the pattern
+  already established in every other migration in this project.
 """
 
 from __future__ import annotations
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine.reflection import Inspector
 
 
@@ -24,6 +34,18 @@ down_revision = "p001_performance_indexes"
 branch_labels = None
 depends_on = None
 
+# The 7 enum values — defined once, reused in both upgrade and downgrade
+_ENUM_VALUES = (
+    "VERIFICATION",
+    "PASSWORD_RESET",
+    "WELCOME",
+    "LOGIN_ALERT",
+    "CUSTOM",
+    "BROADCAST",
+    "SMTP_TEST",
+)
+_ENUM_NAME = "emailtemplatetype"
+
 
 def upgrade() -> None:
     conn = op.get_bind()
@@ -31,22 +53,23 @@ def upgrade() -> None:
     existing_tables = inspector.get_table_names()
 
     if "email_templates" in existing_tables:
-        # Idempotent: table already exists (e.g. dev environment), skip creation
+        # Idempotent: table already exists (partial retry), skip entirely
         return
 
-    # Create the ENUM type first (PostgreSQL requires it to exist before the table)
-    email_template_type = sa.Enum(
-        "VERIFICATION",
-        "PASSWORD_RESET",
-        "WELCOME",
-        "LOGIN_ALERT",
-        "CUSTOM",
-        "BROADCAST",
-        "SMTP_TEST",
-        name="emailtemplatetype",
+    # ── Step 1: Create the PostgreSQL ENUM type ─────────────────────────────
+    # Use postgresql.ENUM (NOT sa.Enum) so that create_type=False is correctly
+    # recognised later in op.create_table(). checkfirst=True makes this safe
+    # for deployment retries where the type may already exist (e.g. from a
+    # prior partial run that crashed after CREATE TYPE but before CREATE TABLE).
+    emailtemplatetype = postgresql.ENUM(
+        *_ENUM_VALUES,
+        name=_ENUM_NAME,
     )
-    email_template_type.create(conn, checkfirst=True)
+    emailtemplatetype.create(conn, checkfirst=True)
 
+    # ── Step 2: Create the table ─────────────────────────────────────────────
+    # Use postgresql.ENUM(..., create_type=False) for the column so SQLAlchemy
+    # knows the type already exists and does NOT emit a second CREATE TYPE.
     op.create_table(
         "email_templates",
         sa.Column("id", sa.Uuid(as_uuid=True), primary_key=True),
@@ -55,16 +78,10 @@ def upgrade() -> None:
         sa.Column("slug", sa.String(100), nullable=False),
         sa.Column(
             "template_type",
-            sa.Enum(
-                "VERIFICATION",
-                "PASSWORD_RESET",
-                "WELCOME",
-                "LOGIN_ALERT",
-                "CUSTOM",
-                "BROADCAST",
-                "SMTP_TEST",
-                name="emailtemplatetype",
-                create_type=False,
+            postgresql.ENUM(
+                *_ENUM_VALUES,
+                name=_ENUM_NAME,
+                create_type=False,  # type already created above
             ),
             nullable=False,
         ),
@@ -116,7 +133,7 @@ def upgrade() -> None:
         ),
     )
 
-    # Individual indexes
+    # ── Step 3: Indexes ───────────────────────────────────────────────────────
     op.create_index(
         "ix_email_templates_slug",
         "email_templates",
@@ -135,7 +152,7 @@ def upgrade() -> None:
         ["is_active"],
         unique=False,
     )
-    # Composite: the primary query pattern — find active template by type
+    # Composite: primary query pattern — find active template by type
     op.create_index(
         "ix_email_templates_type_active",
         "email_templates",
@@ -163,5 +180,5 @@ def downgrade() -> None:
 
     op.drop_table("email_templates")
 
-    # Drop the ENUM type last
-    sa.Enum(name="emailtemplatetype").drop(conn, checkfirst=True)
+    # Drop the ENUM type last (checkfirst=True for safety)
+    postgresql.ENUM(name=_ENUM_NAME).drop(conn, checkfirst=True)
