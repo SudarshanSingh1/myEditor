@@ -1,10 +1,25 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { FolderTree, FileNode } from '../../lib/api/workspace';
 import { useWorkspaceStore } from '../../stores/useWorkspaceStore';
-import { Folder as FolderIcon, FolderOpen, ChevronRight, ChevronDown, MoreVertical, Edit2, Trash2, FilePlus, FolderPlus } from 'lucide-react';
+import {
+  Folder as FolderIcon,
+  FolderOpen,
+  ChevronRight,
+  ChevronDown,
+  MoreVertical,
+  Edit2,
+  Trash2,
+  FilePlus,
+  FolderPlus,
+} from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { FileItem } from './FileItem';
-import { useOnClickOutside } from '../../hooks/useOnClickOutside';
+import { useExplorerContextMenu } from '../../hooks/useExplorerContextMenu';
+import {
+  ExplorerContextMenu,
+  ExplorerMenuItem,
+  ExplorerMenuSeparator,
+} from './ExplorerContextMenu';
 
 interface FolderItemProps {
   folder: FolderTree;
@@ -16,175 +31,214 @@ interface FolderItemProps {
   onRenameFile: (file: FileNode) => void;
   onDeleteFile: (file: FileNode) => void;
   onDuplicateFile: (file: FileNode) => void;
-  onDropItem?: (id: string, type: "file" | "folder", targetId: string | null) => void;
+  onDropItem?: (id: string, type: 'file' | 'folder', targetId: string | null) => void;
 }
 
-export const FolderItem: React.FC<FolderItemProps> = React.memo(({
-  folder,
-  level,
-  onRenameFolder,
-  onDeleteFolder,
-  onCreateFile,
-  onCreateFolder,
-  onRenameFile,
-  onDeleteFile,
-  onDuplicateFile,
-  onDropItem
-}) => {
-  const isExpanded = useWorkspaceStore(state => !!state.expandedFolders[folder.id]);
-  const toggleFolder = useWorkspaceStore(state => state.toggleFolder);
-  const activeFolderId = useWorkspaceStore(state => state.activeFolderId);
-  const setActiveFolder = useWorkspaceStore(state => state.setActiveFolder);
-  const [showMenu, setShowMenu] = useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+export const FolderItem: React.FC<FolderItemProps> = React.memo(
+  ({
+    folder,
+    level,
+    onRenameFolder,
+    onDeleteFolder,
+    onCreateFile,
+    onCreateFolder,
+    onRenameFile,
+    onDeleteFile,
+    onDuplicateFile,
+    onDropItem,
+  }) => {
+    const isExpanded = useWorkspaceStore((state) => !!state.expandedFolders[folder.id]);
+    const toggleFolder = useWorkspaceStore((state) => state.toggleFolder);
+    const activeFolderId = useWorkspaceStore((state) => state.activeFolderId);
+    const setActiveFolder = useWorkspaceStore((state) => state.setActiveFolder);
 
-  useOnClickOutside(containerRef, () => setShowMenu(false));
+    // Portal-based context menu — same pattern as FileItem
+    const { isOpen: menuOpen, position, triggerRef, open: openMenu, close: closeMenu } =
+      useExplorerContextMenu();
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setShowMenu(true);
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveFolder(folder.id);
-    toggleFolder(folder.id);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
       setActiveFolder(folder.id);
       toggleFolder(folder.id);
-    } else if (e.key === 'F2') {
-      e.preventDefault();
-      onRenameFolder(folder);
-    } else if (e.key === 'Delete' || e.key === 'Backspace') {
-      e.preventDefault();
-      onDeleteFolder(folder);
-    }
-  };
+    };
 
-  return (
-    <div className="select-none"
-      draggable
-      onDragStart={(e) => {
-        e.stopPropagation();
-        e.dataTransfer.setData("application/json", JSON.stringify({ id: folder.id, type: "folder" }));
-      }}
-      onDragOver={(e) => {
+    const handleContextMenu = (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (triggerRef.current) {
+        openMenu({ ...e, currentTarget: triggerRef.current } as React.MouseEvent);
+      } else {
+        openMenu(e);
+      }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
         e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-      }}
-      onDrop={(e) => {
+        setActiveFolder(folder.id);
+        toggleFolder(folder.id);
+      } else if (e.key === 'F2') {
         e.preventDefault();
-        e.stopPropagation();
-        try {
-          const data = JSON.parse(e.dataTransfer.getData("application/json"));
-          if (onDropItem) onDropItem(data.id, data.type, folder.id);
-        } catch {}
-      }}>
-      <div className="relative group" ref={containerRef}>
-        <div
-          className={cn(
-            "flex items-center justify-between px-2 py-1 cursor-pointer text-sm font-medium outline-none",
-            "hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20",
-            activeFolderId === folder.id 
-              ? "bg-primary/20 text-primary dark:bg-primary/30" 
-              : "text-foreground"
-          )}
-          style={{ paddingLeft: `${level * 16 + 8}px` }}
-          onClick={handleClick}
-          onContextMenu={handleContextMenu}
-          onKeyDown={handleKeyDown}
-          tabIndex={0}
-        >
-          <div className="flex items-center overflow-hidden">
-            <span className="mr-1 opacity-60">
-              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            </span>
-            {isExpanded ? (
-              <FolderOpen size={14} className="mr-2 text-blue-500 flex-shrink-0" />
-            ) : (
-              <FolderIcon size={14} className="mr-2 text-blue-500 flex-shrink-0" />
+        onRenameFolder(folder);
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        onDeleteFolder(folder);
+      }
+    };
+
+    return (
+      <div
+        className="select-none"
+        draggable
+        onDragStart={(e) => {
+          e.stopPropagation();
+          e.dataTransfer.setData(
+            'application/json',
+            JSON.stringify({ id: folder.id, type: 'folder' })
+          );
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            const data = JSON.parse(e.dataTransfer.getData('application/json'));
+            if (onDropItem) onDropItem(data.id, data.type, folder.id);
+          } catch {}
+        }}
+      >
+        {/* ── Folder row ────────────────────────────────────────────────────── */}
+        <div className="relative group">
+          <div
+            className={cn(
+              'flex items-center gap-1 px-2 py-1 cursor-pointer text-sm font-medium outline-none',
+              'hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20',
+              activeFolderId === folder.id
+                ? 'bg-primary/20 text-primary dark:bg-primary/30'
+                : 'text-foreground'
             )}
-            <span className="truncate">{folder.name}</span>
+            style={{ paddingLeft: `${level * 16 + 8}px` }}
+            onClick={handleClick}
+            onContextMenu={handleContextMenu}
+            onKeyDown={handleKeyDown}
+            tabIndex={0}
+          >
+            {/* Left section: chevron + folder icon + name — truncates */}
+            <div className="flex items-center gap-1 flex-1 min-w-0 overflow-hidden">
+              <span className="opacity-60 flex-shrink-0">
+                {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </span>
+              {isExpanded ? (
+                <FolderOpen size={14} className="flex-shrink-0 text-blue-500" />
+              ) : (
+                <FolderIcon size={14} className="flex-shrink-0 text-blue-500" />
+              )}
+              <span className="truncate">{folder.name}</span>
+            </div>
+
+            {/* Right section: 3-dot button — never shrinks */}
+            <div className="flex-shrink-0 ml-1">
+              <button
+                ref={triggerRef}
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                aria-label={`More actions for ${folder.name}`}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                onClick={openMenu}
+              >
+                <MoreVertical size={14} />
+              </button>
+            </div>
           </div>
 
-          <button 
-            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:opacity-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMenu(!showMenu);
-            }}
-          >
-            <MoreVertical size={14} />
-          </button>
+          {/* ── Context menu (portal) ──────────────────────────────────────── */}
+          <ExplorerContextMenu isOpen={menuOpen} position={position} onClose={closeMenu}>
+            <ExplorerMenuItem
+              icon={<FilePlus size={12} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeMenu();
+                onCreateFile(folder.id);
+              }}
+            >
+              New File
+            </ExplorerMenuItem>
+
+            <ExplorerMenuItem
+              icon={<FolderPlus size={12} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeMenu();
+                onCreateFolder(folder.id);
+              }}
+            >
+              New Folder
+            </ExplorerMenuItem>
+
+            <ExplorerMenuSeparator />
+
+            <ExplorerMenuItem
+              icon={<Edit2 size={12} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeMenu();
+                onRenameFolder(folder);
+              }}
+            >
+              Rename
+            </ExplorerMenuItem>
+
+            <ExplorerMenuSeparator />
+
+            <ExplorerMenuItem
+              icon={<Trash2 size={12} />}
+              variant="destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeMenu();
+                onDeleteFolder(folder);
+              }}
+            >
+              Delete
+            </ExplorerMenuItem>
+          </ExplorerContextMenu>
         </div>
 
-        {showMenu && (
-          <div 
-            className="absolute right-2 top-6 z-50 w-40 bg-popover text-popover-foreground rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1"
-          >
-            <button 
-              className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onCreateFile(folder.id); }}
-            >
-              <FilePlus size={12} className="mr-2" /> New File
-            </button>
-            <button 
-              className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onCreateFolder(folder.id); }}
-            >
-              <FolderPlus size={12} className="mr-2" /> New Folder
-            </button>
-            <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
-            <button 
-              className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onRenameFolder(folder); }}
-            >
-              <Edit2 size={12} className="mr-2" /> Rename
-            </button>
-            <button 
-              className="w-full text-left px-3 py-1.5 text-xs hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center"
-              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onDeleteFolder(folder); }}
-            >
-              <Trash2 size={12} className="mr-2" /> Delete
-            </button>
+        {/* ── Children (expanded) ───────────────────────────────────────────── */}
+        {isExpanded && (
+          <div>
+            {folder.children?.map((childFolder) => (
+              <FolderItem
+                key={childFolder.id}
+                folder={childFolder}
+                level={level + 1}
+                onRenameFolder={onRenameFolder}
+                onDeleteFolder={onDeleteFolder}
+                onCreateFile={onCreateFile}
+                onCreateFolder={onCreateFolder}
+                onRenameFile={onRenameFile}
+                onDeleteFile={onDeleteFile}
+                onDuplicateFile={onDuplicateFile}
+                onDropItem={onDropItem}
+              />
+            ))}
+            {folder.files?.map((childFile) => (
+              <FileItem
+                key={childFile.id}
+                file={childFile}
+                level={level + 1}
+                onRename={onRenameFile}
+                onDelete={onDeleteFile}
+                onDuplicate={onDuplicateFile}
+              />
+            ))}
           </div>
         )}
       </div>
+    );
+  }
+);
 
-      {isExpanded && (
-        <div>
-          {/* Render child folders */}
-          {folder.children?.map(childFolder => (
-            <FolderItem
-              key={childFolder.id}
-              folder={childFolder}
-              level={level + 1}
-              onRenameFolder={onRenameFolder}
-              onDeleteFolder={onDeleteFolder}
-              onCreateFile={onCreateFile}
-              onCreateFolder={onCreateFolder}
-              onRenameFile={onRenameFile}
-              onDeleteFile={onDeleteFile}
-              onDuplicateFile={onDuplicateFile}
-            />
-          ))}
-          {/* Render files in this folder */}
-          {folder.files?.map(childFile => (
-            <FileItem
-              key={childFile.id}
-              file={childFile}
-              level={level + 1}
-              onRename={onRenameFile}
-              onDelete={onDeleteFile}
-              onDuplicate={onDuplicateFile}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-});
+FolderItem.displayName = 'FolderItem';
