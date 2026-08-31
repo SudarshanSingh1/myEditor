@@ -65,6 +65,7 @@ __all__ = [
     "RolePermission",
     "AdminAuditLog",
     "BlockedIP",
+    "BlockedIdentity",
     "Report",
     "ReportStatus",
     "ReportTargetType",

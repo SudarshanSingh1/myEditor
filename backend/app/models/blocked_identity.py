@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, DateTime, Text, Enum
 from sqlalchemy.dialects.postgresql import UUID
-from app.database.session import Base
+from app.database.base import Base
 import enum
 
 class BlockReason(str, enum.Enum):
