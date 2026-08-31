@@ -399,6 +399,30 @@ class UserLifecycle:
                 db.execute(sa_delete(Folder).where(Folder.project_id.in_(project_ids)))
                 db.execute(sa_delete(Project).where(Project.owner_id == user_id))
 
+            # Create tombstone records to prevent re-registration
+            from app.models.blocked_identity import BlockedIdentity, BlockReason
+            from app.models.oauth_account import OAuthAccount
+            
+            # Block primary email
+            db.add(BlockedIdentity(
+                provider="email",
+                provider_id=user.email.lower(),
+                original_user_id=user.id,
+                reason=BlockReason.PERMANENT_DELETE,
+                details=reason
+            ))
+
+            # Block all connected OAuth identities
+            oauth_accounts = db.query(OAuthAccount).filter(OAuthAccount.user_id == user.id).all()
+            for acc in oauth_accounts:
+                db.add(BlockedIdentity(
+                    provider=acc.provider,
+                    provider_id=acc.provider_account_id,
+                    original_user_id=user.id,
+                    reason=BlockReason.PERMANENT_DELETE,
+                    details=reason
+                ))
+
             # Now delete the user — DB CASCADE handles sessions, oauth, activities, notification settings
             db.delete(user)
             db.flush()  # Flush before commit to catch any remaining FK issues

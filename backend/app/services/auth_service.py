@@ -97,6 +97,14 @@ class AuthService:
                 detail="Email is already registered.",
             )
 
+        # Check if email is permanently blocked
+        from app.models.blocked_identity import BlockedIdentity
+        if db.query(BlockedIdentity).filter(BlockedIdentity.provider == "email", BlockedIdentity.provider_id == email_normalized).first():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="ACCOUNT_DELETED",
+            )
+
         # Check duplicate username
         username_clean = req.username.strip()
         if db.query(User).filter(User.username == username_clean).first():
@@ -942,7 +950,7 @@ class AuthService:
                         detail="System is currently under maintenance. Password resets are temporarily disabled.",
                     )
 
-        if not user:
+        if not user or user.is_deleted or user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED]:
             fake_token = jwt.encode(
                 {"sub": "fake", "type": "reset", "otp_hash": "fake"},
                 settings.SECRET_KEY,

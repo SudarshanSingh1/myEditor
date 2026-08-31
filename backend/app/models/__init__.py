@@ -23,6 +23,7 @@ from app.models.permission import Permission
 from app.models.role_permission import RolePermission
 from app.models.admin_audit_log import AdminAuditLog
 from app.models.blocked_ip import BlockedIP
+from app.models.blocked_identity import BlockedIdentity
 from app.models.report import Report, ReportStatus, ReportTargetType
 from app.models.notification import (
     Notification,

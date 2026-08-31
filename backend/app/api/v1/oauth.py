@@ -346,6 +346,15 @@ def _create_session_response(
                 detail="System is currently under maintenance. Only administrators can log in at this time.",
             )
 
+    # Check if this external identity is blocked
+    from app.models.blocked_identity import BlockedIdentity
+    if db.query(BlockedIdentity).filter(BlockedIdentity.provider == provider, BlockedIdentity.provider_id == provider_id).first():
+        raise HTTPException(status_code=401, detail="ACCOUNT_DELETED")
+    
+    # Also check if the email itself is blocked
+    if email and db.query(BlockedIdentity).filter(BlockedIdentity.provider == "email", BlockedIdentity.provider_id == email.lower()).first():
+        raise HTTPException(status_code=401, detail="ACCOUNT_DELETED")
+
     if oauth_acc:
         user: User = oauth_acc.user
         # Refresh avatar if we didn't have one
@@ -667,6 +676,14 @@ async def github_connect_link(
     github_id = str(gh_user["id"])
     github_username: str = gh_user.get("login") or ""
     avatar_url: str | None = gh_user.get("avatar_url")
+    
+    # Check if this GitHub identity is permanently blocked (e.g. from a deleted account)
+    from app.models.blocked_identity import BlockedIdentity
+    if db.query(BlockedIdentity).filter(BlockedIdentity.provider == "github", BlockedIdentity.provider_id == github_id).first():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="ACCOUNT_DELETED"
+        )
 
     # 5. Upsert OAuthAccount — link GitHub to this editor user
     #    If another editor user already owns this GitHub account, we update

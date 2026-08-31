@@ -350,6 +350,13 @@ def create_admin_user(
             status_code=409, detail="User with this email or username already exists."
         )
 
+    # Prevent creation if email is permanently blocked
+    from app.models.blocked_identity import BlockedIdentity
+    if db.query(BlockedIdentity).filter(BlockedIdentity.provider == "email", BlockedIdentity.provider_id == req.email.lower()).first():
+        raise HTTPException(
+            status_code=409, detail="This email address is permanently blocked from registration due to a previous account deletion."
+        )
+
     # Generate temporary password
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
     temp_password = "".join(secrets.choice(alphabet) for i in range(16))
