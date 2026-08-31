@@ -38,6 +38,7 @@ class Project(Base):
     icon = Column(String(50), nullable=True)
     slug = Column(String(150), index=True, nullable=False)
     github_repo_url = Column(String(500), nullable=True)
+    github_default_branch = Column(String(255), nullable=True, default="main")
 
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

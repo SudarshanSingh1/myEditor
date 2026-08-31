@@ -18,6 +18,10 @@ class OAuthAccount(Base):
     access_token = Column(String, nullable=True)
     refresh_token = Column(String, nullable=True)
 
+    # Provider-specific display fields (GitHub only for now)
+    github_username = Column(String(255), nullable=True)
+    avatar_url = Column(String(1024), nullable=True)
+
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

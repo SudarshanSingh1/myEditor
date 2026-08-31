@@ -21,6 +21,59 @@ export default function OAuthCallback() {
 
     const exchangeCode = async () => {
       try {
+        // ----------------------------------------------------------------
+        // ACCOUNT LINKING FLOW
+        // If the state parameter looks like a signed connect token (base64
+        // encoded JSON with action=connect), this is an account-link
+        // request from a logged-in user — NOT a login attempt.
+        // ----------------------------------------------------------------
+        const stateParam = searchParams.get("state");
+        const isConnectFlow =
+          provider === "github" &&
+          stateParam &&
+          (() => {
+            try {
+              const raw = atob(stateParam.replace(/-/g, "+").replace(/_/g, "/"));
+              const lastDot = raw.lastIndexOf(".");
+              if (lastDot < 0) return false;
+              const payload = JSON.parse(raw.slice(0, lastDot));
+              return payload.action === "connect";
+            } catch {
+              return false;
+            }
+          })();
+
+        if (isConnectFlow) {
+          // Link the GitHub account to the currently-logged-in editor user.
+          // This endpoint validates the HMAC, exchanges the code, and
+          // upserts the OAuthAccount — without creating a new session.
+          const res = await fetchApi("/auth/oauth/github/connect-link", {
+            method: "POST",
+            body: JSON.stringify({ code, state: stateParam }),
+          });
+          if (res?.success && res?.data) {
+            const { useGitHubStore } = await import("../../stores/useGitHubStore");
+            await useGitHubStore.getState().fetchStatus();
+            toast.success(
+              `GitHub connected as @${res.data.github_username}`
+            );
+            // Navigate back to wherever they were, or the projects page
+            const returnUrl =
+              sessionStorage.getItem("oauth_redirect_url") ||
+              document.referrer ||
+              "/app/projects";
+            sessionStorage.removeItem("oauth_redirect_url");
+            navigate(returnUrl.startsWith("/") ? returnUrl : "/app/projects", {
+              replace: true,
+            });
+          }
+          return;
+        }
+
+        // ----------------------------------------------------------------
+        // NORMAL LOGIN FLOW — unchanged
+        // ----------------------------------------------------------------
+
         // Step 1: Exchange the code for tokens
         const response = await fetchApi(`/auth/oauth/${provider}/callback`, {
           method: "POST",

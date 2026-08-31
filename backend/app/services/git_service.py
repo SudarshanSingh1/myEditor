@@ -112,6 +112,8 @@ class GitService:
         access_token: str,
         commit_message: str,
         branch: str = "main",
+        git_username: str = "Hamara Editor",
+        git_email: str = "editor@noreply.github.com",
     ):
         """
         Dumps the DB files to a temp directory, clones the remote, overwrites with DB files, commits, and pushes.
@@ -127,8 +129,8 @@ class GitService:
                 try:
                     repo = git.Repo.clone_from(auth_url, tmpdir, branch=branch)
                 except git.exc.GitCommandError as e:
-                    if "not found in upstream" in str(e):
-                        # Likely an empty repository, clone without branch flag
+                    if "not found in upstream" in str(e) or "Remote branch" in str(e):
+                        # Empty repository — clone without branch flag
                         repo = git.Repo.clone_from(auth_url, tmpdir)
                     else:
                         raise
@@ -164,6 +166,7 @@ class GitService:
                     .all()
                 )
 
+                pushed_files = []
                 for f in all_files:
                     if f.folder_id and f.folder_id in folder_paths:
                         rel_path = folder_paths[f.folder_id].strip("/")
@@ -175,28 +178,25 @@ class GitService:
                     file_path = os.path.join(full_folder_path, f.name)
                     with open(file_path, "w", encoding="utf-8") as out_f:
                         out_f.write(f.content or "")
+                    pushed_files.append(f.name)
 
                 # 4. Git Add, Commit, Push
                 repo.git.add(all=True)
 
                 # Check if there are changes
                 if not repo.is_dirty() and not repo.untracked_files:
-                    return {"status": "success", "message": "No changes to commit"}
+                    return {
+                        "status": "success",
+                        "message": "No changes to commit",
+                        "files": [],
+                    }
 
-                # Configure git user (ideally use the actual user's name/email)
-                user_email = (
-                    project.owner.email if project.owner else "editor@hamara.com"
-                )
-                user_name = (
-                    project.owner.first_name if project.owner else "Hamara Editor"
-                )
+                # Configure git user using the GitHub identity (not the app email)
                 with repo.config_writer() as git_config:
-                    git_config.set_value("user", "email", user_email)
-                    git_config.set_value("user", "name", user_name)
+                    git_config.set_value("user", "email", git_email)
+                    git_config.set_value("user", "name", git_username)
 
                 repo.index.commit(commit_message)
-
-                origin = repo.remote(name="origin")
 
                 # Push HEAD to the requested branch, setting upstream
                 repo.git.push("--set-upstream", "origin", f"HEAD:{branch}")
@@ -204,7 +204,10 @@ class GitService:
                 return {
                     "status": "success",
                     "message": f"Successfully pushed to {branch}",
+                    "branch": branch,
+                    "files": pushed_files,
                 }
 
             except Exception as e:
                 raise ValueError(f"Failed to push to repository: {str(e)}")
+

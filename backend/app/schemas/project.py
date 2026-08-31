@@ -45,6 +45,8 @@ class ProjectResponse(ProjectBase):
     owner_id: UUID
     favorite: bool
     slug: str
+    github_repo_url: Optional[str] = None
+    github_default_branch: Optional[str] = None
 
     created_at: datetime
     updated_at: datetime

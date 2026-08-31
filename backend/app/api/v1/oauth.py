@@ -1,10 +1,17 @@
 import uuid
+import hmac
+import hashlib
+import base64
+import json
+import time
+import secrets
 from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 from app.dependencies.database import get_db
+from app.dependencies.auth import get_current_user
 from app.models.user import User, StatusEnum, RoleEnum
 from app.models.oauth_account import OAuthAccount
 from app.core.config import settings
@@ -510,4 +517,209 @@ def disconnect_oauth_account(
         success=True,
         message=f"{provider.capitalize()} account disconnected.",
         data=None,
+    )
+
+
+# ---------------------------------------------------------------------------
+# GitHub Account Linking (for already-logged-in users)
+# ---------------------------------------------------------------------------
+# This is SEPARATE from the GitHub login flow above.
+# A user who is already logged in can connect a GitHub account that may have
+# a completely different email address.  We use a HMAC-signed state token so
+# the backend knows which editor user initiated the connect flow without
+# storing any server-side session data.
+
+_STATE_MAX_AGE_SECONDS = 600  # 10 minutes
+
+
+def _sign_connect_state(user_id: str) -> str:
+    """Create a signed, time-limited state token encoding the user_id."""
+    payload = json.dumps({"user_id": user_id, "ts": int(time.time()), "action": "connect"})
+    sig = hmac.new(
+        settings.SECRET_KEY.encode(), payload.encode(), hashlib.sha256
+    ).hexdigest()
+    raw = f"{payload}.{sig}"
+    return base64.urlsafe_b64encode(raw.encode()).decode()
+
+
+def _verify_connect_state(state: str) -> str:
+    """Verify state signature and expiry. Returns user_id or raises 400."""
+    try:
+        raw = base64.urlsafe_b64decode(state.encode()).decode()
+        # Last segment is the sig; everything before the last "." is the payload
+        last_dot = raw.rfind(".")
+        payload_str = raw[:last_dot]
+        sig = raw[last_dot + 1:]
+        expected_sig = hmac.new(
+            settings.SECRET_KEY.encode(), payload_str.encode(), hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(sig, expected_sig):
+            raise ValueError("bad sig")
+        data = json.loads(payload_str)
+        if data.get("action") != "connect":
+            raise ValueError("wrong action")
+        if int(time.time()) - data["ts"] > _STATE_MAX_AGE_SECONDS:
+            raise ValueError("expired")
+        return data["user_id"]
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state token.")
+
+
+@router.get("/github/connect")
+def github_connect_authorize(
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Initiate GitHub account linking for an already-logged-in editor user.
+
+    Generates a HMAC-signed state token that encodes the current user's ID,
+    then redirects the browser to GitHub OAuth.  The state token lets the
+    callback verify which editor user started the flow — without any
+    server-side session storage and without trusting user-supplied parameters.
+
+    The GitHub OAuth App's callback URL must include the frontend path
+    /oauth/callback/github (same as the login flow).  The state parameter
+    distinguishes the two flows on the frontend.
+    """
+    if not settings.GITHUB_CLIENT_ID or not settings.GITHUB_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="GitHub OAuth is not configured on this server.",
+        )
+
+    state = _sign_connect_state(str(current_user.id))
+
+    params = {
+        "client_id": settings.GITHUB_CLIENT_ID,
+        "redirect_uri": f"{settings.FRONTEND_URL}/oauth/callback/github",
+        "scope": "user:email read:user repo",
+        "state": state,
+    }
+    url = "https://github.com/login/oauth/authorize?" + urlencode(params)
+    return RedirectResponse(url)
+
+
+class ConnectLinkRequest(BaseModel):
+    code: str
+    state: str
+
+
+@router.post("/github/connect-link", response_model=StandardResponse)
+async def github_connect_link(
+    req: ConnectLinkRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Complete GitHub account linking after the OAuth callback.
+
+    Called by the frontend OAuthCallback page when the state token indicates
+    an account-linking flow (not a login flow).  Validates the signed state,
+    exchanges the code for a GitHub token, fetches the GitHub user, and
+    upserts an OAuthAccount linked to the editor user encoded in the state.
+
+    This endpoint NEVER creates a new application user and NEVER issues new
+    JWT tokens.  The caller's existing session remains valid.
+    """
+    # 1. Validate state and extract editor user_id
+    user_id = _verify_connect_state(req.state)
+
+    # 2. Load the editor user — must exist
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Editor user not found.")
+
+    # 3. Exchange authorization code for GitHub access token
+    async with httpx.AsyncClient(timeout=10) as client:
+        token_res = await client.post(
+            "https://github.com/login/oauth/access_token",
+            data={
+                "client_id": settings.GITHUB_CLIENT_ID,
+                "client_secret": settings.GITHUB_CLIENT_SECRET,
+                "code": req.code,
+                "redirect_uri": f"{settings.FRONTEND_URL}/oauth/callback/github",
+            },
+            headers={"Accept": "application/json"},
+        )
+        if token_res.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to exchange GitHub authorization code.")
+        token_data = token_res.json()
+        if "error" in token_data:
+            raise HTTPException(
+                status_code=400,
+                detail=token_data.get("error_description", token_data["error"]),
+            )
+        access_token: str = token_data["access_token"]
+
+        # 4. Fetch GitHub user profile
+        gh_headers = {"Authorization": f"Bearer {access_token}"}
+        user_res = await client.get("https://api.github.com/user", headers=gh_headers)
+        if user_res.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to fetch GitHub user profile.")
+        gh_user = user_res.json()
+
+    github_id = str(gh_user["id"])
+    github_username: str = gh_user.get("login") or ""
+    avatar_url: str | None = gh_user.get("avatar_url")
+
+    # 5. Upsert OAuthAccount — link GitHub to this editor user
+    #    If another editor user already owns this GitHub account, we update
+    #    the token but keep the existing association (prevents account hijack).
+    existing = (
+        db.query(OAuthAccount)
+        .filter(
+            OAuthAccount.provider == "github",
+            OAuthAccount.provider_account_id == github_id,
+        )
+        .first()
+    )
+
+    if existing:
+        if str(existing.user_id) != user_id:
+            # This GitHub account is already linked to a different editor user.
+            # Refuse the link to prevent account takeover.
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"This GitHub account (@{github_username}) is already linked "
+                    "to a different editor account. Disconnect it there first."
+                ),
+            )
+        # Refresh the token and display info
+        existing.access_token = access_token
+        existing.github_username = github_username
+        existing.avatar_url = avatar_url
+        db.commit()
+    else:
+        # Remove any previously connected GitHub account for this editor user
+        # (they may be reconnecting with a different GitHub account)
+        old = (
+            db.query(OAuthAccount)
+            .filter(
+                OAuthAccount.user_id == user_id,
+                OAuthAccount.provider == "github",
+            )
+            .first()
+        )
+        if old:
+            db.delete(old)
+            db.flush()
+
+        new_oauth = OAuthAccount(
+            user_id=user.id,
+            provider="github",
+            provider_account_id=github_id,
+            access_token=access_token,
+            github_username=github_username,
+            avatar_url=avatar_url,
+        )
+        db.add(new_oauth)
+        db.commit()
+
+    return StandardResponse(
+        success=True,
+        message=f"GitHub account @{github_username} connected successfully.",
+        data={
+            "github_username": github_username,
+            "avatar_url": avatar_url,
+        },
     )
