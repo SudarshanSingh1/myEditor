@@ -387,6 +387,11 @@ def _create_session_response(
         db.commit()
         db.refresh(user)
 
+    if user.is_deleted:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="ACCOUNT_DELETED")
+    if user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="ACCOUNT_SUSPENDED")
+
     # 5. Create application session
     from app.models.user_session import UserSession
 
@@ -625,8 +630,10 @@ async def github_connect_link(
 
     # 2. Load the editor user — must exist
     user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Editor user not found.")
+    if not user or user.is_deleted:
+        raise HTTPException(status_code=401, detail="ACCOUNT_DELETED")
+    if user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED]:
+        raise HTTPException(status_code=403, detail="ACCOUNT_SUSPENDED")
 
     # 3. Exchange authorization code for GitHub access token
     async with httpx.AsyncClient(timeout=10) as client:

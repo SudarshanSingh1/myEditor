@@ -23,6 +23,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
       // Always redirect to login when unauthenticated.
       // MaintenanceGuard wraps the auth routes and will redirect to /maintenance if needed.
       navigate('/login', { state: { from: location.pathname }, replace: true });
+    } else if (authState === 'SUSPENDED') {
+      navigate('/suspended', { replace: true });
+    } else if (authState === 'DELETED') {
+      navigate('/deleted', { replace: true });
     } else if (authState === 'AUTHENTICATED' && user?.must_change_password && location.pathname !== '/force-password-change') {
       navigate('/force-password-change', { replace: true });
     }
@@ -34,7 +38,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // If bootstrap finished but still not auth, we are about to redirect, show nothing to avoid flash of content
-  if (authState === 'UNAUTHENTICATED' || authState === 'GUEST') return null;
+  if (authState === 'UNAUTHENTICATED' || authState === 'GUEST' || authState === 'SUSPENDED' || authState === 'DELETED') return null;
 
   return <>{children}</>;
 }

@@ -80,6 +80,17 @@ export async function fetchApi(endpoint: string, options: RequestInit & { _retry
         if (!isDeploying) {
           toast.error(`Server Error: ${errorMsg}`);
         }
+      } else if (errorMsg === "ACCOUNT_SUSPENDED") {
+        const { useUserStore } = await import('../stores/useUserStore');
+        if (useUserStore.getState().authState !== 'SUSPENDED') {
+          useUserStore.getState().setAuthState('SUSPENDED');
+        }
+      } else if (errorMsg === "ACCOUNT_DELETED") {
+        const { useUserStore } = await import('../stores/useUserStore');
+        if (useUserStore.getState().authState !== 'DELETED') {
+          useUserStore.getState().clearAuth();
+          useUserStore.getState().setAuthState('DELETED');
+        }
       } else if (response.status === 403 || response.status === 429) {
         toast.error(errorMsg);
       }

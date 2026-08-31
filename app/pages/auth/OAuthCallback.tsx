@@ -142,8 +142,14 @@ export default function OAuthCallback() {
           navigate("/maintenance", { replace: true });
           return;
         }
-        setError(err.message || "Failed to complete OAuth login");
-        toast.error(err.message || "OAuth login failed");
+        if (err.message === "ACCOUNT_SUSPENDED") {
+          setError("Your account is currently suspended. Please contact support.");
+        } else if (err.message === "ACCOUNT_DELETED") {
+          setError("This account no longer exists or has been deleted.");
+        } else {
+          setError(err.message || "Failed to complete OAuth login");
+          toast.error(err.message || "OAuth login failed");
+        }
         setTimeout(() => navigate("/login"), 3000);
       }
     };

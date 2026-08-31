@@ -28,7 +28,7 @@ interface GuestQuota {
   expires_at: string;
 }
 
-export type AuthState = 'UNKNOWN' | 'BOOTSTRAPPING' | 'AUTHENTICATED' | 'GUEST' | 'UNAUTHENTICATED';
+export type AuthState = 'UNKNOWN' | 'BOOTSTRAPPING' | 'AUTHENTICATED' | 'GUEST' | 'UNAUTHENTICATED' | 'SUSPENDED' | 'DELETED';
 
 interface UserState {
   user: User | null;

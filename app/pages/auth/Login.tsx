@@ -221,7 +221,11 @@ export default function Login({ isAdminPortal = false }: LoginProps) {
       }
       
       // Map generic backend errors to friendly messages
-      if (errorText.includes("credentials") || errorText.includes("unauthorized")) {
+      if (err.message === "ACCOUNT_SUSPENDED") {
+        setError("Your account is currently suspended. Please contact support.");
+      } else if (err.message === "ACCOUNT_DELETED") {
+        setError("This account no longer exists or has been deleted.");
+      } else if (errorText.includes("credentials") || errorText.includes("unauthorized")) {
         setError("Incorrect email or password");
       } else if (errorText.includes("not found")) {
         setError("We couldn't find an account with that email");

@@ -607,6 +607,14 @@ def update_user_status(
 
     old_status = target_user.status
     target_user.status = req.status
+    
+    # Invalidate active sessions if user is suspended or banned
+    if req.status in [StatusEnum.SUSPENDED, StatusEnum.BANNED]:
+        from app.models.user_session import UserSession
+        db.query(UserSession).filter(UserSession.user_id == target_user.id).update(
+            {"is_active": False}, synchronize_session=False
+        )
+
     db.commit()
 
     AuditService.log_action(

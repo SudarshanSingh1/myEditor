@@ -309,15 +309,15 @@ class AuthService:
         logger.debug(
             f"Account status for {user.username}: {user.status.value}, is_deleted: {user.is_deleted}"
         )
-        if user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED] or user.is_deleted:
-            reason = (
-                f"Account is {user.status.value.lower()}"
-                if not user.is_deleted
-                else "Account is deleted"
-            )
-            logger.warning(f"Login failed: {reason} for user {user.username}")
+        if user.is_deleted:
+            logger.warning(f"Login failed: Account is deleted for user {user.username}")
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail=f"{reason}."
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="ACCOUNT_DELETED"
+            )
+        if user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED]:
+            logger.warning(f"Login failed: Account is suspended for user {user.username}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="ACCOUNT_SUSPENDED"
             )
 
         if (
@@ -709,10 +709,15 @@ class AuthService:
                 )
 
             user = db.query(User).filter(User.id == uid).first()
-            if not user or user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED]:
+            if not user or user.is_deleted:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="User not found or inactive.",
+                    detail="ACCOUNT_DELETED",
+                )
+            if user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED]:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="ACCOUNT_SUSPENDED",
                 )
 
             if jti:
@@ -830,21 +835,26 @@ class AuthService:
             user = session.user
             if not user or user.id != uid:
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session user."
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="ACCOUNT_DELETED"
                 )
         else:
             user = db.query(User).filter(User.id == uid).first()
             if not user:
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found."
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="ACCOUNT_DELETED"
                 )
+
+        if user.is_deleted:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="ACCOUNT_DELETED"
+            )
 
         # Re-check account status on every request — a banned user's token may still be valid
         # within the access token lifetime (30 min). This check prevents that window.
         if user.status in [StatusEnum.BANNED, StatusEnum.SUSPENDED]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Account is {user.status.value.lower()}.",
+                detail="ACCOUNT_SUSPENDED",
             )
 
         return user

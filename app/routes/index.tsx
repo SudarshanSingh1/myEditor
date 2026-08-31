@@ -76,6 +76,8 @@ const EmailTemplateStudioPage = lazy(() => import("../pages/admin/EmailTemplateS
 // Error Pages (Lazy)
 const NotFound = lazy(() => import("../pages/error/NotFound"));
 const Forbidden = lazy(() => import("../pages/error/Forbidden"));
+const Suspended = lazy(() => import("../pages/error/Suspended"));
+const Deleted = lazy(() => import("../pages/error/Deleted"));
 
 // Maintenance Page
 import { MaintenancePage } from "../pages/MaintenancePage";
@@ -209,6 +211,8 @@ export default function AppRouter() {
 
           {/* Error Routes */}
           <Route path="/403" element={<Forbidden />} />
+          <Route path="/suspended" element={<Suspended />} />
+          <Route path="/deleted" element={<Deleted />} />
 
           {/* Legal Pages */}
           <Route path="/privacy" element={<PrivacyPolicy />} />
