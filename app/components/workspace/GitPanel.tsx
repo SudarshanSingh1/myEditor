@@ -96,9 +96,9 @@ export function GitPanel({ projectId }: GitPanelProps) {
   const [lastPushFiles, setLastPushFiles] = useState<string[]>([]);
 
   // Changed files from editor store
-  const dirtyFiles = useEditorStore((s) => s.dirtyFiles);
-  const openFiles = useEditorStore((s) => s.openFiles);
-  const changedFileNames = openFiles
+  const dirtyFiles = useEditorStore((s) => s.dirtyFiles) || {};
+  const tabs = useEditorStore((s) => s.tabs) || [];
+  const changedFileNames = tabs
     .filter((f) => dirtyFiles[f.id])
     .map((f) => f.name);
 
