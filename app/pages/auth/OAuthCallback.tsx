@@ -5,13 +5,17 @@ import { useSystemStore } from "../../stores/useSystemStore";
 import { fetchApi } from "../../lib/api";
 import { SudarshanaMandala } from "../../components/ui/SplashLoader";
 import { toast } from "sonner";
+import { githubApi } from "../../lib/api/github";
 
 export default function OAuthCallback() {
   const { provider } = useParams<{ provider: string }>();
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
   const navigate = useNavigate();
+  
+  // Separate states for the two distinct flows
   const [error, setError] = useState<string | null>(null);
+  const [connectError, setConnectError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!provider || !code) {
@@ -20,33 +24,30 @@ export default function OAuthCallback() {
     }
 
     const exchangeCode = async () => {
-      try {
-        // ----------------------------------------------------------------
-        // ACCOUNT LINKING FLOW
-        // If the state parameter looks like a signed connect token (base64
-        // encoded JSON with action=connect), this is an account-link
-        // request from a logged-in user — NOT a login attempt.
-        // ----------------------------------------------------------------
-        const stateParam = searchParams.get("state");
-        const isConnectFlow =
-          provider === "github" &&
-          stateParam &&
-          (() => {
-            try {
-              const raw = atob(stateParam.replace(/-/g, "+").replace(/_/g, "/"));
-              const lastDot = raw.lastIndexOf(".");
-              if (lastDot < 0) return false;
-              const payload = JSON.parse(raw.slice(0, lastDot));
-              return payload.action === "connect";
-            } catch {
-              return false;
-            }
-          })();
+      // ----------------------------------------------------------------
+      // ACCOUNT LINKING FLOW
+      // If the state parameter looks like a signed connect token (base64
+      // encoded JSON with action=connect), this is an account-link
+      // request from a logged-in user — NOT a login attempt.
+      // ----------------------------------------------------------------
+      const stateParam = searchParams.get("state");
+      const isConnectFlow =
+        provider === "github" &&
+        stateParam &&
+        (() => {
+          try {
+            const raw = atob(stateParam.replace(/-/g, "+").replace(/_/g, "/"));
+            const lastDot = raw.lastIndexOf(".");
+            if (lastDot < 0) return false;
+            const payload = JSON.parse(raw.slice(0, lastDot));
+            return payload.action === "connect";
+          } catch {
+            return false;
+          }
+        })();
 
-        if (isConnectFlow) {
-          // Link the GitHub account to the currently-logged-in editor user.
-          // This endpoint validates the HMAC, exchanges the code, and
-          // upserts the OAuthAccount — without creating a new session.
+      if (isConnectFlow) {
+        try {
           const res = await fetchApi("/auth/oauth/github/connect-link", {
             method: "POST",
             body: JSON.stringify({ code, state: stateParam }),
@@ -54,34 +55,30 @@ export default function OAuthCallback() {
           if (res?.success && res?.data) {
             const { useGitHubStore } = await import("../../stores/useGitHubStore");
             await useGitHubStore.getState().fetchStatus();
-            toast.success(
-              `GitHub connected as @${res.data.github_username}`
-            );
-            // Navigate back to wherever they were, or the projects page
-            const returnUrl =
-              sessionStorage.getItem("oauth_redirect_url") ||
-              document.referrer ||
-              "/app/projects";
+            toast.success(`GitHub connected as @${res.data.github_username}`);
+            // Navigate back to wherever they were
+            const returnUrl = sessionStorage.getItem("oauth_redirect_url") || "/app/projects";
             sessionStorage.removeItem("oauth_redirect_url");
-            navigate(returnUrl.startsWith("/") ? returnUrl : "/app/projects", {
-              replace: true,
-            });
+            navigate(returnUrl.startsWith("/") ? returnUrl : "/app/projects", { replace: true });
           }
-          return;
+        } catch (err: any) {
+          // It's a connect flow error, so don't redirect to login!
+          // We set connectError so the UI can show the specific "Already linked" view.
+          setConnectError(err?.data?.detail || err.message || "Failed to link GitHub account.");
         }
+        return;
+      }
 
-        // ----------------------------------------------------------------
-        // NORMAL LOGIN FLOW — unchanged
-        // ----------------------------------------------------------------
-
-        // Step 1: Exchange the code for tokens
+      // ----------------------------------------------------------------
+      // NORMAL LOGIN FLOW — unchanged
+      // ----------------------------------------------------------------
+      try {
         const response = await fetchApi(`/auth/oauth/${provider}/callback`, {
           method: "POST",
           body: JSON.stringify({ code }),
         });
 
         if (response.success && response.data) {
-          // Step 2: Fetch the full profile to get the real role
           let userData = response.data.user;
           const { authController } = await import('../../services/AuthController');
           await authController.bootstrap(true);
@@ -89,11 +86,8 @@ export default function OAuthCallback() {
           if (userState) {
               userData = userState;
           } else {
-              // If /auth/me fails (e.g. maintenance), use what the oauth response gave us
               userData = { ...response.data.user, role: response.data.user.role || "USER" };
           }
-
-
 
           await useSystemStore.getState().checkStatus(true);
           const isMaint = useSystemStore.getState().isMaintenanceMode;
@@ -126,7 +120,6 @@ export default function OAuthCallback() {
           }
 
           if (!userState) {
-            // fallback if auth/me failed but we still want to log them in based on OAuth response
             useUserStore.getState().setAuthSuccess(userData, userData.effective_permissions || []);
           }
           toast.success(`Successfully logged in with ${provider}`);
@@ -158,6 +151,36 @@ export default function OAuthCallback() {
     exchangeCode();
   }, [provider, code, navigate, searchParams]);
 
+  // Specific Error View for the CONNECT flow (e.g. account already linked)
+  if (connectError) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-white h-full">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center w-full max-w-md">
+          <h2 className="mb-2 text-xl font-semibold text-red-400">GitHub Account Already Connected</h2>
+          <p className="text-zinc-400 mb-6">{connectError}</p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => {
+                const returnUrl = sessionStorage.getItem("oauth_redirect_url") || "/app/projects";
+                navigate(returnUrl);
+              }}
+              className="w-full rounded-md bg-white/10 px-4 py-2 hover:bg-white/20 transition-colors"
+            >
+              Back to Editor
+            </button>
+            <button
+              onClick={() => githubApi.connect()}
+              className="w-full rounded-md bg-transparent border border-white/20 px-4 py-2 hover:bg-white/10 transition-colors"
+            >
+              Try Another GitHub Account
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal Login Flow Error View
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-white h-full">

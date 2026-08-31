@@ -17,6 +17,7 @@ export const githubApi = {
 
   /** Redirect to GitHub OAuth to connect an account (for logged-in users) */
   connect: () => {
+    sessionStorage.setItem('oauth_redirect_url', window.location.pathname);
     window.location.href = '/api/v1/auth/oauth/github/connect';
   },
 
