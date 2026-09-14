@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⟨/⟩ Hamara Editor
+# Hamara Editor
 
 ### The Open-Source, Enterprise-Grade Cloud Code Editor
 
@@ -14,51 +14,51 @@
 
 **Write, execute, and collaborate on code — entirely in the browser.**
 
-[Getting Started](#-getting-started) · [Features](#-features) · [Architecture](#-architecture) · [Documentation](#-documentation) · [Contributing](#-contributing)
+[Getting Started](#getting-started) · [Features](#features) · [Architecture](#architecture) · [Documentation](#documentation) · [Contributing](#contributing)
 
 </div>
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [Overview](#-overview)
-- [Features](#-features)
-- [Screenshots](#-screenshots)
-- [Architecture](#-architecture)
-- [Code Execution Flow](#-code-execution-flow)
-- [Tech Stack](#-tech-stack)
-- [Getting Started](#-getting-started)
-- [Project Structure](#-project-structure)
-- [Documentation](#-documentation)
-- [Roadmap](#-roadmap)
-- [Contributing](#-contributing)
-- [Security](#-security)
-- [License](#-license)
+- [Overview](#overview)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Architecture](#architecture)
+- [Code Execution Flow](#code-execution-flow)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Documentation](#documentation)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
 
 ---
 
-## 🔍 Overview
+## Overview
 
 Hamara Editor is a high-performance, containerized cloud IDE built for modern teams and educators. It combines a **React 19** interface with a secure, highly scalable **FastAPI** backend and a **Docker-based** code execution engine. Users can write, run, and debug code in isolated containers — all from the browser.
 
 ---
 
-## ✨ Features
+## Features
 
 | Feature | Description |
 | :--- | :--- |
-| ⚡ **Blazing Fast UI** | Built with React 19, Vite, and Zustand for instant interactions |
-| 🔒 **Secure Execution** | Code runs in ephemeral, resource-limited Docker containers |
-| 🔑 **Enterprise Auth** | Full OAuth 2.0 + RBAC with secure HTTP-only cookie sessions |
-| 📝 **Monaco Editor** | VS Code's editing engine with IntelliSense and syntax highlighting |
-| 📡 **Real-time Terminal** | Live execution output streamed via WebSockets using xterm.js |
-| 🎨 **Dark & Light Modes** | Beautiful themes for every preference |
-| 📊 **Admin Dashboard** | Role-based dashboards for owners, admins, and users |
+| **Blazing Fast UI** | Built with React 19, Vite, and Zustand for instant interactions |
+| **Secure Execution** | Code runs in ephemeral, resource-limited Docker containers |
+| **Enterprise Auth** | Full OAuth 2.0 + RBAC with secure HTTP-only cookie sessions |
+| **Monaco Editor** | VS Code's editing engine with IntelliSense and syntax highlighting |
+| **Real-time Terminal** | Live execution output streamed via WebSockets using xterm.js |
+| **Dark & Light Modes** | Beautiful themes for every preference |
+| **Admin Dashboard** | Role-based dashboards for owners, admins, and users |
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 <details>
 <summary><b>Click to expand screenshots</b></summary>
@@ -76,7 +76,7 @@ Hamara Editor is a high-performance, containerized cloud IDE built for modern te
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 Hamara Editor follows a strictly typed, three-tier architecture with a dedicated compute layer.
 
@@ -84,35 +84,35 @@ Hamara Editor follows a strictly typed, three-tier architecture with a dedicated
 
 ```mermaid
 flowchart LR
-    subgraph Client["🖥️ Client Layer"]
+    subgraph Client["Client Layer"]
         Browser["Browser"]
     end
 
-    subgraph Proxy["🔀 Routing Layer"]
+    subgraph Proxy["Routing Layer"]
         Nginx["Nginx :8080"]
     end
 
-    subgraph Frontend["⚛️ Frontend"]
+    subgraph Frontend["Frontend"]
         React["React 19 SPA"]
         Monaco["Monaco Editor"]
         Xterm["xterm.js Terminal"]
     end
 
-    subgraph Backend["⚙️ API Layer"]
+    subgraph Backend["API Layer"]
         FastAPI["FastAPI Server"]
         Auth["OAuth + RBAC"]
         ExecEngine["Execution Engine"]
     end
 
-    subgraph Storage["💾 Storage Layer"]
+    subgraph Storage["Storage Layer"]
         DB[("PostgreSQL 15")]
     end
 
-    subgraph Compute["🐳 Compute Layer"]
+    subgraph Compute["Compute Layer"]
         DockerDaemon["Docker Daemon"]
-        Container1["🟢 Python"]
-        Container2["🟡 Node.js"]
-        Container3["🔵 C++"]
+        Container1["Python"]
+        Container2["Node.js"]
+        Container3["C++"]
     end
 
     Browser --> Nginx
@@ -133,20 +133,20 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A["📨 Incoming Request"] --> B{"Route Type?"}
+    A["Incoming Request"] --> B{"Route Type?"}
 
     B -->|"/* (Static)"| C["Serve React SPA"]
     B -->|"/api/*"| D{"Authenticated?"}
     B -->|"WebSocket"| E["Upgrade Connection"]
 
-    D -->|"❌ No"| F["Return 401 Unauthorized"]
-    D -->|"✅ Yes"| G{"Request Type?"}
+    D -->|"No"| F["Return 401 Unauthorized"]
+    D -->|"Yes"| G{"Request Type?"}
 
     G -->|"CRUD Operation"| H["Service Layer → Repository → DB"]
     G -->|"Code Execution"| I{"Valid Language?"}
 
-    I -->|"❌ No"| J["Return 400 Bad Request"]
-    I -->|"✅ Yes"| K["Create Ephemeral Container"]
+    I -->|"No"| J["Return 400 Bad Request"]
+    I -->|"Yes"| K["Create Ephemeral Container"]
 
     K --> L["Inject Code & Run"]
     L --> M["Stream Output via WebSocket"]
@@ -164,7 +164,7 @@ flowchart TD
 
 ---
 
-## 🐳 Code Execution Flow
+## Code Execution Flow
 
 This is the standout feature of Hamara Editor. User code never runs on the host — it's executed inside isolated, ephemeral Docker containers with strict resource limits.
 
@@ -199,7 +199,7 @@ sequenceDiagram
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 <table>
 <tr>
@@ -237,7 +237,7 @@ sequenceDiagram
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -276,7 +276,7 @@ http://localhost:8080
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 hamara-editor/
@@ -301,21 +301,21 @@ hamara-editor/
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 | :--- | :--- |
-| [📖 Documentation Index](docs/README.md) | Central hub for all documentation |
-| [🏗 Architecture Diagrams](docs/ARCHITECTURE/diagrams.md) | Visual system design references |
-| [⚙️ Configuration Reference](docs/CONFIGURATION.md) | Environment variables & config options |
-| [🚀 Quick Start Guide](docs/QUICK_START.md) | Detailed setup walkthrough |
-| [🔒 Security & RBAC](docs/SECURITY_AND_RBAC.md) | Auth, roles, and security policies |
-| [🏠 Self-Hosting Guide](docs/SELF_HOSTING.md) | Deploy on your own infrastructure |
-| [🛠 Developer Guide](docs/DEVELOPING.md) | Local development workflow |
+| [Documentation Index](docs/README.md) | Central hub for all documentation |
+| [Architecture Diagrams](docs/ARCHITECTURE/diagrams.md) | Visual system design references |
+| [Configuration Reference](docs/CONFIGURATION.md) | Environment variables & config options |
+| [Quick Start Guide](docs/QUICK_START.md) | Detailed setup walkthrough |
+| [Security & RBAC](docs/SECURITY_AND_RBAC.md) | Auth, roles, and security policies |
+| [Self-Hosting Guide](docs/SELF_HOSTING.md) | Deploy on your own infrastructure |
+| [Developer Guide](docs/DEVELOPING.md) | Local development workflow |
 
 ---
 
-## 🗺 Roadmap
+## Roadmap
 
 | Version | Features |
 | :--- | :--- |
@@ -327,7 +327,7 @@ hamara-editor/
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions from the community! Here's how to get started:
 
@@ -342,13 +342,13 @@ We welcome contributions from the community! Here's how to get started:
 
 ---
 
-## 🔒 Security
+## Security
 
 If you discover a security vulnerability, please report it responsibly. **Do not open a public issue.** Instead, refer to our [Security Policy](SECURITY.md) for instructions.
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
 
@@ -356,8 +356,8 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 
 <div align="center">
 
-**Built with ❤️ by the Hamara Editor team**
+**Built with love by the Hamara Editor team**
 
-⭐ Star this repo if you find it useful!
+Star this repo if you find it useful!
 
 </div>

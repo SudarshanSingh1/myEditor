@@ -324,13 +324,13 @@ export function EnterpriseLayout({ isSuperAdminLayout = false }: { isSuperAdminL
     >
       {/* Logo */}
       <div className="e-sidebar-logo">
-        <div style={{
-          width: 26, height: 26, borderRadius: 7, flexShrink: 0,
-          background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontWeight: 800, fontSize: 12,
-          boxShadow: "0 0 14px rgba(99,102,241,0.35)",
-        }}>H</div>
+        <img
+          src="/images/hamara-editor-icon.svg"
+          alt="Hamara Editor"
+          width={26}
+          height={26}
+          style={{ borderRadius: 7, flexShrink: 0 }}
+        />
         <div className="e-sidebar-text" style={{ overflow: "hidden" }}>
           <p style={{ fontSize: 12.5, fontWeight: 700, color: "#ffffff", whiteSpace: "nowrap" }}>
             Hamara

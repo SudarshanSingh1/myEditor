@@ -102,9 +102,16 @@ export function LandingFooter() {
         </div>
         
         <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground/80 italic">
-            Built with <span className="text-red-500 not-italic" aria-label="love">❤️</span> by Sudarshan for his brother — and coders everywhere.
-          </p>
+          <div className="group inline-flex items-center justify-center px-4 py-2 sm:px-5 sm:py-2.5 rounded-full border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.02] transition-all duration-300 hover:border-indigo-500/30 dark:hover:border-indigo-500/30 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/10 hover:shadow-[0_0_12px_-4px_rgba(99,102,241,0.2)] text-[13px] sm:text-sm text-zinc-600 dark:text-zinc-400">
+            <span className="flex flex-wrap items-center justify-center text-center gap-x-1.5 gap-y-0.5">
+              <span className="flex items-center gap-x-1.5">
+                Built with 
+                <span className="text-red-500 transition-all duration-300 drop-shadow-[0_0_4px_rgba(239,68,68,0.2)] group-hover:drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] group-hover:scale-110" aria-label="love">❤️</span> 
+                by <span className="font-medium text-zinc-900 dark:text-zinc-200">Sudarshan</span>
+              </span>
+              <span>for his brother — and coders everywhere.</span>
+            </span>
+          </div>
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} Hamara Editor. All rights reserved.
           </p>

@@ -22,7 +22,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap" rel="stylesheet" />
-        <link rel="preload" as="image" href="/logo.svg" fetchPriority="high" />
+        <link rel="preload" as="image" href="/images/hamara-editor-icon.svg" fetchPriority="high" />
         <Meta />
         <Links />
       </head>

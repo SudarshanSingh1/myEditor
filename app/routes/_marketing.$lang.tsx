@@ -209,9 +209,7 @@ export default function LanguageCompiler() {
       <header className="h-14 border-b border-border bg-[#1e1e1e] flex items-center px-4 justify-between shrink-0">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-               <span className="text-white font-bold text-xl">H</span>
-             </div>
+             <img src="/images/hamara-editor-icon.svg" alt="Hamara Editor" className="w-8 h-8 rounded-lg" />
              <span className="font-semibold text-lg hidden sm:block text-white">Hamara Editor</span>
           </div>
           <div className="h-6 w-px border-l border-white/20 mx-2"></div>
